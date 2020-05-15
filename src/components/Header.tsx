@@ -1,0 +1,90 @@
+import React, { FC } from 'react';
+import { StatusBar, StyleSheet, View } from 'react-native';
+
+import { Appbar } from 'react-native-paper';
+import { useSafeArea } from 'react-native-safe-area-context';
+import { StackHeaderProps } from '@react-navigation/stack';
+
+import usePress from '!/hooks/use-press';
+import useTheme from '!/hooks/use-theme';
+import { HeaderOptions } from '!/types';
+
+const Header: FC<StackHeaderProps> = ({ navigation, scene, previous }) => {
+  const insets = useSafeArea();
+  const { colors, dark } = useTheme();
+
+  const { descriptor, route } = scene;
+
+  const options = descriptor.options as HeaderOptions;
+
+  const title = options?.headerTitle || options?.title || route.name;
+  const isHomeScreen = route.name === 'Home';
+
+  const textColor = dark ? colors.text : colors.textOnPrimary;
+
+  const handlePressBack = usePress(() => {
+    requestAnimationFrame(() => {
+      navigation.goBack();
+    });
+  });
+
+  const headerStyle = [];
+  if (isHomeScreen) {
+    headerStyle.push(styles.headerNoElevation);
+  }
+  if (options.headerTransparent) {
+    headerStyle.push(styles.headerTranslucent);
+    headerStyle.push({ marginTop: insets.top || (StatusBar.currentHeight ?? 20) });
+  }
+  if (options.skipInset === true) {
+    headerStyle.push({ marginTop: 0 });
+  }
+
+  return (
+    <Appbar.Header style={headerStyle}>
+      {options?.handlePressBack || previous ? (
+        <Appbar.BackAction
+          color={textColor}
+          onPress={options?.handlePressBack ?? handlePressBack}
+        />
+      ) : null}
+
+      {options?.headerLeft ? options?.headerLeft({ tintColor: textColor }) : null}
+
+      {options?.headerCenter ? (
+        <View style={styles.centerContainer}>
+          {options?.headerCenter({ tintColor: textColor })}
+        </View>
+      ) : (
+        <Appbar.Content
+          color={textColor}
+          style={styles.content}
+          subtitle={options?.subtitle}
+          title={title}
+        />
+      )}
+
+      {options?.headerRight ? options?.headerRight({ tintColor: textColor }) : null}
+    </Appbar.Header>
+  );
+};
+
+const styles = StyleSheet.create({
+  headerNoElevation: {
+    elevation: 0,
+  },
+  headerTranslucent: {
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+
+  centerContainer: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+
+  content: {
+    marginLeft: 0,
+  },
+});
+
+export default Header;

@@ -1,0 +1,13 @@
+diff --git a/node_modules/semantic-release/lib/git.js b/node_modules/semantic-release/lib/git.js
+index 8585730..b04935d 100644
+--- a/node_modules/semantic-release/lib/git.js
++++ b/node_modules/semantic-release/lib/git.js
+@@ -221,7 +221,7 @@ async function verifyAuth(repositoryUrl, branch, execaOptions) {
+  * @throws {Error} if the tag creation failed.
+  */
+ async function tag(tagName, ref, execaOptions) {
+-  await execa('git', ['tag', tagName, ref], execaOptions);
++  await execa('git', ['tag', tagName, ref, '-a', '-m', `release ${tagName}`], execaOptions);
+ }
+ 
+ /**

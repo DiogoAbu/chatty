@@ -1,0 +1,44 @@
+{
+  "branches": [
+    "+([0-9])?(.{+([0-9]),x}).x",
+    "master",
+    {
+      "name": "beta",
+      "prerelease": true
+    }
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "yarn version --new-version ${nextRelease.version} --no-git-tag-version --allow-same-version && yarn run rn-version --never-amend --skip-tag && cd ./android && ./gradlew assembleRelease --no-daemon"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "githubUrl": "https://api.github.com",
+        "assets": "android/app/build/outputs/apk/release/*.apk"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+        "assets": ["android/app/build.gradle", "ios/*/Info.plist", "package.json"]
+      }
+    ]
+  ]
+}

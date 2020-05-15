@@ -1,0 +1,153 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+      - beta
+      - "[0-9]+.[0-9x]+"
+      - "[0-9]+.[0-9x]+.x"
+
+env:
+  node-version: "12.x"
+  java-version: "1.8"
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.node-version }}
+
+      - name: Get Yarn cache dir
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v1
+        id: cache-yarn
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --prefer-offline --frozen-lockfile --silent
+
+      - name: Start test
+        run: yarn test --forceExit --silent --onlyChanged
+
+  release:
+    name: Release
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      # Fix for docker
+      - name: Increase watchers
+        run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
+      - name: Decrypt release keystore
+        run: |
+          echo "$RELEASE_JKS" | base64 --decode > ./android/app/release.jks
+          chmod 600 ./android/app/release.jks
+        env:
+          RELEASE_JKS: ${{ secrets.RELEASE_JKS }}
+
+      - name: Decrypt google services
+        run: |
+          echo "$GOOGLE_SERVICES" | base64 --decode > ./android/app/google-services.json
+          chmod 600 ./android/app/google-services.json
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+
+      - name: Decrypt staging dotenv
+        if: github.ref == 'refs/heads/beta'
+        run: |
+          echo "$DOTENV_STAGING" | base64 --decode > ./.env
+          chmod 600 ./.env
+        env:
+          DOTENV_STAGING: ${{ secrets.DOTENV_STAGING }}
+
+      - name: Decrypt production dotenv
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "$DOTENV_PRODUCTION" | base64 --decode > ./.env
+          chmod 600 ./.env
+        env:
+          DOTENV_PRODUCTION: ${{ secrets.DOTENV_PRODUCTION }}
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v1
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+          git_committer_name: ${{ secrets.GIT_NAME }}
+          git_committer_email: ${{ secrets.GIT_EMAIL }}
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      # Required to run Gradle
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.java-version }}
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+        working-directory: ./android
+
+      - name: Cache Gradle
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      # Required to run React Native
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.node-version }}
+
+      - name: Get Yarn cache dir
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v1
+        id: cache-yarn
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --prefer-offline --frozen-lockfile --silent
+
+      - name: Bump version, generate release notes, build, and release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_COMMITTER_NAME: ${{ secrets.GIT_NAME }}
+          GIT_COMMITTER_EMAIL: ${{ secrets.GIT_EMAIL }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_ALIAS_PASSWORD: ${{ secrets.RELEASE_KEY_ALIAS_PASSWORD }}
