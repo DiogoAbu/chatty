@@ -70,7 +70,7 @@ export class AuthStore extends BaseStore {
   }
 
   // Get token directly from the database local storage.
-  async forceGetToken() {
+  forceGetToken = async () => {
     const data = await this.stores.generalStore.database.adapter.getLocal(this.DB_KEY);
     if (!data) {
       return '';
@@ -78,5 +78,5 @@ export class AuthStore extends BaseStore {
 
     const { token } = JSON.parse(data);
     return token;
-  }
+  };
 }
