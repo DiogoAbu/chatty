@@ -22,7 +22,7 @@
       Server
     </a>
   </h3>
-  <img src="https://github.com/DiogoAbu/chatty/workflows/build-release/badge.svg" />
+  <img src="https://github.com/DiogoAbu/chatty/workflows/Build%20and%20Release/badge.svg?branch=master" />
 </div>
 
 <div align="center">
