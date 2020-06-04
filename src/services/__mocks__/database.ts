@@ -3,7 +3,7 @@ import LokiJSAdapter from '@nozbe/watermelondb/adapters/lokijs';
 
 import { modelClasses, schema } from '!/models';
 
-export default function createDatabase() {
+export default function createDatabase(): Database {
   const adapter = new LokiJSAdapter({
     dbName: 'chatty_database',
     schema,

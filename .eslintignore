@@ -22,3 +22,6 @@ node_modules/**
 
 templates/
 templates/**
+
+generated/
+generated/**

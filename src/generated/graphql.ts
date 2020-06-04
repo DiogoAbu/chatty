@@ -66,6 +66,7 @@ export type User = {
   __typename?: 'User';
   id?: Maybe<Scalars['ID']>;
   name?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
   email?: Maybe<Scalars['String']>;
   role?: Maybe<Scalars['String']>;
   lastAccessAt?: Maybe<Scalars['Timestamp']>;
@@ -82,6 +83,7 @@ export type Room = {
   __typename?: 'Room';
   id?: Maybe<Scalars['ID']>;
   name?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
   members?: Maybe<Array<Maybe<User>>>;
   messages?: Maybe<Array<Maybe<Message>>>;
   updatedAt?: Maybe<Scalars['Timestamp']>;
@@ -193,6 +195,7 @@ export type CreateMessageInput = {
 
 export type CreateRoomInput = {
   name?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
   recipientsId?: Maybe<Array<Maybe<Scalars['ID']>>>;
 };
 
@@ -206,6 +209,7 @@ export type CreateAccountInput = {
   name?: Maybe<Scalars['String']>;
   email?: Maybe<Scalars['String']>;
   password?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
 };
 
 export type SignInInput = {
@@ -247,6 +251,7 @@ export type CreateAccountMutation = {
       name?: Maybe<string>;
       email?: Maybe<string>;
       role?: Maybe<string>;
+      pictureUri?: Maybe<string>;
       lastAccessAt?: Maybe<any>;
       createdAt?: Maybe<any>;
     }>;
@@ -268,6 +273,7 @@ export type SignInMutation = {
       name?: Maybe<string>;
       email?: Maybe<string>;
       role?: Maybe<string>;
+      pictureUri?: Maybe<string>;
       lastAccessAt?: Maybe<any>;
       createdAt?: Maybe<any>;
     }>;
@@ -296,6 +302,7 @@ export type MeQuery = {
     name?: Maybe<string>;
     email?: Maybe<string>;
     role?: Maybe<string>;
+    pictureUri?: Maybe<string>;
     lastAccessAt?: Maybe<any>;
     createdAt?: Maybe<any>;
   }>;
@@ -317,6 +324,7 @@ export type ListUsersQuery = {
         id?: Maybe<string>;
         name?: Maybe<string>;
         email?: Maybe<string>;
+        pictureUri?: Maybe<string>;
       }>
     >
   >;
@@ -333,7 +341,14 @@ export type CreateRoomMutation = {
     id?: Maybe<string>;
     name?: Maybe<string>;
     members?: Maybe<
-      Array<Maybe<{ __typename?: 'User'; id?: Maybe<string>; name?: Maybe<string> }>>
+      Array<
+        Maybe<{
+          __typename?: 'User';
+          id?: Maybe<string>;
+          name?: Maybe<string>;
+          pictureUri?: Maybe<string>;
+        }>
+      >
     >;
   }>;
 };
@@ -348,15 +363,28 @@ export type GetRoomsQuery = {
         __typename?: 'Room';
         id?: Maybe<string>;
         name?: Maybe<string>;
+        pictureUri?: Maybe<string>;
         lastMessage?: Maybe<{
           __typename?: 'Message';
           id?: Maybe<string>;
           content?: Maybe<string>;
           createdAt?: Maybe<any>;
-          user?: Maybe<{ __typename?: 'User'; id?: Maybe<string>; name?: Maybe<string> }>;
+          user?: Maybe<{
+            __typename?: 'User';
+            id?: Maybe<string>;
+            name?: Maybe<string>;
+            pictureUri?: Maybe<string>;
+          }>;
         }>;
         members?: Maybe<
-          Array<Maybe<{ __typename?: 'User'; id?: Maybe<string>; name?: Maybe<string> }>>
+          Array<
+            Maybe<{
+              __typename?: 'User';
+              id?: Maybe<string>;
+              name?: Maybe<string>;
+              pictureUri?: Maybe<string>;
+            }>
+          >
         >;
       }>
     >
@@ -371,15 +399,28 @@ export type RoomCreatedSubscription = {
     __typename?: 'Room';
     id?: Maybe<string>;
     name?: Maybe<string>;
+    pictureUri?: Maybe<string>;
     lastMessage?: Maybe<{
       __typename?: 'Message';
       id?: Maybe<string>;
       content?: Maybe<string>;
       createdAt?: Maybe<any>;
-      user?: Maybe<{ __typename?: 'User'; id?: Maybe<string>; name?: Maybe<string> }>;
+      user?: Maybe<{
+        __typename?: 'User';
+        id?: Maybe<string>;
+        name?: Maybe<string>;
+        pictureUri?: Maybe<string>;
+      }>;
     }>;
     members?: Maybe<
-      Array<Maybe<{ __typename?: 'User'; id?: Maybe<string>; name?: Maybe<string> }>>
+      Array<
+        Maybe<{
+          __typename?: 'User';
+          id?: Maybe<string>;
+          name?: Maybe<string>;
+          pictureUri?: Maybe<string>;
+        }>
+      >
     >;
   }>;
 };
@@ -462,6 +503,7 @@ export const CreateAccountDocument = gql`
         name
         email
         role
+        pictureUri
         lastAccessAt
         createdAt
       }
@@ -483,6 +525,7 @@ export const SignInDocument = gql`
         name
         email
         role
+        pictureUri
         lastAccessAt
         createdAt
       }
@@ -523,6 +566,7 @@ export const MeDocument = gql`
       name
       email
       role
+      pictureUri
       lastAccessAt
       createdAt
     }
@@ -538,6 +582,7 @@ export const ListUsersDocument = gql`
       id
       name
       email
+      pictureUri
     }
   }
 `;
@@ -555,6 +600,7 @@ export const CreateRoomDocument = gql`
       members {
         id
         name
+        pictureUri
       }
     }
   }
@@ -568,6 +614,7 @@ export const GetRoomsDocument = gql`
     getRooms {
       id
       name
+      pictureUri
       lastMessage {
         id
         content
@@ -575,11 +622,13 @@ export const GetRoomsDocument = gql`
         user {
           id
           name
+          pictureUri
         }
       }
       members {
         id
         name
+        pictureUri
       }
     }
   }
@@ -595,6 +644,7 @@ export const RoomCreatedDocument = gql`
     roomCreated {
       id
       name
+      pictureUri
       lastMessage {
         id
         content
@@ -602,11 +652,13 @@ export const RoomCreatedDocument = gql`
         user {
           id
           name
+          pictureUri
         }
       }
       members {
         id
         name
+        pictureUri
       }
     }
   }

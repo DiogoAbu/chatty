@@ -1,6 +1,7 @@
 import React, { FC, PropsWithChildren } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Avatar, Colors, List } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
@@ -19,7 +20,7 @@ type Friend = {
   id: string;
   name: string;
   email: string;
-  picture: string;
+  pictureUri: string;
   publicKey: string;
   isSelected?: boolean;
 };
@@ -65,8 +66,9 @@ const FriendItem: FC<Props> = ({ friend, isSelecting, toggleSelected }) => {
       onPress={isSelecting ? handleToggleSelect : handleZoomPhoto}
     >
       <Avatar.Image
+        ImageComponent={FastImage}
         size={58}
-        source={{ uri: friend.picture }}
+        source={{ uri: friend.pictureUri }}
         style={[style, { marginRight: grid }]}
       />
     </TouchableOpacity>

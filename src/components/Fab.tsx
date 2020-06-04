@@ -7,7 +7,7 @@ import { useObserver } from 'mobx-react-lite';
 import useTheme from '!/hooks/use-theme';
 import { useStores } from '!/stores';
 
-const Fab: FC<{}> = () => {
+const Fab: FC<unknown> = () => {
   const { generalStore } = useStores();
   const { colors } = useTheme();
 

@@ -30,39 +30,30 @@ class MessageModel extends Model {
     [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
   };
 
-  // @ts-ignore
   @field('content')
   content: string;
 
-  // @ts-ignore
   @field('type')
   type: MessageTypes;
 
-  // @ts-ignore
   @children(Tables.attachments)
   attachments: Query<AttachmentModel>;
 
-  // @ts-ignore
   @immutableRelation(Tables.users, 'user_id')
   sender: Relation<UserModel>;
 
-  // @ts-ignore
   @immutableRelation(Tables.rooms, 'room_id')
   room: Relation<RoomModel>;
 
-  // @ts-ignore
   @date('local_created_at')
   localCreatedAt: number;
 
-  // @ts-ignore
   @date('local_sent_at')
   localSentAt: number | null;
 
-  // @ts-ignore
   @date('remote_received_at')
   remoteReceivedAt: number | null;
 
-  // @ts-ignore
   @date('remote_opened_at')
   remoteOpenedAt: number | null;
 }
@@ -81,7 +72,7 @@ export const messageSchema = tableSchema({
   ],
 });
 
-export function messageUpdater(changes: DeepPartial<MessageModel>) {
+export function messageUpdater(changes: DeepPartial<MessageModel>): (record: MessageModel) => void {
   return (record: MessageModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -116,8 +107,8 @@ export function messageUpdater(changes: DeepPartial<MessageModel>) {
 export async function upsertMessage(
   database: Database,
   message: DeepPartial<MessageModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<MessageModel> {
   return upsert<MessageModel>(
     database,
     Tables.messages,
@@ -127,7 +118,10 @@ export async function upsertMessage(
   );
 }
 
-export async function prepareUpsertMessage(database: Database, message: DeepPartial<MessageModel>) {
+export async function prepareUpsertMessage(
+  database: Database,
+  message: DeepPartial<MessageModel>,
+): Promise<MessageModel> {
   return prepareUpsert<MessageModel>(
     database,
     Tables.messages,
@@ -136,7 +130,10 @@ export async function prepareUpsertMessage(database: Database, message: DeepPart
   );
 }
 
-export async function prepareMessagesId(messages: DeepPartial<MessageModel>[], filter = true) {
+export async function prepareMessagesId(
+  messages: DeepPartial<MessageModel>[],
+  filter = true,
+): Promise<DeepPartial<MessageModel>[]> {
   if (!messages) {
     return [];
   }

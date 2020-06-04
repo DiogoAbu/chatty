@@ -26,7 +26,7 @@ export type RootStackParams = {
   RoomInfoModal: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
     friendId: string;
   };
   PictureScrollerModal: {
@@ -62,12 +62,12 @@ export type MainStackParams = {
   Camera: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
   };
   PreparePicture: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
     popCount?: number;
     skipStatusBar?: boolean;
 
@@ -81,7 +81,7 @@ export type MainStackParams = {
   PrepareVideo: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
 
     videoRecorded: VideoRecorded;
   };

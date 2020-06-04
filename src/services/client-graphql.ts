@@ -13,7 +13,7 @@ import { fetchOptionsExchange } from '!/exchanges/fetch-options';
 
 const { NODE_ENV } = process.env;
 
-export default function createClient(getToken: () => any): Client {
+export default function createClient(getToken: () => Promise<string>): Client {
   // By using lazy, we delay the connection until it's required, so the connection params
   // will get the token only when it's available.
   // We ensure it's available be using the 'pause' attribute in the subscription hook.
@@ -35,7 +35,7 @@ export default function createClient(getToken: () => any): Client {
     exchanges: [
       dedupExchange,
       cacheExchange,
-      fetchOptionsExchange(async (fetchOptions: RequestInit) => {
+      fetchOptionsExchange(async (fetchOptions: RequestInit | (() => RequestInit) | undefined) => {
         const token = await getToken();
         return Promise.resolve({
           ...fetchOptions,

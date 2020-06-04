@@ -18,25 +18,19 @@ class PostModel extends Model {
     [Tables.users]: { type: 'belongs_to', key: 'user_id' },
   };
 
-  // @ts-ignore
   @field('content')
   content: string;
 
-  // @ts-ignore
   @immutableRelation(Tables.users, 'user_id')
   user: Relation<UserModel>;
 
-  // @ts-ignore
   @children(Tables.attachments)
   attachments: Query<AttachmentModel>;
 
-  // @ts-ignore
   @children(Tables.comments)
   comments: Query<CommentModel>;
 
-  // @ts-ignore
   @readonly
-  // @ts-ignore
   @date('created_at')
   createdAt: number;
 }
@@ -50,7 +44,7 @@ export const postSchema = tableSchema({
   ],
 });
 
-export function postUpdater(changes: DeepPartial<PostModel>) {
+export function postUpdater(changes: DeepPartial<PostModel>): (record: PostModel) => void {
   return (record: PostModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -67,12 +61,15 @@ export function postUpdater(changes: DeepPartial<PostModel>) {
 export async function upsertPost(
   database: Database,
   post: DeepPartial<PostModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<PostModel> {
   return upsert<PostModel>(database, Tables.posts, post.id, actionParent, postUpdater(post));
 }
 
-export async function prepareUpsertPost(database: Database, post: DeepPartial<PostModel>) {
+export async function prepareUpsertPost(
+  database: Database,
+  post: DeepPartial<PostModel>,
+): Promise<PostModel> {
   return prepareUpsert<PostModel>(database, Tables.posts, post.id, postUpdater(post));
 }
 

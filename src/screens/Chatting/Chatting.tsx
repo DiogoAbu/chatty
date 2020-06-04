@@ -1,7 +1,6 @@
 import React, { FC, useCallback, useEffect, useRef } from 'react';
 import { BackHandler, GestureResponderEvent, StatusBar, View } from 'react-native';
 
-import { useTranslation } from 'react-i18next';
 import { Appbar } from 'react-native-paper';
 import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
@@ -10,9 +9,10 @@ import { useNavigation } from '@react-navigation/native';
 
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
+import useTranslation from '!/hooks/use-translation';
 import RoomModel, { removeRoomsCascade, roomUpdater } from '!/models/RoomModel';
 import { useStores } from '!/stores';
-import { DeepPartial, HeaderOptions, MainNavigationProp } from '!/types';
+import { DeepPartial, HeaderOptions, MainNavigationProp, StackHeaderRightProps } from '!/types';
 import capitalize from '!/utils/capitalize';
 import getRoomMember from '!/utils/get-room-member';
 
@@ -37,14 +37,14 @@ const Chatting: FC<Props> = ({ room, members }) => {
   // Get title
   let title = room.name;
   let subtitle: string | undefined;
-  let picture = room.picture;
+  let pictureUri = room.pictureUri;
 
   let friendId: string | undefined;
 
   if (!title && members) {
     const friend = getRoomMember(members, authStore.user.id);
     title = friend?.name || null;
-    picture = friend?.picture || null;
+    pictureUri = friend?.pictureUri || null;
     friendId = friend?.id;
   } else {
     subtitle = members
@@ -56,7 +56,7 @@ const Chatting: FC<Props> = ({ room, members }) => {
     const userId = friendId || members[Math.floor(Math.random() * members.length)].id;
 
     if (userId) {
-      room.addMessage({ content: "Friend's response", senderId: userId });
+      void room.addMessage({ content: "Friend's response", senderId: userId });
     }
   });
 
@@ -91,7 +91,7 @@ const Chatting: FC<Props> = ({ room, members }) => {
         lastReadAt: Date.now(),
       };
 
-      database.action(async () => {
+      void database.action(async () => {
         await room.update(roomUpdater(changes));
       }, name);
     },
@@ -115,7 +115,7 @@ const Chatting: FC<Props> = ({ room, members }) => {
       title,
       subtitle,
       handlePressBack,
-      headerRight: ({ tintColor }: any) => (
+      headerRight: ({ tintColor }: StackHeaderRightProps) => (
         <Appbar.Action color={tintColor} icon='message-text' onPress={handleAddMessage} />
       ),
     } as HeaderOptions);
@@ -123,7 +123,7 @@ const Chatting: FC<Props> = ({ room, members }) => {
     return () => {
       backHandler.remove();
       if (room.isLocalOnly && shouldBlurRemoveRoom.current) {
-        removeRoomsCascade(database, [room.id], authStore.user.id);
+        void removeRoomsCascade(database, [room.id], authStore.user.id);
       }
     };
   }, [
@@ -154,7 +154,7 @@ const Chatting: FC<Props> = ({ room, members }) => {
 
       <MessageInput
         attachmentPickerRef={attachmentPickerRef}
-        picture={picture!}
+        pictureUri={pictureUri!}
         room={room}
         shouldBlurRemoveRoom={shouldBlurRemoveRoom}
         title={title!}

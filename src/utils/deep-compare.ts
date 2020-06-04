@@ -25,7 +25,7 @@ function deepCompareEquals<T extends Record<string, any>>(
   });
 }
 
-export default function deepCompare<T>(value: T[] | undefined, prop: string) {
+export default function deepCompare<T>(value: T[] | undefined, prop: string): T[] | undefined {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const ref = useRef<T[]>();
 

@@ -1,6 +1,7 @@
 import React, { FC, useCallback } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Avatar, Badge, Caption, Chip, Colors, List, Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SharedElement } from 'react-navigation-shared-element';
@@ -55,13 +56,13 @@ const RoomItem: FC<Props> = ({
   const lastByMe = lastMessageSender?.id === authStore.user.id;
 
   let title = room.name;
-  let picture = room.picture || undefined;
+  let pictureUri = room.pictureUri || undefined;
   let friendId: string | undefined;
 
   if (!title) {
     const friend = getRoomMember(members, authStore.user.id);
     title = friend?.name || null;
-    picture = friend?.picture;
+    pictureUri = friend?.pictureUri as string | undefined;
     friendId = friend?.id;
   }
 
@@ -81,7 +82,7 @@ const RoomItem: FC<Props> = ({
     requestAnimationFrame(() => {
       navigation.navigate('RoomInfoModal', {
         roomTitle: title!,
-        roomPicture: picture!,
+        roomPictureUri: pictureUri!,
         friendId: friendId!,
         roomId: room.id,
       });
@@ -103,6 +104,7 @@ const RoomItem: FC<Props> = ({
           style={[styles.lastMessageAttachmentIcon, { color: colors.accent }]}
         />
       ) : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [colors.accent, lastMessageAttachments],
   );
 
@@ -126,13 +128,19 @@ const RoomItem: FC<Props> = ({
           ) : null}
         </View>
       ) : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [lastByMe, lastMessage, lastMessageSender, renderAttachmentIcon, room.name],
   );
 
   const renderPicture = useCallback(
     (style: any) =>
-      picture ? (
-        <Avatar.Image size={58} source={{ uri: picture }} style={[style, { marginRight: grid }]} />
+      pictureUri ? (
+        <Avatar.Image
+          ImageComponent={FastImage}
+          size={58}
+          source={{ uri: pictureUri }}
+          style={[style, { marginRight: grid }]}
+        />
       ) : (
         <Avatar.Icon
           color={colors.textOnPrimary}
@@ -141,7 +149,7 @@ const RoomItem: FC<Props> = ({
           style={[style, { marginRight: grid }]}
         />
       ),
-    [colors.textOnPrimary, friendId, grid, picture],
+    [colors.textOnPrimary, friendId, grid, pictureUri],
   );
 
   const renderLeft = ({ style }: ListItemSideProps) => (

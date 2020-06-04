@@ -20,35 +20,27 @@ class UserModel extends Model {
     [Tables.roomMembers]: { type: 'has_many', foreignKey: 'user_id' },
   };
 
-  // @ts-ignore
   @field('name')
   name: string;
 
-  // @ts-ignore
   @field('email')
   email: string;
 
-  // @ts-ignore
-  @field('picture')
-  picture: string;
+  @field('pictureUri')
+  pictureUri: string | null;
 
-  // @ts-ignore
   @field('role')
   role: string | null;
 
-  // @ts-ignore
   @field('secret_key')
   secretKey: string | null;
 
-  // @ts-ignore
   @field('public_key')
   publicKey: string | null;
 
-  // @ts-ignore
   @field('is_following_me')
   isFollowingMe: boolean | null;
 
-  // @ts-ignore
   @field('is_followed_by_me')
   isFollowedByMe: boolean | null;
 
@@ -68,7 +60,7 @@ export const userSchema = tableSchema({
   columns: [
     { name: 'name', type: 'string' },
     { name: 'email', type: 'string' },
-    { name: 'picture', type: 'string' },
+    { name: 'pictureUri', type: 'string', isOptional: true },
     { name: 'role', type: 'string', isOptional: true },
     { name: 'secret_key', type: 'string', isOptional: true },
     { name: 'public_key', type: 'string', isOptional: true },
@@ -77,7 +69,7 @@ export const userSchema = tableSchema({
   ],
 });
 
-export function userUpdater(changes: DeepPartial<UserModel>) {
+export function userUpdater(changes: DeepPartial<UserModel>): (record: UserModel) => void {
   return (record: UserModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -88,8 +80,8 @@ export function userUpdater(changes: DeepPartial<UserModel>) {
     if (typeof changes.email !== 'undefined') {
       record.email = changes.email;
     }
-    if (typeof changes.picture !== 'undefined') {
-      record.picture = changes.picture;
+    if (typeof changes.pictureUri !== 'undefined') {
+      record.pictureUri = changes.pictureUri;
     }
     if (typeof changes.role !== 'undefined') {
       record.role = changes.role;
@@ -112,16 +104,22 @@ export function userUpdater(changes: DeepPartial<UserModel>) {
 export async function upsertUser(
   database: Database,
   user: DeepPartial<UserModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<UserModel> {
   return upsert<UserModel>(database, Tables.users, user.id, actionParent, userUpdater(user));
 }
 
-export async function prepareUpsertUser(database: Database, user: DeepPartial<UserModel>) {
+export async function prepareUpsertUser(
+  database: Database,
+  user: DeepPartial<UserModel>,
+): Promise<UserModel> {
   return prepareUpsert<UserModel>(database, Tables.users, user.id, userUpdater(user));
 }
 
-export async function prepareUsersId(users: DeepPartial<UserModel>[], filter = true) {
+export async function prepareUsersId(
+  users: DeepPartial<UserModel>[],
+  filter = true,
+): Promise<DeepPartial<UserModel>[]> {
   if (!users) {
     return [];
   }

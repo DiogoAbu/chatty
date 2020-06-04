@@ -87,9 +87,7 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(
     useEffect(() => {
       // @ts-ignore
       const surface = containerRef.current?._component._children[0];
-      // eslint-disable-next-line no-underscore-dangle
       const childrenIds = getChildrenIds(surface._children);
-      // eslint-disable-next-line no-underscore-dangle
       childrenIds.push(surface._nativeTag);
 
       handleSetTouchableIds(childrenIds);
@@ -99,19 +97,17 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(
       <Animated.View
         pointerEvents={isShowing ? 'auto' : 'none'}
         ref={containerRef}
-        style={
-          [
-            styles.attachmentTypePickerContainer,
-            {
-              opacity: animValue,
-              transform: [
-                { translateY: 80, translateX: 130 }, // Tranlate to origin point
-                { scale: animValue },
-                { translateY: -80, translateX: -130 }, // Tranlate back to final position
-              ],
-            },
-          ] as any
-        }
+        style={[
+          styles.attachmentTypePickerContainer,
+          {
+            opacity: animValue,
+            transform: [
+              { translateY: 80, translateX: 130 }, // Tranlate to origin point
+              { scale: animValue },
+              { translateY: -80, translateX: -130 }, // Tranlate back to final position
+            ],
+          },
+        ]}
       >
         <Surface style={[styles.attachmentTypePicker, { borderRadius: roundness * 2 }]}>
           <TouchableOpacity

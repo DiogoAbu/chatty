@@ -26,7 +26,7 @@ const limiter = new Bottleneck({
 
 interface Props {
   room: RoomModel;
-  picture: string;
+  pictureUri: string;
   title: string;
   shouldBlurRemoveRoom: MutableRefObject<boolean>;
   attachmentPickerRef: MutableRefObject<AttachmentPickerType | null>;
@@ -37,7 +37,7 @@ const buttonSize = (24 + 6) * 1.5;
 
 const MessageInput: FC<Props> = ({
   room,
-  picture,
+  pictureUri,
   title,
   shouldBlurRemoveRoom,
   attachmentPickerRef,
@@ -59,7 +59,7 @@ const MessageInput: FC<Props> = ({
     }
 
     // Create message
-    room.addMessage({ content, senderId: authStore.user.id });
+    void room.addMessage({ content, senderId: authStore.user.id });
 
     // Clear input
     message.onChangeText('');
@@ -81,7 +81,11 @@ const MessageInput: FC<Props> = ({
 
     shouldBlurRemoveRoom.current = false;
     requestAnimationFrame(() => {
-      navigation.navigate('Camera', { roomId: room.id, roomTitle: title, roomPicture: picture });
+      navigation.navigate('Camera', {
+        roomId: room.id,
+        roomTitle: title,
+        roomPictureUri: pictureUri,
+      });
     });
   });
 
@@ -185,7 +189,7 @@ const MessageInput: FC<Props> = ({
           navigation.navigate('PreparePicture', {
             roomId: room.id,
             roomTitle: title,
-            roomPicture: picture,
+            roomPictureUri: pictureUri,
             popCount: 1,
             initialMessage: message.value,
             picturesTaken: images,
@@ -207,7 +211,7 @@ const MessageInput: FC<Props> = ({
     handleSaveMessage,
     message.value,
     navigation,
-    picture,
+    pictureUri,
     room,
     shouldBlurRemoveRoom,
     t,

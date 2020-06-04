@@ -71,7 +71,10 @@ const CameraPreview: FC<Props> = ({
   }, [handleSetIsCameraReady]);
 
   const handleStatusChange = useCallback(
-    async (camera: any) => {
+    async (camera: {
+      cameraStatus: 'READY' | 'PENDING_AUTHORIZATION' | 'NOT_AUTHORIZED';
+      recordAudioPermissionStatus: 'PENDING_AUTHORIZATION' | 'NOT_AUTHORIZED' | 'AUTHORIZED';
+    }) => {
       if (camera.cameraStatus !== 'READY' || !cameraRef.current) {
         handleSetIsCameraReady(false);
         return;

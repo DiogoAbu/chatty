@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { FC, useCallback } from 'react';
 import { Dimensions, StatusBar } from 'react-native';
 
 import { overlay } from 'react-native-paper';
@@ -17,7 +17,7 @@ import getStatusBarColor from '!/utils/get-status-bar-color';
 
 const Tab = createMaterialTopTabNavigator<HomeTabParams>();
 
-const HomeTab = () => {
+const HomeTab: FC<unknown> = () => {
   const navigation = useNavigation();
   const { colors, dark, mode } = useTheme();
   const { t } = useTranslation();

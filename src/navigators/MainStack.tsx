@@ -23,7 +23,7 @@ import HomeTab from './HomeTab';
 
 const Stack = createStackNavigator<MainStackParams>();
 
-const MainStack: FC<{}> = () => {
+const MainStack: FC<unknown> = () => {
   const stores = useStores();
   const { colors } = useTheme();
   const { t } = useTranslation();

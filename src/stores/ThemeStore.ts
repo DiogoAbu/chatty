@@ -6,39 +6,39 @@ export class ThemeStore extends BaseStore {
   @observable
   isDarkMode = false;
 
-  protected DB_KEY = 'ThemeStore';
+  protected databaseKey = 'ThemeStore';
 
   @action
-  toggleDarkMode() {
+  toggleDarkMode(): void {
     this.isDarkMode = !this.isDarkMode;
-    this.persist();
+    void this.persist();
   }
 
   @action
-  async hydrate() {
-    const data = await this.stores.generalStore.database.adapter.getLocal(this.DB_KEY);
+  async hydrate(): Promise<void> {
+    const data = await this.stores.generalStore.database.adapter.getLocal(this.databaseKey);
     if (!data) {
       return;
     }
 
-    const { isDarkMode } = JSON.parse(data);
+    const { isDarkMode } = JSON.parse(data) as { isDarkMode: boolean };
 
     runInAction(() => {
       this.isDarkMode = isDarkMode;
     });
   }
 
-  async persist() {
+  async persist(): Promise<void> {
     const serializableObj = {
       isDarkMode: this.isDarkMode,
     };
     await this.stores.generalStore.database.adapter.setLocal(
-      this.DB_KEY,
+      this.databaseKey,
       JSON.stringify(serializableObj),
     );
   }
 
-  async remove() {
-    await this.stores.generalStore.database.adapter.removeLocal(this.DB_KEY);
+  async remove(): Promise<void> {
+    await this.stores.generalStore.database.adapter.removeLocal(this.databaseKey);
   }
 }

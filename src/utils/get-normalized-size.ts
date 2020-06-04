@@ -1,7 +1,11 @@
 export default function getNormalizedSize(
   dimensions: { width?: number; height?: number },
   window: { winWidth: number; winHeight: number; isLandscape: boolean },
-) {
+): {
+  aspectRatio?: number;
+  width?: number;
+  height?: number;
+} {
   if (!dimensions.width || !dimensions.height) {
     return { ...dimensions, aspectRatio: undefined };
   }

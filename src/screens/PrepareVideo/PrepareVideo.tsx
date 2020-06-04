@@ -1,6 +1,7 @@
 import React, { FC, useEffect } from 'react';
 import { TextInput, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Appbar, Avatar, Colors, IconButton } from 'react-native-paper';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 
@@ -22,7 +23,7 @@ interface Props {
 }
 
 const PrepareVideo: FC<Props> = ({ navigation, route }) => {
-  const { roomId, roomPicture, videoRecorded } = route.params;
+  const { roomId, roomPictureUri, videoRecorded } = route.params;
 
   const database = useDatabase();
   const { authStore } = useStores();
@@ -41,7 +42,7 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
     const roomDb = database.collections.get<RoomModel>(Tables.rooms);
     const room = await roomDb.find(roomId);
 
-    room.addMessage({
+    void room.addMessage({
       content: message.value.trim(),
       senderId: authStore.user.id,
       attachments: [{ ...videoRecorded, type: AttachmentTypes.video }],
@@ -58,12 +59,14 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     navigation.setOptions({
       handlePressBack,
-      headerCenter: () => <Avatar.Image size={32} source={{ uri: roomPicture }} />,
+      headerCenter: () => (
+        <Avatar.Image ImageComponent={FastImage} size={32} source={{ uri: roomPictureUri }} />
+      ),
       headerRight: () => (
         <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeleteVideo} />
       ),
     } as HeaderOptions);
-  }, [handleDeleteVideo, handlePressBack, navigation, roomPicture]);
+  }, [handleDeleteVideo, handlePressBack, navigation, roomPictureUri]);
 
   return (
     <View style={styles.container}>

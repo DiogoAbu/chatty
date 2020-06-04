@@ -1,6 +1,7 @@
 import React, { FC, PropsWithChildren } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Avatar, Colors, IconButton, List } from 'react-native-paper';
 
 import usePress from '!/hooks/use-press';
@@ -30,8 +31,9 @@ const FriendItem: FC<Props> = ({ friend, removeMember }) => {
   const renderLeft = ({ style }: ListItemSideProps) => (
     <TouchableOpacity activeOpacity={0.6} onPress={handleZoomPhoto}>
       <Avatar.Image
+        ImageComponent={FastImage}
         size={58}
-        source={{ uri: friend.picture }}
+        source={{ uri: friend.pictureUri }}
         style={[style, { marginRight: grid }]}
       />
     </TouchableOpacity>

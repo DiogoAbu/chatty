@@ -63,7 +63,7 @@ const VideoPlayer: FC<Props> = ({
   const [playFromBeginning, setPlayFromBeginning] = useState(false);
 
   const animateControl = useCallback(
-    (toValue) => {
+    (toValue: number) => {
       timing(controlValue, {
         duration: animation.scale * 100,
         easing: Easing.linear,
@@ -181,12 +181,14 @@ const VideoPlayer: FC<Props> = ({
 
   useFocusEffect(() => {
     initialOrientation.current = Orientation.getInitialOrientation();
-    InteractionManager.runAfterInteractions(() => {
+
+    void InteractionManager.runAfterInteractions(() => {
       Orientation.unlockAllOrientations();
       StatusBar.setBackgroundColor('rgba(0,0,0,0.6)');
       StatusBar.setTranslucent(true);
       setIsReady(true);
     });
+
     return () => {
       StatusBar.setBackgroundColor(getStatusBarColor(4, colors, dark, mode));
       StatusBar.setTranslucent(false);
@@ -259,13 +261,11 @@ const VideoPlayer: FC<Props> = ({
       </TouchableWithoutFeedback>
 
       <Animated.View
-        style={
-          [
-            styles.controlContainer,
-            isLandscape && styles.controlContainerBottom,
-            { width, opacity: controlValue },
-          ] as any
-        }
+        style={[
+          styles.controlContainer,
+          isLandscape && styles.controlContainerBottom,
+          { width, opacity: controlValue },
+        ]}
       >
         <TouchableOpacity activeOpacity={0.3} onPress={handlePressPlay}>
           <Icon name={isPlaying ? 'pause-circle' : 'play-circle'} style={styles.playPauseIcon} />

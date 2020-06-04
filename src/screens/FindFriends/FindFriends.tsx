@@ -21,7 +21,7 @@ type Friend = {
   id: string;
   name: string;
   email: string;
-  picture: string;
+  pictureUri: string;
   publicKey: string;
   isSelected?: boolean;
 };

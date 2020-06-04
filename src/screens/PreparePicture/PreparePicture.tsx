@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from 'react';
-import { BackHandler, StatusBar, TextInput, View } from 'react-native';
+import { BackHandler, ListRenderItemInfo, StatusBar, TextInput, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { FlatList } from 'react-native-gesture-handler';
 import { Appbar, Avatar, Colors, IconButton } from 'react-native-paper';
 import Animated, {
@@ -52,7 +53,7 @@ interface Props {
 const PreparePicture: FC<Props> = ({ navigation, route }) => {
   const {
     roomId,
-    roomPicture,
+    roomPictureUri,
     popCount,
     skipStatusBar,
     initialMessage,
@@ -128,7 +129,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
     const roomDb = database.collections.get<RoomModel>(Tables.rooms);
     const room = await roomDb.find(roomId);
 
-    room.addMessage({
+    void room.addMessage({
       content: message.value.trim(),
       senderId: authStore.user.id,
       attachments: pictures.map((e) => ({ ...e, type: AttachmentTypes.image })),
@@ -141,12 +142,14 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     navigation.setOptions({
       handlePressBack,
-      headerCenter: () => <Avatar.Image size={32} source={{ uri: roomPicture }} />,
+      headerCenter: () => (
+        <Avatar.Image ImageComponent={FastImage} size={32} source={{ uri: roomPictureUri }} />
+      ),
       headerRight: () => (
         <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeletePicture} />
       ),
     } as HeaderOptions);
-  }, [handleDeletePicture, handlePressBack, navigation, roomPicture]);
+  }, [handleDeletePicture, handlePressBack, navigation, roomPictureUri]);
 
   useFocusEffect(() => {
     if (!skipStatusBar) {
@@ -167,7 +170,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
   }, [handlePressBack, skipStatusBar]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       // Prepare images
       const wrapped = limiter.wrap(
         async (pic: PicturesTaken): Promise<PicturesTaken> => {
@@ -209,20 +212,20 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
       <FlatListAnim
         contentContainerStyle={{ width: pictures.length ? undefined : winWidth }}
         data={pictures}
-        getItemLayout={(_, index) => ({
+        getItemLayout={(_: PicturesTaken, index: number) => ({
           length: winWidth,
           offset: winWidth * index,
           index,
         })}
         horizontal
         initialNumToRender={1}
-        keyExtractor={(item) => item.uri!}
+        keyExtractor={(item: PicturesTaken) => item.uri!}
         ListEmptyComponent={Loading}
         onScroll={event([{ nativeEvent: { contentOffset: { x: scrollAnim } } }])}
         pagingEnabled
         ref={listRef}
         removeClippedSubviews
-        renderItem={({ item }) => <ImageViewer image={item} />}
+        renderItem={({ item }: ListRenderItemInfo<PicturesTaken>) => <ImageViewer image={item} />}
         scrollEventThrottle={16}
         showsHorizontalScrollIndicator={false}
       />
@@ -257,17 +260,17 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
       />
 
       <View style={styles.inputContainer}>
-        <IconButton icon='image-plus' onPress={handleMakeAlbumAndBack} />
+        <IconButton color={Colors.white} icon='image-plus' onPress={handleMakeAlbumAndBack} />
 
         <TextInput
           keyboardAppearance={dark ? 'dark' : 'light'}
           multiline
           placeholder={t('messageInput.placeholder')}
-          placeholderTextColor={colors.placeholder}
+          placeholderTextColor={Colors.grey500}
           selectionColor={colors.primary}
           style={[
             {
-              color: colors.text,
+              color: Colors.white,
               ...fonts.regular,
             },
             styles.inputText,
@@ -276,7 +279,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
           {...message}
         />
 
-        <IconButton icon='send' onPress={handleSend} />
+        <IconButton color={Colors.white} icon='send' onPress={handleSend} />
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-export default function getInitials(name?: string | null) {
+export default function getInitials(name?: string | null): string {
   if (!name) {
     return '';
   }

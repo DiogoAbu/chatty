@@ -1,10 +1,12 @@
 import React, { FC, useMemo, useRef, useState } from 'react';
-import { Alert, Image, ScrollView, StatusBar, View } from 'react-native';
+import { Alert, ScrollView, StatusBar, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import { Button, HelperText, Surface, TextInput, Title } from 'react-native-paper';
 import color from 'color';
 
+import { useSignInMutation } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
@@ -14,6 +16,8 @@ import UserModel from '!/models/UserModel';
 import { generateKeyPair } from '!/services/encryption';
 import { useStores } from '!/stores';
 import { DeepPartial, MainNavigationProp } from '!/types';
+import getValidationErrors from '!/utils/get-validation-errors';
+import { humanizeEmailError, humanizePasswordError } from '!/utils/humanize-errors';
 import { focusNext } from '!/utils/scroll-into-view';
 
 import styles from './styles';
@@ -27,14 +31,14 @@ const SignIn: FC<Props> = ({ navigation }) => {
   const { colors, roundness } = useTheme();
   const { t } = useTranslation();
 
-  // State for form
+  const [, signInExec] = useSignInMutation();
+
   const [isSigningIn, setIsSigningIn] = useState(false);
-
-  const emailInput = useInput('');
-  const passInput = useInput('');
-
   const [emailError, setEmailError] = useState('');
   const [passError, setPassError] = useState('');
+
+  const emailInput = useInput('', () => setEmailError(''));
+  const passInput = useInput('', () => setPassError(''));
 
   // Refs
   const scrollRef = useRef<ScrollView | null>(null);
@@ -45,15 +49,41 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
   const handleSignIn = usePress(async () => {
     try {
-      setIsSigningIn(() => true);
+      setEmailError('');
+      setPassError('');
+      setIsSigningIn(true);
+
+      const res = await signInExec({
+        data: {
+          email: emailInput.value,
+          password: passInput.value,
+        },
+      });
+
+      if (res.error?.graphQLErrors[0].extensions?.exception?.validationErrors) {
+        const errors = getValidationErrors(res.error, ['email', 'password']);
+        setEmailError(humanizeEmailError(errors?.email, t));
+        setPassError(humanizePasswordError(errors?.password, t));
+        setIsSigningIn(false);
+        return;
+      }
+
+      if (!res.data?.signIn?.user || !res.data?.signIn?.token) {
+        setEmailError(t('error.signIn.user'));
+        setIsSigningIn(false);
+        return;
+      }
 
       const { secretKey, publicKey } = await generateKeyPair();
 
+      const userFetched = res.data.signIn.user;
+
       const user: DeepPartial<UserModel> = {
-        id: '98a002bf-5ce3-4a28-a43f-eee3662687e7',
-        name: 'Diogo Silva',
-        email: 'diogodeazevedosilva@gmail.com',
-        picture: 'https://randomuser.me/api/portraits/men/1.jpg',
+        id: userFetched.id,
+        email: userFetched.email,
+        name: userFetched.name,
+        role: userFetched.role,
+        pictureUri: userFetched.pictureUri,
         secretKey,
         publicKey,
       };
@@ -61,15 +91,16 @@ const SignIn: FC<Props> = ({ navigation }) => {
       await authStore.signIn(user, 'token');
 
       requestAnimationFrame(() => {
-        setIsSigningIn(() => false);
+        setIsSigningIn(false);
         navigation.reset({
           index: 0,
           routes: [{ name: 'Home' }],
         });
       });
-    } catch (e) {
+    } catch (err) {
+      console.log(err);
+      setIsSigningIn(false);
       Alert.alert(t('title.oops'), t('error.signInUserNotCreated'));
-      setIsSigningIn(() => false);
     }
   });
 
@@ -84,7 +115,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
   });
 
   useFocusEffect(() => {
-    setIsSigningIn(() => false);
+    setIsSigningIn(false);
 
     const textIsDark = color(colors.textOnPrimary).isDark();
     StatusBar.setHidden(false);
@@ -93,7 +124,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
     StatusBar.setTranslucent(false);
 
     // Sign out here so the other screens that depend on the user will be already disposed
-    authStore.signOut();
+    void authStore.signOut();
     generalStore.setFab();
   }, [authStore, colors.primary, colors.textOnPrimary, generalStore]);
 
@@ -107,7 +138,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
     >
       <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
         <TouchableWithoutFeedback onPress={handleToggleDarkMode}>
-          <Image source={require('!/assets/logo/icon.png')} />
+          <FastImage source={require('!/assets/logo/icon.png')} />
         </TouchableWithoutFeedback>
       </View>
 

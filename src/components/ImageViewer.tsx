@@ -33,7 +33,7 @@ import AttachmentModel from '!/models/AttachmentModel';
 import { DeepPartial } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
 
-const FastImageAnim = Animated.createAnimatedComponent(FastImage);
+const FastImageAnim = Animated.createAnimatedComponent(FastImage) as typeof FastImage;
 
 interface Props {
   image: DeepPartial<AttachmentModel>;
@@ -144,17 +144,15 @@ const ImageViewer: FC<Props> = ({ image, shouldFillScreen }) => {
         <SharedElement id={image.id!}>
           <FastImageAnim
             source={{ uri: image.uri }}
-            style={
-              {
-                width,
-                height,
-                aspectRatio,
-                transform: [
-                  ...translate(vec.add({ x: offsetX, y: offsetY }, translation)),
-                  { scale: scaleReset },
-                ],
-              } as any
-            }
+            style={{
+              width,
+              height,
+              aspectRatio,
+              transform: [
+                ...(translate(vec.add({ x: offsetX, y: offsetY }, translation)) as any),
+                { scale: scaleReset },
+              ],
+            }}
           />
         </SharedElement>
       </Animated.View>

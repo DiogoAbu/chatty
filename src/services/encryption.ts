@@ -18,15 +18,18 @@ const limiter = new Bottleneck({
  * Asymmetric encryption, secret key can decrypt messages that used the linked public key.
  * Rooms have members, and each member has a pair of keys.
  */
-export async function generateKeyPair(database?: Database, user?: UserModel) {
+export async function generateKeyPair(
+  database?: Database,
+  user?: UserModel,
+): Promise<{ secretKey: string; publicKey: string }> {
   try {
     const { sk: secretKey, pk: publicKey } = await Sodium.crypto_box_keypair();
 
     // Store secret and public key, only public will be shared
     if (database && user) {
-      await database.action<void>(() => {
+      await database.action<void>(async () => {
         const changes: DeepPartial<UserModel> = { secretKey, publicKey };
-        user.update(userUpdater(changes));
+        await user.update(userUpdater(changes));
       });
     }
 
@@ -44,7 +47,7 @@ export async function encryptContentUsingPair(
   content: string,
   recipientPublicKey: string,
   senderSecretKey: string,
-) {
+): Promise<string> {
   try {
     const message = Base64.encode(content);
     const nonce = await Sodium.randombytes_buf(Sodium.crypto_box_NONCEBYTES);
@@ -70,7 +73,7 @@ export async function decryptContentUsingPair(
   cipherWithNonce: string,
   senderPublicKey: string,
   recipientSecretKey: string,
-) {
+): Promise<string> {
   try {
     if (cipherWithNonce.length < Sodium.crypto_box_NONCEBYTES + Sodium.crypto_box_MACBYTES) {
       throw 'Short message';
@@ -100,7 +103,7 @@ export async function generateSharedKey(
   room: RoomModel,
   members: UserModel[],
   senderId: string,
-) {
+): Promise<string | null> {
   try {
     if (members.some((e) => !e.publicKey)) {
       console.log('Not all members have a public key.');
@@ -141,7 +144,7 @@ export async function generateSharedKey(
       const batch: any[] = await Promise.all(members.map(wrapped));
       batch.push(await prepareUpsertRoom(database, room));
 
-      database.batch(...batch);
+      await database.batch(...batch);
     });
 
     return sharedKey;
@@ -154,7 +157,10 @@ export async function generateSharedKey(
 /**
  * Encrypt content with the room's shared key.
  */
-export async function encryptContentUsingShared(content: string, sharedKey: string) {
+export async function encryptContentUsingShared(
+  content: string,
+  sharedKey: string,
+): Promise<string> {
   try {
     const nonce = await Sodium.randombytes_buf(Sodium.crypto_secretbox_NONCEBYTES);
     const cipher = await Sodium.crypto_secretbox_easy(content, nonce, sharedKey);
@@ -168,7 +174,10 @@ export async function encryptContentUsingShared(content: string, sharedKey: stri
 /**
  * Decrypt content with the room's shared key.
  */
-export async function decryptContentUsingShared(cipher: string, sharedKey: string) {
+export async function decryptContentUsingShared(
+  cipher: string,
+  sharedKey: string,
+): Promise<string> {
   try {
     if (cipher.length < Sodium.crypto_secretbox_NONCEBYTES + Sodium.crypto_secretbox_MACBYTES) {
       throw 'Short message';
@@ -178,7 +187,6 @@ export async function decryptContentUsingShared(cipher: string, sharedKey: strin
     const cipherText = cipher.slice(Sodium.crypto_secretbox_NONCEBYTES);
 
     const content = await Sodium.crypto_secretbox_open_easy(cipherText, nonce, sharedKey);
-
     return content;
   } catch (err) {
     console.error('decryptContentUsingShared', err);

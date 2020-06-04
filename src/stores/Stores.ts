@@ -25,11 +25,11 @@ export class Stores {
     this.themeStore = new ThemeStore(this);
     this.generalStore = new GeneralStore(this);
 
-    this.hydrate();
+    void this.hydrate();
   }
 
   @action
-  async hydrate() {
+  async hydrate(): Promise<void> {
     await this.authStore.hydrate();
     await this.themeStore.hydrate();
 

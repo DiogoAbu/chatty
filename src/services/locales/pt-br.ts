@@ -12,7 +12,7 @@ export default {
     'title.chats': 'Conversas',
     'title.feed': 'Feed',
     'title.findFriends': 'Contatos',
-    'title.createGroup': 'Criar grupo',
+    'title.createGroup': 'Novo grupo',
     'title.settings': 'Configurações',
     'title.chatsArchived': 'Conversas arquivadas',
     'title.oops': 'Oops!',
@@ -28,7 +28,7 @@ export default {
     'label.selectAll': 'Selecionar todos',
     'label.deselectAll': 'Deselecionar todos',
     'label.archived': 'Arquivada',
-    'label.archivedAmount': 'Arquivadas ({{amount}})',
+    'label.archivedNumber': 'Arquivadas ({{count}})',
     'label.goBack': 'Voltar',
     'label.return': 'Retornar',
 
@@ -37,7 +37,8 @@ export default {
     'label.image': 'Imagem',
     'label.images': 'Imagens',
 
-    'helper.charactersLeft': 'Restam {{amount}} caracteres',
+    'helper.charactersLeft': 'Resta {{count}} caractere',
+    'helper.charactersLeft_plural': 'Restam {{count}} caracteres',
 
     'error.invalid.email': 'Email inválido',
     'error.invalid.password': 'Senha inválida',
@@ -48,6 +49,15 @@ export default {
     'error.storagePermission': 'Permissão negada para armazenamento',
     'error.cameraPermission': 'Permissão negada para câmera',
     'error.audioPermission': 'Permissão negada para áudio',
+
+    'error.emailEmpty': 'Email é obrigatório',
+    'error.passwordEmpty': 'Senha é obrigatório',
+
+    'error.inputShort': 'Muito curto, tamanho mínimo de {{count}} caractere',
+    'error.inputShort_plural': 'Muito curto, tamanho mínimo de {{count}} caracteres',
+    'error.inputLong': 'Muito longo, tamanho máximo de {{count}} caractere',
+    'error.inputLong_plural': 'Muito longo, tamanho máximo de {{count}} caracteres',
+    'error.inputLength': 'Tamanho deve ser entre {{min}} e {{max}} caracteres',
 
     'alert.oneFileNotFound': 'Este arquivo não foi encontrado',
     'alert.someFilesNotFound': 'Alguns arquivos não foram encontrados',

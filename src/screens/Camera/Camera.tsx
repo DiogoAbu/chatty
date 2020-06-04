@@ -103,7 +103,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       navigation.navigate('PreparePicture', {
         roomId: params.roomId,
         roomTitle: params.roomTitle,
-        roomPicture: params.roomPicture,
+        roomPictureUri: params.roomPictureUri,
         skipStatusBar: true,
         initialMessage: messageSaved.current,
         picturesTaken: pictures || picsTaken,
@@ -251,7 +251,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
         navigation.navigate('PrepareVideo', {
           roomId: params.roomId,
           roomTitle: params.roomTitle,
-          roomPicture: params.roomPicture,
+          roomPictureUri: params.roomPictureUri,
           videoRecorded,
         });
       });
@@ -281,7 +281,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       setFlashMode('off');
       setWhiteBalance('auto');
 
-      InteractionManager.runAfterInteractions(() => {
+      void InteractionManager.runAfterInteractions(() => {
         if (!cameraIds?.length) {
           setActiveCameraId(null);
           return;
@@ -487,7 +487,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       return false;
     });
 
-    InteractionManager.runAfterInteractions(async () => {
+    void InteractionManager.runAfterInteractions(async () => {
       const storageStatus = await requestStoragePermission();
       setStorageGranted(storageStatus);
       if (!storageStatus) {

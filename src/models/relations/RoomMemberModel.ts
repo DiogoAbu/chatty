@@ -14,11 +14,9 @@ class RoomMemberModel extends Model {
     [Tables.users]: { type: 'belongs_to', key: 'user_id' },
   };
 
-  // @ts-ignore
   @field('room_id')
   roomId: string;
 
-  // @ts-ignore
   @field('user_id')
   userId: string;
 }
@@ -31,7 +29,9 @@ export const roomMemberSchema = tableSchema({
   ],
 });
 
-export function roomMemberUpdater(changes: DeepPartial<RoomMemberModel>) {
+export function roomMemberUpdater(
+  changes: DeepPartial<RoomMemberModel>,
+): (record: RoomMemberModel) => void {
   return (record: RoomMemberModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -48,8 +48,8 @@ export function roomMemberUpdater(changes: DeepPartial<RoomMemberModel>) {
 export async function upsertRoomMember(
   database: Database,
   member: DeepPartial<RoomMemberModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<RoomMemberModel> {
   const id = member.id || (await UUIDGenerator.getRandomUUID());
   const memberUpdate = { ...member, id };
   return upsert<RoomMemberModel>(
@@ -64,7 +64,7 @@ export async function upsertRoomMember(
 export async function prepareUpsertRoomMember(
   database: Database,
   member: DeepPartial<RoomMemberModel>,
-) {
+): Promise<RoomMemberModel> {
   const id = member.id || (await UUIDGenerator.getRandomUUID());
   const memberUpdate = { ...member, id };
   return prepareUpsert<RoomMemberModel>(
@@ -75,7 +75,10 @@ export async function prepareUpsertRoomMember(
   );
 }
 
-export async function getAllMembersOfRoom(database: Database, roomId: string) {
+export async function getAllMembersOfRoom(
+  database: Database,
+  roomId: string,
+): Promise<RoomMemberModel[]> {
   const roomMemberTable = database.collections.get<RoomMemberModel>(Tables.roomMembers);
   return roomMemberTable.query(Q.where('room_id', roomId)).fetch();
 }

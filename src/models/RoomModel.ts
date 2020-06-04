@@ -27,41 +27,32 @@ class RoomModel extends Model {
     [Tables.roomMembers]: { type: 'has_many', foreignKey: 'room_id' },
   };
 
-  // @ts-ignore
   @field('name')
   name: string | null;
 
-  // @ts-ignore
-  @field('picture')
-  picture: string | null;
+  @field('pictureUri')
+  pictureUri: string | null;
 
-  // @ts-ignore
   @field('is_local_only')
   isLocalOnly: boolean;
 
-  // @ts-ignore
   @field('is_archived')
   isArchived: boolean;
 
-  // @ts-ignore
   @field('shared_key')
   sharedKey: string;
 
-  // @ts-ignore
   // Last time read by me so we can show the badge,
   // messages after this will make up the number
   @date('last_read_at')
   lastReadAt: number | null;
 
-  // @ts-ignore
   @date('last_change_at')
   lastChangeAt: number;
 
-  // @ts-ignore
   @relation(Tables.messages, 'last_message_id')
   lastMessage: Relation<MessageModel>;
 
-  // @ts-ignore
   @children(Tables.messages)
   messages: Query<MessageModel>;
 
@@ -81,7 +72,7 @@ class RoomModel extends Model {
     senderId: string;
     messageId?: string;
     attachments?: DeepPartial<AttachmentModel>[];
-  }) {
+  }): Promise<void> {
     const messageDb = this.collections.get<MessageModel>(Tables.messages);
     const attachmentDb = this.collections.get<AttachmentModel>(Tables.attachments);
 
@@ -131,7 +122,7 @@ export const roomSchema = tableSchema({
   name: Tables.rooms,
   columns: [
     { name: 'name', type: 'string', isOptional: true },
-    { name: 'picture', type: 'string', isOptional: true },
+    { name: 'pictureUri', type: 'string', isOptional: true },
     { name: 'is_local_only', type: 'boolean' },
     { name: 'is_archived', type: 'boolean' },
     { name: 'shared_key', type: 'string' },
@@ -141,7 +132,7 @@ export const roomSchema = tableSchema({
   ],
 });
 
-export function roomUpdater(changes: DeepPartial<RoomModel>) {
+export function roomUpdater(changes: DeepPartial<RoomModel>): (record: RoomModel) => void {
   return (record: RoomModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -149,8 +140,8 @@ export function roomUpdater(changes: DeepPartial<RoomModel>) {
     if (typeof changes.name !== 'undefined') {
       record.name = changes.name;
     }
-    if (typeof changes.picture !== 'undefined') {
-      record.picture = changes.picture;
+    if (typeof changes.pictureUri !== 'undefined') {
+      record.pictureUri = changes.pictureUri;
     }
     if (typeof changes.isLocalOnly !== 'undefined') {
       record.isLocalOnly = changes.isLocalOnly;
@@ -176,16 +167,19 @@ export function roomUpdater(changes: DeepPartial<RoomModel>) {
 export async function upsertRoom(
   database: Database,
   room: DeepPartial<RoomModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<RoomModel> {
   return upsert<RoomModel>(database, Tables.rooms, room.id, actionParent, roomUpdater(room));
 }
 
-export async function prepareUpsertRoom(database: Database, room: DeepPartial<RoomModel>) {
+export async function prepareUpsertRoom(
+  database: Database,
+  room: DeepPartial<RoomModel>,
+): Promise<RoomModel> {
   return prepareUpsert<RoomModel>(database, Tables.rooms, room.id, roomUpdater(room));
 }
 
-export function findRoomIdInCommon(memberMix: RoomMemberModel[]) {
+export function findRoomIdInCommon(memberMix: RoomMemberModel[]): string | null {
   const roomIds = memberMix.map((e) => e.roomId);
 
   // Count the repeated rooms using Map.
@@ -349,7 +343,7 @@ export async function removeRoomsCascade(
   database: Database,
   roomIds: string[],
   signedUserId: string,
-) {
+): Promise<void> {
   const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
   const roomMembersTable = database.collections.get<RoomMemberModel>(Tables.roomMembers);
 
@@ -393,7 +387,7 @@ export async function removeRoomsCascade(
     // Execute all promises
     const batch = await Promise.all(rooms.map(wrapped));
 
-    await database.batch(...batch.flat(2));
+    await database.batch(...(batch.flat(2) as any[]));
   }, 'removeRoomsCascade');
 }
 
@@ -401,7 +395,7 @@ export async function updateRooms(
   database: Database,
   roomIds: string[],
   roomPartial: DeepPartial<RoomModel>,
-) {
+): Promise<void> {
   const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
 
   const rooms = await roomsTable.query(Q.where('id', Q.oneOf(roomIds))).fetch();

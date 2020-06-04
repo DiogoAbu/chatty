@@ -10,7 +10,7 @@ import usePress from '!/hooks/use-press';
 import useTranslation from '!/hooks/use-translation';
 import { createRoomAndMembers } from '!/models/RoomModel';
 import { useStores } from '!/stores';
-import { MainNavigationProp, MainRouteProp } from '!/types';
+import { MainNavigationProp, MainRouteProp, StackHeaderRightProps } from '!/types';
 
 import DetailsForm from './DetailsForm';
 import FriendItem from './FriendItem';
@@ -76,7 +76,7 @@ const CreateGroup: FC<Props> = ({ navigation, route }) => {
 
   useFocusEffect(() => {
     navigation.setOptions({
-      headerRight: ({ tintColor }: any) => (
+      headerRight: ({ tintColor }: StackHeaderRightProps) => (
         <Appbar.Action color={tintColor} icon='check-bold' onPress={handleCreateRoom} />
       ),
     });

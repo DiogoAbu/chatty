@@ -1,6 +1,6 @@
 import moment from 'moment';
 
-export default function getSentAt(time: number) {
+export default function getSentAt(time: number): string {
   return moment(time).calendar(undefined, {
     lastDay: 'LT',
     sameDay: 'LT',

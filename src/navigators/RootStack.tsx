@@ -26,7 +26,7 @@ const transitionSpecConfig: TransitionSpec = {
   },
 };
 
-const RootStack: FC<{}> = () => {
+const RootStack: FC<unknown> = () => {
   return (
     <AnimationStack.Navigator
       initialRouteName='Main'

@@ -36,39 +36,30 @@ class AttachmentModel extends Model {
     [Tables.posts]: { type: 'belongs_to', key: 'post_id' },
   };
 
-  // @ts-ignore
   @field('uri')
   uri: string;
 
-  // @ts-ignore
   @field('remoteUri')
   remoteUri: string;
 
-  // @ts-ignore
   @field('type')
   type: AttachmentTypes;
 
-  // @ts-ignore
   @field('width')
   width: number;
 
-  // @ts-ignore
   @field('height')
   height: number;
 
-  // @ts-ignore
   @immutableRelation(Tables.users, 'user_id')
   sender: Relation<UserModel>;
 
-  // @ts-ignore
   @immutableRelation(Tables.rooms, 'room_id')
   room: Relation<RoomModel>;
 
-  // @ts-ignore
   @immutableRelation(Tables.messages, 'message_id')
   message: Relation<MessageModel>;
 
-  // @ts-ignore
   @immutableRelation(Tables.posts, 'post_id')
   post: Relation<PostModel>;
 }
@@ -88,7 +79,9 @@ export const attachmentSchema = tableSchema({
   ],
 });
 
-export function attachmentUpdater(changes: DeepPartial<AttachmentModel>) {
+export function attachmentUpdater(
+  changes: DeepPartial<AttachmentModel>,
+): (record: AttachmentModel) => void {
   return (record: AttachmentModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -126,8 +119,8 @@ export function attachmentUpdater(changes: DeepPartial<AttachmentModel>) {
 export async function upsertAttachment(
   database: Database,
   attachment: DeepPartial<AttachmentModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<AttachmentModel> {
   return upsert<AttachmentModel>(
     database,
     Tables.attachments,
@@ -140,7 +133,7 @@ export async function upsertAttachment(
 export async function prepareUpsertAttachment(
   database: Database,
   attachment: DeepPartial<AttachmentModel>,
-) {
+): Promise<AttachmentModel> {
   return prepareUpsert<AttachmentModel>(
     database,
     Tables.attachments,
@@ -155,7 +148,7 @@ export async function prepareUpsertAttachment(
 export async function prepareAttachmentsId(
   attachments?: DeepPartial<AttachmentModel>[],
   filter = true,
-) {
+): Promise<DeepPartial<AttachmentModel>[]> {
   if (!attachments?.length) {
     return [];
   }

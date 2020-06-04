@@ -23,7 +23,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "yarn version --new-version ${nextRelease.version} --no-git-tag-version --allow-same-version && yarn run rn-version --never-amend --skip-tag && cd ./android && ./gradlew assembleRelease --no-daemon"
+        "prepareCmd": "yarn version --new-version ${nextRelease.version} --no-git-tag-version --allow-same-version && yarn run rn-version --never-amend --skip-tag --never-increment-build && cd ./android && ./gradlew assembleRelease --no-daemon"
       }
     ],
     [

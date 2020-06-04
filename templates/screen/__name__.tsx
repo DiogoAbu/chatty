@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 
 import styles from './styles';
 
-const __name__: FC<{}> = () => {
+const __name__: FC<unknown> = () => {
   return <Text style={styles.text}>__name__</Text>;
 };
 

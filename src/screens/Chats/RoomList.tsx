@@ -211,7 +211,7 @@ const RoomList: FC<Props> = ({ rooms, archivedOnly }) => {
       ListFooterComponent={
         !archivedOnly && roomsArchived.length ? (
           <Button compact mode='text' onPress={handleSeeArchived} uppercase={false}>
-            {t('label.archivedAmount', { amount: roomsArchived.length })}
+            {t('label.archivedNumber', { count: roomsArchived.length })}
           </Button>
         ) : null
       }

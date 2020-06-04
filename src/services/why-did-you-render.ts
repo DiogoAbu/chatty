@@ -1,6 +1,6 @@
 import React from 'react';
 
-if (__DEV__ && false) {
+if (__DEV__ && true) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const whyDidYouRender = require('@welldone-software/why-did-you-render');
 

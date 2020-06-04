@@ -91,7 +91,7 @@ class FadeIcon extends React.Component<Props, State> {
           style,
         ]}
       >
-        <Animated.View style={[styles.icon, { opacity: fade, transform: [{ scale }] }] as any}>
+        <Animated.View style={[styles.icon, { opacity: fade, transform: [{ scale }] }]}>
           <Icon color={color} size={size} source={source} />
         </Animated.View>
       </View>

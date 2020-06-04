@@ -10,7 +10,7 @@ export default {
     'title.chats': 'Chats',
     'title.feed': 'Feed',
     'title.findFriends': 'Friends',
-    'title.createGroup': 'Create Group Chat',
+    'title.createGroup': 'New Group Chat',
     'title.settings': 'Settings',
     'title.chatsArchived': 'Archived chats',
     'title.oops': 'Oops!',
@@ -26,7 +26,7 @@ export default {
     'label.selectAll': 'Select all',
     'label.deselectAll': 'Deselect all',
     'label.archived': 'Archived',
-    'label.archivedAmount': 'Archived ({{amount}})',
+    'label.archivedNumber': 'Archived ({{count}})',
     'label.goBack': 'Go Back',
     'label.return': 'Return',
 
@@ -35,7 +35,8 @@ export default {
     'label.image': 'Image',
     'label.images': 'Images',
 
-    'helper.charactersLeft': 'You have {{amount}} characters left',
+    'helper.charactersLeft': 'You have {{count}} character left',
+    'helper.charactersLeft_plural': 'You have {{count}} characters left',
 
     'error.invalid.email': 'Invalid email',
     'error.invalid.password': 'Invalid password',
@@ -46,6 +47,15 @@ export default {
     'error.storagePermission': 'Storage permission denied',
     'error.cameraPermission': 'Camera permission denied',
     'error.audioPermission': 'Audio permission denied',
+
+    'error.emailEmpty': 'Email is required',
+    'error.passwordEmpty': 'Password is required',
+
+    'error.inputShort': 'Too short, minimum length is {{count}} character',
+    'error.inputShort_plural': 'Too short, minimum length is {{count}} characters',
+    'error.inputLong': 'Too long, maximum length is {{count}} character',
+    'error.inputLong_plural': 'Too long, maximum length is {{count}} characters',
+    'error.inputLength': 'Length should be between {{min}} and {{max}} characters',
 
     'alert.oneFileNotFound': 'This file could not be found',
     'alert.someFilesNotFound': 'Some files could not be found',

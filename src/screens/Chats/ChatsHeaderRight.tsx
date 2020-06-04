@@ -8,6 +8,8 @@ import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import { StackHeaderRightProps } from '!/types';
 
+import styles from './styles';
+
 interface Props extends StackHeaderRightProps {
   archivedOnly?: boolean;
   handleSelectAll: () => any;
@@ -61,8 +63,7 @@ const ChatsHeaderRight: FC<Props> = ({
 
   return (
     <>
-      {/* eslint-disable-next-line react-native/no-inline-styles */}
-      <Animated.View style={{ opacity: opacity.current, flexDirection: 'row' }}>
+      <Animated.View style={[styles.headerActionsContainer, { opacity: opacity.current }]}>
         <Appbar.Action
           color={textColor}
           icon='delete'

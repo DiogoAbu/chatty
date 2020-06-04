@@ -5,7 +5,7 @@ import { Stores } from './Stores';
 export const StoresContext = createContext<Stores | null>(null);
 export const StoresProvider = StoresContext.Provider;
 
-export const useStores = () => {
+export const useStores = (): Stores => {
   const stores = useContext(StoresContext);
 
   if (!stores) {

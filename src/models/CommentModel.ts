@@ -16,21 +16,16 @@ class CommentModel extends Model {
     [Tables.posts]: { type: 'belongs_to', key: 'post_id' },
   };
 
-  // @ts-ignore
   @field('content')
   content: string;
 
-  // @ts-ignore
   @immutableRelation(Tables.users, 'user_id')
   user: Relation<UserModel>;
 
-  // @ts-ignore
   @immutableRelation(Tables.posts, 'post_id')
   post: Relation<PostModel>;
 
-  // @ts-ignore
   @readonly
-  // @ts-ignore
   @date('created_at')
   createdAt: number;
 }
@@ -45,7 +40,7 @@ export const commentSchema = tableSchema({
   ],
 });
 
-export function commentUpdater(changes: DeepPartial<CommentModel>) {
+export function commentUpdater(changes: DeepPartial<CommentModel>): (record: CommentModel) => void {
   return (record: CommentModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -62,7 +57,11 @@ export function commentUpdater(changes: DeepPartial<CommentModel>) {
   };
 }
 
-export async function upsertComment(database: Database, comment: CommentModel, actionParent?: any) {
+export async function upsertComment(
+  database: Database,
+  comment: CommentModel,
+  actionParent?: unknown,
+): Promise<CommentModel> {
   return upsert<CommentModel>(
     database,
     Tables.comments,
@@ -72,7 +71,10 @@ export async function upsertComment(database: Database, comment: CommentModel, a
   );
 }
 
-export async function prepareUpsertComment(database: Database, comment: CommentModel) {
+export async function prepareUpsertComment(
+  database: Database,
+  comment: CommentModel,
+): Promise<CommentModel> {
   return prepareUpsert<CommentModel>(
     database,
     Tables.comments,

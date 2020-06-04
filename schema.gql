@@ -8,6 +8,7 @@ mutation CreateAccount($data: CreateAccountInput!) {
       name
       email
       role
+      pictureUri
       lastAccessAt
       createdAt
     }
@@ -22,6 +23,7 @@ mutation SignIn($data: SignInInput!) {
       name
       email
       role
+      pictureUri
       lastAccessAt
       createdAt
     }
@@ -43,6 +45,7 @@ query Me {
     name
     email
     role
+    pictureUri
     lastAccessAt
     createdAt
   }
@@ -53,6 +56,7 @@ query ListUsers($where: ListUsersWhere, $order: ListUsersOrder, $skip: Int, $tak
     id
     name
     email
+    pictureUri
   }
 }
 
@@ -66,6 +70,7 @@ mutation CreateRoom($data: CreateRoomInput!) {
     members {
       id
       name
+      pictureUri
     }
   }
 }
@@ -74,6 +79,7 @@ query GetRooms {
   getRooms {
     id
     name
+    pictureUri
     lastMessage {
       id
       content
@@ -81,11 +87,13 @@ query GetRooms {
       user {
         id
         name
+        pictureUri
       }
     }
     members {
       id
       name
+      pictureUri
     }
   }
 }
@@ -94,6 +102,7 @@ subscription RoomCreated {
   roomCreated {
     id
     name
+    pictureUri
     lastMessage {
       id
       content
@@ -101,11 +110,13 @@ subscription RoomCreated {
       user {
         id
         name
+        pictureUri
       }
     }
     members {
       id
       name
+      pictureUri
     }
   }
 }

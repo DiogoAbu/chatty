@@ -53,6 +53,10 @@ const styles = StyleSheet.create({
     marginRight: 4,
     marginLeft: 4,
   },
+
+  headerActionsContainer: {
+    flexDirection: 'row',
+  },
 });
 
 export default styles;
