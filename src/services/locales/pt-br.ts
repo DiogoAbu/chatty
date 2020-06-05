@@ -4,10 +4,7 @@ export default {
   translation: {
     you: 'você',
 
-    'slogan.talkMore': 'Fale mais',
-    'slogan.beMore': 'Seja mais',
-    'slogan.wantMore': 'Queira mais',
-    'slogan.doMore': 'Faça mais',
+    slogan1: 'Um lugar onde gostamos quando você fala demais!',
 
     'title.chats': 'Conversas',
     'title.feed': 'Feed',
@@ -31,6 +28,8 @@ export default {
     'label.archivedNumber': 'Arquivadas ({{count}})',
     'label.goBack': 'Voltar',
     'label.return': 'Retornar',
+    'label.signInWithSocialNetwork': 'Entre com sua rede social preferida',
+    'label.signInWithEmail': 'Entrar com email',
 
     'label.documents': 'Documentos',
     'label.video': 'Vídeo',
@@ -49,6 +48,8 @@ export default {
     'error.storagePermission': 'Permissão negada para armazenamento',
     'error.cameraPermission': 'Permissão negada para câmera',
     'error.audioPermission': 'Permissão negada para áudio',
+    'error.checkInternetConnection': 'Verifique sua conexão com a internet',
+    'error.somethingWentWrong': 'Algo deu errado! Por favor, tente novamente mais tarde',
 
     'error.emailEmpty': 'Email é obrigatório',
     'error.passwordEmpty': 'Senha é obrigatório',
@@ -74,6 +75,7 @@ export default {
     needDigitCode: 'Pegar um código',
     confirmDigitCode: 'Confirmar código',
     typeCodeReceivedOnEmail: 'O código foi enviado para o seu email',
+    passwordChangedSuccess: 'Senha alterada com sucesso',
 
     'forgotPass.desc':
       'Um código de 6 dígitos será enviado ao seu email para confirmar sua identidade',
@@ -85,6 +87,6 @@ export default {
     signIn: 'Entrar',
     signOut: 'Sair',
     forgotPassword: 'Esqueceu a senha?',
-    changePassword: 'Mudar senha',
+    changePassword: 'Mudar a senha',
   },
 };

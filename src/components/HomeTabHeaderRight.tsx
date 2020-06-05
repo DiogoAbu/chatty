@@ -39,7 +39,7 @@ const HomeTabHeaderRight: FC<Props> = ({ tintColor: textColor, navigation }) => 
     requestAnimationFrame(() => {
       navigation.reset({
         index: 0,
-        routes: [{ name: 'SignIn' }],
+        routes: [{ name: 'Welcome' }],
       });
     });
   });

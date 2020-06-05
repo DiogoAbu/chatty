@@ -1,10 +1,7 @@
-import React, { FC, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StatusBar, View } from 'react-native';
+import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, ScrollView, TouchableWithoutFeedback, View } from 'react-native';
 
-import FastImage from 'react-native-fast-image';
-import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import { Button, HelperText, Surface, TextInput, Title } from 'react-native-paper';
-import color from 'color';
 
 import { useSignInMutation } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
@@ -27,7 +24,7 @@ interface Props {
 }
 
 const SignIn: FC<Props> = ({ navigation }) => {
-  const { authStore, generalStore, themeStore } = useStores();
+  const { authStore } = useStores();
   const { colors, roundness } = useTheme();
   const { t } = useTranslation();
 
@@ -41,6 +38,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
   const passInput = useInput('', () => setPassError(''));
 
   // Refs
+  const isMounted = useRef(true);
   const scrollRef = useRef<ScrollView | null>(null);
   const passRef = useRef<any>(null);
 
@@ -49,18 +47,37 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
   const handleSignIn = usePress(async () => {
     try {
+      const email = emailInput.value.trim();
+      const pass = passInput.value.trim();
+
+      if (!email || !pass) {
+        setEmailError(email ? '' : t('error.invalid.email'));
+        setPassError(pass ? '' : t('error.invalid.password'));
+        return;
+      }
       setEmailError('');
       setPassError('');
+
       setIsSigningIn(true);
 
       const res = await signInExec({
         data: {
-          email: emailInput.value,
-          password: passInput.value,
+          email,
+          password: pass,
         },
       });
 
-      if (res.error?.graphQLErrors[0].extensions?.exception?.validationErrors) {
+      if (!isMounted.current) {
+        return;
+      }
+
+      if (res.error?.message.includes('Network')) {
+        Alert.alert(t('title.oops'), t('error.checkInternetConnection'));
+        setIsSigningIn(false);
+        return;
+      }
+
+      if (res.error?.graphQLErrors?.[0].extensions?.exception?.validationErrors) {
         const errors = getValidationErrors(res.error, ['email', 'password']);
         setEmailError(humanizeEmailError(errors?.email, t));
         setPassError(humanizePasswordError(errors?.password, t));
@@ -90,6 +107,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
       await authStore.signIn(user, 'token');
 
+      navigation.popToTop();
       requestAnimationFrame(() => {
         setIsSigningIn(false);
         navigation.reset({
@@ -99,34 +117,32 @@ const SignIn: FC<Props> = ({ navigation }) => {
       });
     } catch (err) {
       console.log(err);
-      setIsSigningIn(false);
       Alert.alert(t('title.oops'), t('error.signInUserNotCreated'));
+      setIsSigningIn(false);
     }
   });
 
   const handleForgotPass = usePress(() => {
-    //
+    requestAnimationFrame(() => {
+      navigation.navigate('ForgotPass');
+    });
   });
 
-  const handleToggleDarkMode = usePress(() => {
+  const handleGoBack = usePress(() => {
     requestAnimationFrame(() => {
-      themeStore.toggleDarkMode();
+      navigation.goBack();
     });
   });
 
   useFocusEffect(() => {
     setIsSigningIn(false);
+  }, []);
 
-    const textIsDark = color(colors.textOnPrimary).isDark();
-    StatusBar.setHidden(false);
-    StatusBar.setBackgroundColor(colors.primary, true);
-    StatusBar.setBarStyle(textIsDark ? 'dark-content' : 'light-content');
-    StatusBar.setTranslucent(false);
-
-    // Sign out here so the other screens that depend on the user will be already disposed
-    void authStore.signOut();
-    generalStore.setFab();
-  }, [authStore, colors.primary, colors.textOnPrimary, generalStore]);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   return (
     <ScrollView
@@ -134,87 +150,67 @@ const SignIn: FC<Props> = ({ navigation }) => {
       keyboardDismissMode='on-drag'
       keyboardShouldPersistTaps='handled'
       ref={scrollRef}
-      style={{ backgroundColor: colors.background }}
     >
-      <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
-        <TouchableWithoutFeedback onPress={handleToggleDarkMode}>
-          <FastImage source={require('!/assets/logo/icon.png')} />
-        </TouchableWithoutFeedback>
-      </View>
+      <TouchableWithoutFeedback onPress={handleGoBack}>
+        <View style={styles.touchable} />
+      </TouchableWithoutFeedback>
 
-      <View style={[styles.formContainer, { backgroundColor: colors.background }]}>
-        <Surface style={[styles.formContent, { borderRadius: roundness * 2 }]}>
-          <Title style={styles.title}>{t('label.welcome')}</Title>
+      <Surface style={[{ borderRadius: roundness * 4 }, styles.formContent]}>
+        <Title style={styles.title}>Entrar com email</Title>
 
-          <TextInput
-            autoCapitalize='none'
-            autoCompleteType='email'
-            autoCorrect={false}
-            blurOnSubmit={false}
-            error={!!emailError}
-            keyboardType='email-address'
-            label={t('label.email')}
-            mode='flat'
-            onSubmitEditing={focusPass}
-            returnKeyType='next'
-            style={{
-              backgroundColor: colors.background,
-              borderColor: emailError ? colors.error : colors.primary,
-            }}
-            textContentType='emailAddress'
-            {...emailInput}
-          />
-          <HelperText type='error' visible>
-            {emailError}
-          </HelperText>
+        <TextInput
+          autoCapitalize='none'
+          autoCompleteType='email'
+          autoCorrect={false}
+          blurOnSubmit={false}
+          error={!!emailError}
+          keyboardType='email-address'
+          label={t('label.email')}
+          mode='outlined'
+          onSubmitEditing={focusPass}
+          returnKeyType='next'
+          textContentType='emailAddress'
+          {...emailInput}
+        />
+        <HelperText type='error' visible>
+          {emailError}
+        </HelperText>
 
-          <TextInput
-            autoCapitalize='none'
-            autoCompleteType='password'
-            autoCorrect={false}
-            blurOnSubmit={false}
-            error={!!passError}
-            label={t('label.password')}
-            mode='flat'
-            onSubmitEditing={handleSignIn}
-            ref={passRef}
-            returnKeyType='go'
-            secureTextEntry
-            style={[
-              styles.inputBottom,
-              {
-                backgroundColor: colors.background,
-                borderColor: emailError ? colors.error : colors.primary,
-              },
-            ]}
-            textContentType='password'
-            {...passInput}
-          />
-          <HelperText type='error' visible>
-            {passError}
-          </HelperText>
+        <TextInput
+          autoCapitalize='none'
+          autoCompleteType='password'
+          autoCorrect={false}
+          blurOnSubmit={false}
+          error={!!passError}
+          label={t('label.password')}
+          mode='outlined'
+          onSubmitEditing={handleSignIn}
+          ref={passRef}
+          returnKeyType='go'
+          secureTextEntry
+          style={styles.inputBottom}
+          textContentType='password'
+          {...passInput}
+        />
+        <HelperText type='error' visible>
+          {passError}
+        </HelperText>
 
-          <Button
-            disabled={isSigningIn}
-            labelStyle={{ color: colors.textOnPrimary }}
-            loading={isSigningIn}
-            mode='contained'
-            onPress={handleSignIn}
-            style={styles.button}
-          >
-            {t('signIn')}
-          </Button>
+        <Button
+          disabled={isSigningIn}
+          labelStyle={{ color: isSigningIn ? colors.disabled : colors.textOnPrimary }}
+          loading={isSigningIn}
+          mode='contained'
+          onPress={handleSignIn}
+          style={styles.button}
+        >
+          {t('signIn')}
+        </Button>
 
-          <Button
-            disabled={isSigningIn}
-            mode='text'
-            onPress={handleForgotPass}
-            style={styles.button}
-          >
-            {t('forgotPassword')}
-          </Button>
-        </Surface>
-      </View>
+        <Button disabled={isSigningIn} mode='text' onPress={handleForgotPass} style={styles.button}>
+          {t('forgotPassword')}
+        </Button>
+      </Surface>
     </ScrollView>
   );
 };

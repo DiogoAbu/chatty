@@ -4,19 +4,17 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
   },
-  logoContainer: {
+
+  touchable: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  formContainer: {
-    padding: 16,
-  },
+
   formContent: {
     margin: 0,
-    marginTop: -40,
-    padding: 12,
-    elevation: 2,
+    padding: 16,
+    elevation: 8,
+    borderBottomStartRadius: 0,
+    borderBottomEndRadius: 0,
   },
   title: {
     textAlign: 'center',

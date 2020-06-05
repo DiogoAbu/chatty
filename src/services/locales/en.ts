@@ -2,10 +2,7 @@ export default {
   translation: {
     you: 'you',
 
-    'slogan.talkMore': 'Talk more',
-    'slogan.beMore': 'Be more',
-    'slogan.wantMore': 'Want more',
-    'slogan.doMore': 'Do more',
+    slogan1: 'A place where we like when you talk a lot!',
 
     'title.chats': 'Chats',
     'title.feed': 'Feed',
@@ -29,6 +26,8 @@ export default {
     'label.archivedNumber': 'Archived ({{count}})',
     'label.goBack': 'Go Back',
     'label.return': 'Return',
+    'label.signInWithSocialNetwork': 'Sign in with your social network account',
+    'label.signInWithEmail': 'Sign in with email',
 
     'label.documents': 'Documents',
     'label.video': 'Video',
@@ -47,6 +46,8 @@ export default {
     'error.storagePermission': 'Storage permission denied',
     'error.cameraPermission': 'Camera permission denied',
     'error.audioPermission': 'Audio permission denied',
+    'error.checkInternetConnection': 'Check your internet connection',
+    'error.somethingWentWrong': 'Something went wrong! Please, try again later',
 
     'error.emailEmpty': 'Email is required',
     'error.passwordEmpty': 'Password is required',
@@ -72,6 +73,7 @@ export default {
     needDigitCode: 'Need a code?',
     confirmDigitCode: 'Confirm code',
     typeCodeReceivedOnEmail: 'The code was sent to your email',
+    passwordChangedSuccess: 'Password changed succefully',
 
     'forgotPass.desc': 'A 6-digit code will be send to your email to confirm your identity',
 

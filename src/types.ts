@@ -42,6 +42,7 @@ export type RootStackParams = {
     title: string;
     attachment: DeepPartial<AttachmentModel>;
   };
+  SignIn: undefined;
 };
 
 // Stack screens with params
@@ -86,6 +87,7 @@ export type MainStackParams = {
     videoRecorded: VideoRecorded;
   };
 
+  Welcome: undefined;
   SignIn: undefined;
   ForgotPass: undefined;
   ChangePass: undefined;

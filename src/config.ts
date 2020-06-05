@@ -4,3 +4,5 @@ export const ATTACHMENT_MAX_AMOUNT = 10;
 
 export const VIDEO_MAX_DURATION = 60;
 export const VIDEO_CONTROL_VISIBLE_TIMEOUT = 5000;
+
+export const ONE_TIME_CODE_MAX_LENGTH = 6;
