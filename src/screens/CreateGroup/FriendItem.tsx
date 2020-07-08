@@ -1,4 +1,4 @@
-import React, { FC, PropsWithChildren } from 'react';
+import React, { FC, memo, PropsWithChildren } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
 import FastImage from 'react-native-fast-image';
@@ -66,4 +66,4 @@ const propsAreEqual = (
   return true;
 };
 
-export default React.memo(FriendItem, propsAreEqual);
+export default memo(FriendItem, propsAreEqual);

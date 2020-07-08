@@ -38,12 +38,7 @@ interface Props {
   onShowHideStatusBar?: (state: boolean) => void;
 }
 
-const VideoPlayer: FC<Props> = ({
-  video,
-  onShowHideOverlay,
-  onShowHideControl,
-  onShowHideStatusBar,
-}) => {
+const VideoPlayer: FC<Props> = ({ video, onShowHideOverlay, onShowHideControl, onShowHideStatusBar }) => {
   const [winWidth, winHeight, isLandscape] = useDimensions('window');
   const navigation = useNavigation();
   const { colors, dark, mode, animation } = useTheme();
@@ -247,10 +242,7 @@ const VideoPlayer: FC<Props> = ({
 
       <TouchableWithoutFeedback onPress={handlePressShowControl}>
         <View
-          style={[
-            { width, height, aspectRatio, backgroundColor: overlayColor },
-            styles.overlayContainer,
-          ]}
+          style={[{ width, height, aspectRatio, backgroundColor: overlayColor }, styles.overlayContainer]}
         >
           {isShowingOverlay || !isPlaying ? (
             <TouchableWithoutFeedback onPress={handlePressPlayOverlay}>

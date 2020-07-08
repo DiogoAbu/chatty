@@ -21,6 +21,7 @@ export function useBackHandlerOnFocus(
 ): void {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const action = useCallback(backAction, deps);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useFocusEffect(
     useCallback(() => {
       const backHandler = BackHandler.addEventListener('hardwareBackPress', action);

@@ -1,6 +1,7 @@
 import React, { FC, useEffect } from 'react';
 import { StatusBar, View } from 'react-native';
 
+import Config from 'react-native-config';
 import { Button, Colors, FAB as Fab, Text } from 'react-native-paper';
 import LottieView from 'lottie-react-native';
 
@@ -23,7 +24,9 @@ const Welcome: FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
 
   const handleSignInWithEmail = usePress(() => {
-    navigation.navigate('SignIn');
+    requestAnimationFrame(() => {
+      navigation.navigate('SignIn');
+    });
   });
 
   useEffect(() => {
@@ -35,6 +38,19 @@ const Welcome: FC<Props> = ({ navigation }) => {
     // Sign out here so the other screens that depend on the user will be already disposed
     void authStore.signOut();
     generalStore.setFab();
+
+    // Hit the server to wake it up
+    const fetchControl = new AbortController();
+    const fetchTimeout = setTimeout(() => {
+      fetchControl.abort();
+    }, 10000);
+
+    void fetch(Config.API_URL, { method: 'GET', signal: fetchControl.signal }).catch(() => null);
+
+    return () => {
+      clearTimeout(fetchTimeout);
+      fetchControl.abort();
+    };
   }, [authStore, colors.statusBar, colors.statusBarText, generalStore]);
 
   return (
@@ -43,11 +59,7 @@ const Welcome: FC<Props> = ({ navigation }) => {
       <Subtitle />
 
       <View style={styles.contentContainer}>
-        <LottieView
-          autoPlay
-          loop
-          source={require('!/assets/animations/16360-girl-with-phone.json')}
-        />
+        <LottieView autoPlay loop source={require('!/assets/animations/16360-girl-with-phone.json')} />
       </View>
 
       <View>

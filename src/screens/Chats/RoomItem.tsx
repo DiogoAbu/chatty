@@ -5,7 +5,6 @@ import FastImage from 'react-native-fast-image';
 import { Avatar, Badge, Caption, Chip, Colors, List, Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SharedElement } from 'react-navigation-shared-element';
-import { ExtractedObservables } from '@nozbe/with-observables';
 import { useNavigation } from '@react-navigation/native';
 
 import FadeIcon from '!/components/FadeIcon';
@@ -20,24 +19,17 @@ import getSentAt from '!/utils/get-sent-at';
 
 import MessageMark from '../../components/MessageMark';
 
-import { withRoom, WithRoomOutput } from './queries';
+import { withOneRoom, WithOneRoomInput, WithOneRoomOutput } from './queries';
 import styles from './styles';
 
-interface PropsExtra {
-  isSelecting: boolean;
-  toggleSelected: (userId: string) => void;
-  getSelected: (userId: string) => boolean;
-}
-
-type Props = ExtractedObservables<WithRoomOutput & PropsExtra>;
-
-const RoomItem: FC<Props> = ({
+const RoomItem: FC<WithOneRoomOutput> = ({
   room,
   members,
   newMessagesCount,
   lastMessage,
   lastMessageSender,
   lastMessageAttachments,
+  lastMessageReadReceipts,
   isSelecting,
   toggleSelected,
   getSelected,
@@ -47,11 +39,11 @@ const RoomItem: FC<Props> = ({
   const { grid, colors } = useTheme();
   const { t } = useTranslation();
 
-  const sentAt = getSentAt(lastMessage?.localCreatedAt || room.lastChangeAt);
+  const sentAt = getSentAt(lastMessage?.createdAt || room.lastChangeAt);
   const lastMessagenNotRead =
     !lastMessage || !room?.lastReadAt
       ? false
-      : new Date(lastMessage.localCreatedAt).getTime() > new Date(room.lastReadAt).getTime();
+      : new Date(lastMessage.createdAt).getTime() > new Date(room.lastReadAt).getTime();
 
   const lastByMe = lastMessageSender?.id === authStore.user.id;
 
@@ -94,17 +86,19 @@ const RoomItem: FC<Props> = ({
       lastMessageAttachments?.some((e) => e.type === AttachmentTypes.image) ? (
         <Icon
           name={lastMessageAttachments.length > 1 ? 'image-album' : 'image'}
-          style={[styles.lastMessageAttachmentIcon, { color: colors.accent }]}
+          style={[styles.lastMessageAttachmentIcon, styles.marginRight, { color: colors.accent }]}
         />
       ) : lastMessageAttachments?.some((e) => e.type === AttachmentTypes.video) ? (
-        <Icon name='video' style={[styles.lastMessageAttachmentIcon, { color: colors.accent }]} />
+        <Icon
+          name='video'
+          style={[styles.lastMessageAttachmentIcon, styles.marginRight, { color: colors.accent }]}
+        />
       ) : lastMessageAttachments?.some((e) => e.type === AttachmentTypes.document) ? (
         <Icon
           name='paperclip'
-          style={[styles.lastMessageAttachmentIcon, { color: colors.accent }]}
+          style={[styles.lastMessageAttachmentIcon, styles.marginRight, { color: colors.accent }]}
         />
       ) : null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [colors.accent, lastMessageAttachments],
   );
 
@@ -112,17 +106,19 @@ const RoomItem: FC<Props> = ({
     ({ color, fontSize }: { color: string; fontSize: number }) =>
       lastMessage ? (
         <View style={styles.itemContentContainer}>
-          {lastByMe ? <MessageMark color={color} fontSize={16} message={lastMessage} /> : null}
+          {lastByMe ? (
+            <MessageMark
+              color={color}
+              fontSize={16}
+              readReceipts={lastMessageReadReceipts}
+              sentAt={lastMessage.sentAt}
+              style={styles.marginRight}
+            />
+          ) : null}
           {renderAttachmentIcon()}
           {lastMessage.content ? (
-            <Text
-              ellipsizeMode='tail'
-              numberOfLines={1}
-              style={[styles.messageContent, { color, fontSize }]}
-            >
-              {room.name && lastMessageSender?.name
-                ? `${lastMessageSender.name.split(' ')[0]}: `
-                : null}
+            <Text ellipsizeMode='tail' numberOfLines={1} style={{ color, fontSize }}>
+              {room.name && lastMessageSender?.name ? `${lastMessageSender.name.split(' ')[0]}: ` : null}
               {lastMessage.content}
             </Text>
           ) : null}
@@ -184,19 +180,13 @@ const RoomItem: FC<Props> = ({
         </Caption>
       ) : null}
       {room.isArchived ? (
-        <Chip
-          mode='outlined'
-          style={styles.roomArchivedChip}
-          textStyle={styles.roomArchivedChipText}
-        >
+        <Chip mode='outlined' style={styles.roomArchivedChip} textStyle={styles.roomArchivedChipText}>
           {t('label.archived')}
         </Chip>
       ) : lastMessagenNotRead && newMessagesCount > 0 ? (
         <Badge
-          style={[
-            styles.roomMessagesBadge,
-            { backgroundColor: colors.accent, color: colors.textOnAccent },
-          ]}
+          size={26}
+          style={[styles.roomMessagesBadge, { backgroundColor: colors.accent, color: colors.textOnAccent }]}
           visible
         >
           {newMessagesCount}
@@ -219,4 +209,4 @@ const RoomItem: FC<Props> = ({
   );
 };
 
-export default withRoom(RoomItem);
+export default withOneRoom(RoomItem) as FC<WithOneRoomInput>;

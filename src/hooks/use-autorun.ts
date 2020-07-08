@@ -1,6 +1,5 @@
 import { DependencyList, useEffect } from 'react';
 
-// eslint-disable-next-line import/named
 import { autorun, IAutorunOptions } from 'mobx';
 
 export default function useAutorun(

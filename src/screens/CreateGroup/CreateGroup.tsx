@@ -5,12 +5,14 @@ import { FlatList } from 'react-native-gesture-handler';
 import { Appbar, Divider } from 'react-native-paper';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 
+import { User } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTranslation from '!/hooks/use-translation';
-import { createRoomAndMembers } from '!/models/RoomModel';
+import { createRoom } from '!/models/RoomModel';
+import UserModel from '!/models/UserModel';
 import { useStores } from '!/stores';
-import { MainNavigationProp, MainRouteProp, StackHeaderRightProps } from '!/types';
+import { DeepPartial, MainNavigationProp, MainRouteProp, StackHeaderRightProps } from '!/types';
 
 import DetailsForm from './DetailsForm';
 import FriendItem from './FriendItem';
@@ -21,7 +23,7 @@ interface Props {
   route: MainRouteProp<'CreateGroup'>;
 }
 
-const handleKeyExtractor = (item: any) => item.id;
+const handleKeyExtractor = (item: User) => item.id!;
 
 const CreateGroup: FC<Props> = ({ navigation, route }) => {
   const database = useDatabase();
@@ -44,7 +46,7 @@ const CreateGroup: FC<Props> = ({ navigation, route }) => {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<any>) => <FriendItem friend={item} removeMember={removeMember} />,
+    ({ item }: ListRenderItemInfo<User>) => <FriendItem friend={item} removeMember={removeMember} />,
     [removeMember],
   );
 
@@ -56,8 +58,18 @@ const CreateGroup: FC<Props> = ({ navigation, route }) => {
     }
 
     const room = { name, isLocalOnly: false };
-    const allMembers = [authStore.user, ...members];
-    const roomId = await createRoomAndMembers(database, room, allMembers);
+    const memberUsers: DeepPartial<UserModel>[] = members.map((friend) => ({
+      id: friend.id,
+      name: friend.name,
+      pictureUri: friend.pictureUri,
+      email: friend.email,
+      role: friend.role,
+      publicKey: friend.publicKey,
+      isFollowingMe: friend.isFollowingMe,
+      isFollowedByMe: friend.isFollowedByMe,
+    }));
+    const allMembers = [authStore.user, ...memberUsers];
+    const roomId = await createRoom(database, authStore.user, room, allMembers);
 
     requestAnimationFrame(() => {
       // Make it so the first screen is Home and we're at the Chatting screen

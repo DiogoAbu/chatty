@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, memo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { FAB as FabPaper } from 'react-native-paper';
@@ -35,4 +35,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(Fab);
+export default memo(Fab);

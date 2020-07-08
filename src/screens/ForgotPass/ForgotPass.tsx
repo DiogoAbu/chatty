@@ -1,11 +1,5 @@
 import React, { FC, useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  InteractionManager,
-  ScrollView,
-  TextInput as NativeInput,
-  View,
-} from 'react-native';
+import { Alert, InteractionManager, ScrollView, TextInput as NativeInput, View } from 'react-native';
 
 import { Button, HelperText, Subheading, TextInput } from 'react-native-paper';
 
@@ -97,6 +91,7 @@ const ForgotPass: FC<Props> = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    isMounted.current = true;
     return () => {
       isMounted.current = false;
     };

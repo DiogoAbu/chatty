@@ -24,12 +24,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
 
-  messageContent: {
-    marginLeft: 4,
+  marginRight: {
+    marginRight: 4,
   },
 
   lastMessageAttachmentIcon: {
-    marginLeft: 4,
     fontSize: 18,
   },
 
@@ -42,7 +41,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
     marginLeft: 4,
     marginBottom: 4,
-    lineHeight: 16,
+    lineHeight: 17,
   },
 
   roomArchivedChip: {

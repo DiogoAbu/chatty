@@ -34,6 +34,8 @@ export default {
     'label.image': 'Image',
     'label.images': 'Images',
 
+    'label.findPeopleNearYou': 'Find people near you',
+
     'helper.charactersLeft': 'You have {{count}} character left',
     'helper.charactersLeft_plural': 'You have {{count}} characters left',
 

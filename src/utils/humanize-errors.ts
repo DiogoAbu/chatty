@@ -1,9 +1,6 @@
 import { TFunction } from 'i18next';
 
-export function humanizeEmailError(
-  error: Record<string, string> | undefined,
-  t: TFunction,
-): string {
+export function humanizeEmailError(error: Record<string, string> | undefined, t: TFunction): string {
   if (error?.isNotEmpty) {
     return t('error.emailEmpty');
   }
@@ -33,10 +30,7 @@ export function humanizeEmailError(
   return '';
 }
 
-export function humanizePasswordError(
-  error: Record<string, string> | undefined,
-  t: TFunction,
-): string {
+export function humanizePasswordError(error: Record<string, string> | undefined, t: TFunction): string {
   if (error?.isNotEmpty) {
     return t('error.passwordEmpty');
   }

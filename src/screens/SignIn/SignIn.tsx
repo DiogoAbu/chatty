@@ -10,7 +10,8 @@ import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import UserModel from '!/models/UserModel';
-import { generateKeyPair } from '!/services/encryption';
+import debug from '!/services/debug';
+import { deriveKeyPair, derivesKeyFromPassword, generateSaltForKeyDerivation } from '!/services/encryption';
 import { useStores } from '!/stores';
 import { DeepPartial, MainNavigationProp } from '!/types';
 import getValidationErrors from '!/utils/get-validation-errors';
@@ -18,6 +19,8 @@ import { humanizeEmailError, humanizePasswordError } from '!/utils/humanize-erro
 import { focusNext } from '!/utils/scroll-into-view';
 
 import styles from './styles';
+
+const log = debug.extend('sign-in');
 
 interface Props {
   navigation: MainNavigationProp<'SignIn'>;
@@ -40,6 +43,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
   // Refs
   const isMounted = useRef(true);
   const scrollRef = useRef<ScrollView | null>(null);
+  const emailRef = useRef<any>(null);
   const passRef = useRef<any>(null);
 
   // Shift input focus
@@ -47,12 +51,14 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
   const handleSignIn = usePress(async () => {
     try {
-      const email = emailInput.value.trim();
-      const pass = passInput.value.trim();
+      log('signing in');
 
-      if (!email || !pass) {
+      const email = emailInput.value.trim();
+      const password = passInput.value.trim();
+
+      if (!email || !password) {
         setEmailError(email ? '' : t('error.invalid.email'));
-        setPassError(pass ? '' : t('error.invalid.password'));
+        setPassError(password ? '' : t('error.invalid.password'));
         return;
       }
       setEmailError('');
@@ -63,11 +69,13 @@ const SignIn: FC<Props> = ({ navigation }) => {
       const res = await signInExec({
         data: {
           email,
-          password: pass,
+          password,
         },
       });
 
       if (!isMounted.current) {
+        log('not mounted');
+        setIsSigningIn(false);
         return;
       }
 
@@ -78,6 +86,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
       }
 
       if (res.error?.graphQLErrors?.[0].extensions?.exception?.validationErrors) {
+        log('validation error');
         const errors = getValidationErrors(res.error, ['email', 'password']);
         setEmailError(humanizeEmailError(errors?.email, t));
         setPassError(humanizePasswordError(errors?.password, t));
@@ -86,26 +95,36 @@ const SignIn: FC<Props> = ({ navigation }) => {
       }
 
       if (!res.data?.signIn?.user || !res.data?.signIn?.token) {
+        log('no user or token');
         setEmailError(t('error.signIn.user'));
         setIsSigningIn(false);
         return;
       }
 
-      const { secretKey, publicKey } = await generateKeyPair();
+      const { user, token } = res.data.signIn;
 
-      const userFetched = res.data.signIn.user;
+      // Using the password and a salt to derive a key that will be used to derive the pair of keys
+      const derivedSalt = user.derivedSalt || (await generateSaltForKeyDerivation());
 
-      const user: DeepPartial<UserModel> = {
-        id: userFetched.id,
-        email: userFetched.email,
-        name: userFetched.name,
-        role: userFetched.role,
-        pictureUri: userFetched.pictureUri,
+      const pass = password + user.id!;
+      const derivedKey = await derivesKeyFromPassword(pass, derivedSalt);
+
+      const { secretKey, publicKey } = await deriveKeyPair(derivedKey);
+
+      const userData: DeepPartial<UserModel> = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        pictureUri: user.pictureUri,
         secretKey,
         publicKey,
+        derivedSalt,
+        _raw: { _changed: 'public_key,derived_salt', _status: 'updated' },
       };
 
-      await authStore.signIn(user, 'token');
+      await authStore.signIn(userData, token);
+      log('signed in successfully');
 
       navigation.popToTop();
       requestAnimationFrame(() => {
@@ -139,6 +158,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    isMounted.current = true;
     return () => {
       isMounted.current = false;
     };
@@ -168,6 +188,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
           label={t('label.email')}
           mode='outlined'
           onSubmitEditing={focusPass}
+          ref={emailRef}
           returnKeyType='next'
           textContentType='emailAddress'
           {...emailInput}

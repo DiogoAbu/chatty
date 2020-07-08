@@ -9,9 +9,7 @@ export async function requestStoragePermission(): Promise<boolean> {
   }
 
   try {
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    );
+    const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
     return granted === PermissionsAndroid.RESULTS.GRANTED;
   } catch (err) {
     console.error(err);

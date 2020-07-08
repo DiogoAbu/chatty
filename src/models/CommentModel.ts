@@ -54,6 +54,9 @@ export function commentUpdater(changes: DeepPartial<CommentModel>): (record: Com
     if (typeof changes.post?.id !== 'undefined') {
       record.post.id = changes.post.id;
     }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
   };
 }
 
@@ -62,25 +65,11 @@ export async function upsertComment(
   comment: CommentModel,
   actionParent?: unknown,
 ): Promise<CommentModel> {
-  return upsert<CommentModel>(
-    database,
-    Tables.comments,
-    comment.id,
-    actionParent,
-    commentUpdater(comment),
-  );
+  return upsert<CommentModel>(database, Tables.comments, comment.id, actionParent, commentUpdater(comment));
 }
 
-export async function prepareUpsertComment(
-  database: Database,
-  comment: CommentModel,
-): Promise<CommentModel> {
-  return prepareUpsert<CommentModel>(
-    database,
-    Tables.comments,
-    comment.id,
-    commentUpdater(comment),
-  );
+export async function prepareUpsertComment(database: Database, comment: CommentModel): Promise<CommentModel> {
+  return prepareUpsert<CommentModel>(database, Tables.comments, comment.id, commentUpdater(comment));
 }
 
 export default CommentModel;

@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { FC, memo, useEffect, useRef, useState } from 'react';
 
 import { Appbar, Menu } from 'react-native-paper';
 import Animated, { Easing, timing, Value } from 'react-native-reanimated';
@@ -64,11 +64,7 @@ const ChatsHeaderRight: FC<Props> = ({
   return (
     <>
       <Animated.View style={[styles.headerActionsContainer, { opacity: opacity.current }]}>
-        <Appbar.Action
-          color={textColor}
-          icon='delete'
-          onPress={hijackOnPress(handleDeleteSelected)}
-        />
+        <Appbar.Action color={textColor} icon='delete' onPress={hijackOnPress(handleDeleteSelected)} />
         <Appbar.Action
           color={textColor}
           icon={archivedOnly ? 'package-up' : 'package-down'}
@@ -95,4 +91,4 @@ const ChatsHeaderRight: FC<Props> = ({
   );
 };
 
-export default React.memo(ChatsHeaderRight);
+export default memo(ChatsHeaderRight);

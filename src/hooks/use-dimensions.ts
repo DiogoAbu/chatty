@@ -7,9 +7,7 @@ type DimensionsResult = {
 };
 
 // https://www.reactnativeschool.com/building-a-dimensions-hook-in-react-native
-export default function useDimensions(
-  type: 'window' | 'screen',
-): [number, number, boolean, number, number] {
+export default function useDimensions(type: 'window' | 'screen'): [number, number, boolean, number, number] {
   const [dimensions, setDimensions] = useState(Dimensions.get(type));
 
   useEffect(() => {

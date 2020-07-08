@@ -1,18 +1,18 @@
-import React, { FC, useCallback, useEffect, useRef } from 'react';
-import { BackHandler, GestureResponderEvent, StatusBar, View } from 'react-native';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { BackHandler, GestureResponderEvent, InteractionManager, StatusBar, View } from 'react-native';
 
-import { Appbar } from 'react-native-paper';
 import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
-import { useDatabase } from '@nozbe/watermelondb/hooks';
-import { ExtractedObservables } from '@nozbe/with-observables';
 import { useNavigation } from '@react-navigation/native';
+import Bottleneck from 'bottleneck';
 
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTranslation from '!/hooks/use-translation';
-import RoomModel, { removeRoomsCascade, roomUpdater } from '!/models/RoomModel';
+import MessageModel from '!/models/MessageModel';
+import ReadReceiptModel from '!/models/ReadReceiptModel';
+import { removeRoomsCascade, roomUpdater } from '!/models/RoomModel';
 import { useStores } from '!/stores';
-import { DeepPartial, HeaderOptions, MainNavigationProp, StackHeaderRightProps } from '!/types';
+import { HeaderOptions, MainNavigationProp } from '!/types';
 import capitalize from '!/utils/capitalize';
 import getRoomMember from '!/utils/get-room-member';
 
@@ -22,13 +22,16 @@ import MessageList from './MessageList';
 import { withMembers, WithMembersOutput, withRoom, WithRoomOutput } from './queries';
 import styles from './styles';
 
-type Props = ExtractedObservables<WithRoomOutput & WithMembersOutput>;
+const limiter = new Bottleneck({
+  maxConcurrent: 1,
+});
 
-const Chatting: FC<Props> = ({ room, members }) => {
-  const database = useDatabase();
+const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, members }) => {
   const navigation = useNavigation<MainNavigationProp<'Chatting'>>();
-  const { authStore, generalStore } = useStores();
+  const { authStore, generalStore, syncStore } = useStores();
   const { t } = useTranslation();
+
+  const [page, setPage] = useState(1);
 
   const shouldBlurRemoveRoom = useRef(true);
   const attachmentPickerRef = useRef<AttachmentPickerType | null>(null);
@@ -39,26 +42,16 @@ const Chatting: FC<Props> = ({ room, members }) => {
   let subtitle: string | undefined;
   let pictureUri = room.pictureUri;
 
-  let friendId: string | undefined;
-
-  if (!title && members) {
+  if (!title) {
     const friend = getRoomMember(members, authStore.user.id);
     title = friend?.name || null;
     pictureUri = friend?.pictureUri || null;
-    friendId = friend?.id;
   } else {
-    subtitle = members
-      .map((e) => capitalize(e.id === authStore.user.id ? t('you') : e.name.split(' ')[0]))
-      .join(', ');
+    const names = members
+      .map((e) => (e.id !== authStore.user.id ? capitalize(e.name.split(' ')[0]) : null))
+      .filter((e) => e);
+    subtitle = `${capitalize(t('you'))}, ${names.join(', ')}`;
   }
-
-  const handleAddMessage = usePress(() => {
-    const userId = friendId || members[Math.floor(Math.random() * members.length)].id;
-
-    if (userId) {
-      void room.addMessage({ content: "Friend's response", senderId: userId });
-    }
-  });
 
   const handlePressBack = usePress(() => {
     if (attachmentPickerRef.current?.isShowing) {
@@ -83,22 +76,6 @@ const Chatting: FC<Props> = ({ room, members }) => {
     touchableIds.current = ids;
   }, []);
 
-  const updateReadTime = usePress(
-    () => {
-      const name = 'Chatting -> updateReadTime';
-      const changes: DeepPartial<RoomModel> = {
-        ...room,
-        lastReadAt: Date.now(),
-      };
-
-      void database.action(async () => {
-        await room.update(roomUpdater(changes));
-      }, name);
-    },
-    350,
-    { leading: false, trailing: true },
-  );
-
   // Remove room on blur if it's local only
   useFocusEffect(() => {
     shouldBlurRemoveRoom.current = true;
@@ -115,10 +92,37 @@ const Chatting: FC<Props> = ({ room, members }) => {
       title,
       subtitle,
       handlePressBack,
-      headerRight: ({ tintColor }: StackHeaderRightProps) => (
-        <Appbar.Action color={tintColor} icon='message-text' onPress={handleAddMessage} />
-      ),
     } as HeaderOptions);
+
+    const markAsSeen = async () => {
+      const wrapped = limiter.wrap(async (msg: MessageModel) => {
+        if (msg.sender.id !== authStore.user.id) {
+          return msg.prepareMarkAsSeen(authStore.user.id);
+        }
+        return (null as unknown) as ReadReceiptModel;
+      });
+
+      const messages = await room.messages.fetch();
+      const batch = await Promise.all(messages.map(wrapped));
+
+      const roomUpdate = room.prepareUpdate(
+        roomUpdater({
+          lastReadAt: Date.now(),
+          _raw: {
+            _status: room._raw._status === 'synced' ? 'synced' : 'updated',
+          },
+        }),
+      );
+
+      await database.action(async () => {
+        await database.batch(roomUpdate, ...batch);
+      }, 'Chatting -> markAsSeen');
+
+      await syncStore.sync();
+    };
+    void InteractionManager.runAfterInteractions(() => {
+      void markAsSeen();
+    });
 
     return () => {
       backHandler.remove();
@@ -126,17 +130,7 @@ const Chatting: FC<Props> = ({ room, members }) => {
         void removeRoomsCascade(database, [room.id], authStore.user.id);
       }
     };
-  }, [
-    authStore.user.id,
-    database,
-    handleAddMessage,
-    handlePressBack,
-    navigation,
-    room.id,
-    room.isLocalOnly,
-    subtitle,
-    title,
-  ]);
+  }, [authStore.user.id, database, handlePressBack, navigation, room, subtitle, syncStore, title]);
 
   // Hide FAB
   useEffect(() => {
@@ -147,9 +141,10 @@ const Chatting: FC<Props> = ({ room, members }) => {
     <View onStartShouldSetResponder={handleTappingOutside} style={styles.container}>
       <MessageList
         attachmentPickerRef={attachmentPickerRef}
+        page={page}
         room={room}
+        setPage={setPage}
         title={title!}
-        updateReadTime={updateReadTime}
       />
 
       <MessageInput

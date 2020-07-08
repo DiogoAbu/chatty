@@ -21,7 +21,13 @@ const PictureItem: FC<Props> = ({ item: picture, title }) => {
   const navigation = useNavigation<RootNavigationProp<'PictureScrollerModal'>>();
 
   const handlePress = usePress(() => {
-    navigation.navigate('PictureViewerModal', { attachment: picture, title, skipStatusBar: true });
+    requestAnimationFrame(() => {
+      navigation.navigate('PictureViewerModal', {
+        attachment: picture,
+        title,
+        skipStatusBar: true,
+      });
+    });
   });
 
   const { aspectRatio, height, width } = getNormalizedSize(picture, {

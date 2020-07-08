@@ -26,7 +26,7 @@ class UserModel extends Model {
   @field('email')
   email: string;
 
-  @field('pictureUri')
+  @field('picture_uri')
   pictureUri: string | null;
 
   @field('role')
@@ -37,6 +37,9 @@ class UserModel extends Model {
 
   @field('public_key')
   publicKey: string | null;
+
+  @field('derived_salt')
+  derivedSalt: string | null;
 
   @field('is_following_me')
   isFollowingMe: boolean | null;
@@ -60,10 +63,11 @@ export const userSchema = tableSchema({
   columns: [
     { name: 'name', type: 'string' },
     { name: 'email', type: 'string' },
-    { name: 'pictureUri', type: 'string', isOptional: true },
+    { name: 'picture_uri', type: 'string', isOptional: true },
     { name: 'role', type: 'string', isOptional: true },
     { name: 'secret_key', type: 'string', isOptional: true },
     { name: 'public_key', type: 'string', isOptional: true },
+    { name: 'derived_salt', type: 'string', isOptional: true },
     { name: 'is_following_me', type: 'boolean', isOptional: true },
     { name: 'is_followed_by_me', type: 'boolean', isOptional: true },
   ],
@@ -92,11 +96,20 @@ export function userUpdater(changes: DeepPartial<UserModel>): (record: UserModel
     if (typeof changes.publicKey !== 'undefined') {
       record.publicKey = changes.publicKey;
     }
+    if (typeof changes.derivedSalt !== 'undefined') {
+      record.derivedSalt = changes.derivedSalt;
+    }
     if (typeof changes.isFollowingMe !== 'undefined') {
       record.isFollowingMe = changes.isFollowingMe;
     }
     if (typeof changes.isFollowedByMe !== 'undefined') {
       record.isFollowedByMe = changes.isFollowedByMe;
+    }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
+    if (typeof changes._raw?._changed !== 'undefined') {
+      record._raw._changed = changes._raw._changed;
     }
   };
 }
@@ -116,21 +129,8 @@ export async function prepareUpsertUser(
   return prepareUpsert<UserModel>(database, Tables.users, user.id, userUpdater(user));
 }
 
-export async function prepareUsersId(
-  users: DeepPartial<UserModel>[],
-  filter = true,
-): Promise<DeepPartial<UserModel>[]> {
-  if (!users) {
-    return [];
-  }
-  let withoutId = users;
-
-  if (filter) {
-    // Get only users that do not have ID, will return only users with new ID.
-    withoutId = withoutId.filter((e) => !e.id);
-  }
-
-  if (!withoutId.length) {
+export async function prepareUsers(users?: DeepPartial<UserModel>[]): Promise<DeepPartial<UserModel>[]> {
+  if (!users?.length) {
     return [];
   }
 
@@ -139,7 +139,7 @@ export async function prepareUsersId(
     return { ...user, id } as DeepPartial<UserModel>;
   });
 
-  return Promise.all(withoutId.map(wrapped));
+  return Promise.all(users.map(wrapped));
 }
 
 export default UserModel;

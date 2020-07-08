@@ -55,6 +55,9 @@ export function postUpdater(changes: DeepPartial<PostModel>): (record: PostModel
     if (typeof changes.user?.id !== 'undefined') {
       record.user.id = changes.user.id;
     }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
   };
 }
 

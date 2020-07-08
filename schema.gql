@@ -1,16 +1,30 @@
 #
+# Fragments
+#
+fragment UserFragment on User {
+  id
+  name
+  email
+  role
+  pictureUri
+  publicKey
+  isFollowingMe
+  isFollowedByMe
+}
+
+fragment RoomFragment on Room {
+  id
+  name
+  pictureUri
+}
+
+#
 # User
 #
 mutation CreateAccount($data: CreateAccountInput!) {
   createAccount(data: $data) {
     user {
-      id
-      name
-      email
-      role
-      pictureUri
-      lastAccessAt
-      createdAt
+      ...UserFragment
     }
     token
   }
@@ -19,13 +33,8 @@ mutation CreateAccount($data: CreateAccountInput!) {
 mutation SignIn($data: SignInInput!) {
   signIn(data: $data) {
     user {
-      id
-      name
-      email
-      role
-      pictureUri
-      lastAccessAt
-      createdAt
+      ...UserFragment
+      derivedSalt
     }
     token
   }
@@ -41,11 +50,7 @@ mutation ChangePassword($data: ChangePasswordInput!) {
 
 query Me {
   me {
-    id
-    name
-    email
-    role
-    pictureUri
+    ...UserFragment
     lastAccessAt
     createdAt
   }
@@ -53,10 +58,7 @@ query Me {
 
 query ListUsers($where: ListUsersWhere, $order: ListUsersOrder, $skip: Int, $take: Int) {
   listUsers(where: $where, order: $order, skip: $skip, take: $take) {
-    id
-    name
-    email
-    pictureUri
+    ...UserFragment
   }
 }
 
@@ -65,35 +67,36 @@ query ListUsers($where: ListUsersWhere, $order: ListUsersOrder, $skip: Int, $tak
 #
 mutation CreateRoom($data: CreateRoomInput!) {
   createRoom(data: $data) {
-    id
-    name
+    ...RoomFragment
     members {
-      id
-      name
-      pictureUri
+      ...UserFragment
     }
   }
 }
 
 query GetRooms {
   getRooms {
-    id
-    name
-    pictureUri
+    ...RoomFragment
     lastMessage {
       id
-      content
+      cipher
+      type
       createdAt
-      user {
+      sentAt
+      sender {
+        ...UserFragment
+      }
+      readReceipts {
         id
-        name
-        pictureUri
+        user {
+          id
+        }
+        receivedAt
+        seenAt
       }
     }
     members {
-      id
-      name
-      pictureUri
+      ...UserFragment
     }
   }
 }
@@ -105,18 +108,34 @@ subscription RoomCreated {
     pictureUri
     lastMessage {
       id
-      content
+      cipher
+      type
       createdAt
-      user {
+      sentAt
+      sender {
         id
         name
+        email
+        role
         pictureUri
+        publicKey
+      }
+      readReceipts {
+        id
+        user {
+          id
+        }
+        receivedAt
+        seenAt
       }
     }
     members {
       id
       name
+      email
+      role
       pictureUri
+      publicKey
     }
   }
 }
@@ -136,10 +155,10 @@ query GetMessages($roomId: ID, $limit: Int, $afterDate: Timestamp) {
     cursor
     items {
       id
-      content
-      user {
-        id
-        name
+      cipher
+      type
+      sender {
+        ...UserFragment
       }
       createdAt
     }
@@ -149,28 +168,49 @@ query GetMessages($roomId: ID, $limit: Int, $afterDate: Timestamp) {
 subscription MessageCreated($roomIds: [ID]) {
   messageCreated(roomIds: $roomIds) {
     id
-    content
-    user {
+    cipher
+    type
+    createdAt
+    sentAt
+    sender {
       id
       name
+      email
+      role
+      pictureUri
+      publicKey
     }
     room {
       id
       name
+      pictureUri
     }
-    createdAt
+    readReceipts {
+      id
+      user {
+        id
+      }
+      receivedAt
+      seenAt
+    }
   }
 }
 
-#
-# Sync
-#
-query PullChanges($lastPulledAt: Float) {
-  pullChanges(lastPulledAt: $lastPulledAt)
-}
-
-mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
-  pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
+subscription ReadReceiptCreated($roomIds: [ID]) {
+  readReceiptCreated(roomIds: $roomIds) {
+    id
+    user {
+      id
+    }
+    message {
+      id
+    }
+    room {
+      id
+    }
+    receivedAt
+    seenAt
+  }
 }
 
 #
@@ -178,4 +218,25 @@ mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
 #
 mutation RegisterDevice($data: RegisterDeviceInput!) {
   registerDevice(data: $data)
+}
+mutation UnregisterDevice($data: RegisterDeviceInput!) {
+  unregisterDevice(data: $data)
+}
+
+#
+# Sync
+#
+query PullChanges($lastPulledAt: Float) {
+  pullChanges(lastPulledAt: $lastPulledAt) {
+    timestamp
+    changes
+  }
+}
+
+mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
+  pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
+}
+
+subscription ShouldSync($roomIds: [ID]) {
+  shouldSync(roomIds: $roomIds)
 }

@@ -44,7 +44,7 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
 
     void room.addMessage({
       content: message.value.trim(),
-      senderId: authStore.user.id,
+      sender: authStore.user,
       attachments: [{ ...videoRecorded, type: AttachmentTypes.video }],
     });
 
@@ -62,9 +62,7 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
       headerCenter: () => (
         <Avatar.Image ImageComponent={FastImage} size={32} source={{ uri: roomPictureUri }} />
       ),
-      headerRight: () => (
-        <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeleteVideo} />
-      ),
+      headerRight: () => <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeleteVideo} />,
     } as HeaderOptions);
   }, [handleDeleteVideo, handlePressBack, navigation, roomPictureUri]);
 

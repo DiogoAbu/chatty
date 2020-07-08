@@ -64,11 +64,7 @@ const MainStack: FC<unknown> = () => {
           options={{ title: t('title.createGroup') }}
         />
 
-        <Stack.Screen
-          component={Settings}
-          name='Settings'
-          options={{ title: t('title.settings') }}
-        />
+        <Stack.Screen component={Settings} name='Settings' options={{ title: t('title.settings') }} />
 
         <Stack.Screen
           component={Camera}
@@ -88,24 +84,12 @@ const MainStack: FC<unknown> = () => {
           options={{ headerTransparent: true }}
         />
 
-        <Stack.Screen
-          component={PrepareVideo}
-          name='PrepareVideo'
-          options={{ headerTransparent: true }}
-        />
+        <Stack.Screen component={PrepareVideo} name='PrepareVideo' options={{ headerTransparent: true }} />
 
         <Stack.Screen component={Welcome} name='Welcome' options={{ headerShown: false }} />
 
-        <Stack.Screen
-          component={ForgotPass}
-          name='ForgotPass'
-          options={{ title: t('forgotPassword') }}
-        />
-        <Stack.Screen
-          component={ChangePass}
-          name='ChangePass'
-          options={{ title: t('changePassword') }}
-        />
+        <Stack.Screen component={ForgotPass} name='ForgotPass' options={{ title: t('forgotPassword') }} />
+        <Stack.Screen component={ChangePass} name='ChangePass' options={{ title: t('changePassword') }} />
       </Stack.Navigator>
     );
   });

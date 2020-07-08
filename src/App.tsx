@@ -13,13 +13,13 @@ import { useObserver } from 'mobx-react-lite';
 import { Provider as UrqlProvider } from 'urql';
 
 import Fab from './components/Fab';
+import SubscriptionManager from './components/SubscriptionManager';
 import RootStack from './navigators/RootStack';
-import createClient from './services/client-graphql';
 import { darkTheme, lightTheme } from './services/theme';
 import { Stores } from './stores/Stores';
 import { StoresProvider, useStores } from './stores';
 
-const App: FC = () => {
+const AppWithStores: FC = () => {
   const stores = useStores();
 
   const navigationContainer = useRef<NavigationContainerRef | null>(null);
@@ -36,16 +36,21 @@ const App: FC = () => {
     }
 
     return (
-      <UrqlProvider value={createClient(authStore.forceGetToken)}>
+      <UrqlProvider value={generalStore.client}>
         <DatabaseProvider database={generalStore.database}>
           <PaperProvider theme={isDarkMode ? darkTheme : lightTheme}>
-            <NavigationContainer
-              ref={navigationContainer}
-              theme={isDarkMode ? darkTheme : lightTheme}
-            >
+            <NavigationContainer ref={navigationContainer} theme={isDarkMode ? darkTheme : lightTheme}>
               <RootStack />
 
               <Fab />
+
+              {/* <SyncManager token={authStore.token} userId={authStore.user?.id} /> */}
+
+              <SubscriptionManager
+                token={authStore.token}
+                user={authStore.user}
+                userId={authStore.user?.id}
+              />
             </NavigationContainer>
           </PaperProvider>
         </DatabaseProvider>
@@ -54,14 +59,14 @@ const App: FC = () => {
   }, 'App');
 };
 
-const AppStores: FC = () => {
+const App: FC = () => {
   return (
     <SafeAreaProvider>
       <StoresProvider value={new Stores()}>
-        <App />
+        <AppWithStores />
       </StoresProvider>
     </SafeAreaProvider>
   );
 };
 
-export default AppStores;
+export default App;

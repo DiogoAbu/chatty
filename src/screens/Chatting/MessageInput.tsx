@@ -1,5 +1,5 @@
-import React, { FC, MutableRefObject, useCallback, useEffect } from 'react';
-import { Alert, AlertButton, TextInput, View } from 'react-native';
+import React, { FC, memo, MutableRefObject, useCallback, useEffect, useState } from 'react';
+import { Alert, AlertButton, InteractionManager, TextInput, View } from 'react-native';
 
 import DocumentPicker, { DocumentPickerResponse } from 'react-native-document-picker';
 import { IconButton, Surface } from 'react-native-paper';
@@ -35,34 +35,38 @@ interface Props {
 const iconSize = 24;
 const buttonSize = (24 + 6) * 1.5;
 
-const MessageInput: FC<Props> = ({
-  room,
-  pictureUri,
-  title,
-  shouldBlurRemoveRoom,
-  attachmentPickerRef,
-}) => {
+const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom, attachmentPickerRef }) => {
   const navigation = useNavigation<MainNavigationProp<'Chatting'>>();
-  const { authStore } = useStores();
+  const { authStore, syncStore } = useStores();
   const { colors, dark, roundness, fonts } = useTheme();
   const { t } = useTranslation();
 
   const message = useInput('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const handleSendMessage = usePress(() => {
     attachmentPickerRef.current?.hide();
+    if (sendingMessage) {
+      return;
+    }
+    setSendingMessage(true);
 
     // Sanitize message
-    const content = message.value.trim();
+    const content = `${message.value.trim()}`;
     if (!content) {
       return;
     }
 
-    // Create message
-    void room.addMessage({ content, senderId: authStore.user.id });
-
-    // Clear input
+    // Clear input for another message
     message.onChangeText('');
+
+    void InteractionManager.runAfterInteractions(async () => {
+      await room.addMessage({ content, sender: authStore.user });
+
+      setSendingMessage(false);
+
+      void syncStore.sync();
+    });
   });
 
   const handleSaveMessage = useCallback(
@@ -102,7 +106,7 @@ const MessageInput: FC<Props> = ({
           // Create one message for each document
           await room.addMessage({
             content: '',
-            senderId: authStore.user.id,
+            sender: authStore.user,
             attachments: [{ uri: file.uri, type: AttachmentTypes.document }],
           });
         }
@@ -110,7 +114,7 @@ const MessageInput: FC<Props> = ({
 
       await Promise.all(docs.map(wrapped));
     },
-    [authStore.user.id, room],
+    [authStore.user, room],
   );
 
   useEffect(() => {
@@ -119,9 +123,7 @@ const MessageInput: FC<Props> = ({
       try {
         const filesChosen = await DocumentPicker.pickMultiple({
           type:
-            type === AttachmentTypes.image
-              ? [DocumentPicker.types.images]
-              : [DocumentPicker.types.allFiles],
+            type === AttachmentTypes.image ? [DocumentPicker.types.images] : [DocumentPicker.types.allFiles],
         });
 
         // Prepare documents
@@ -260,4 +262,4 @@ const MessageInput: FC<Props> = ({
   );
 };
 
-export default React.memo(MessageInput);
+export default memo(MessageInput);

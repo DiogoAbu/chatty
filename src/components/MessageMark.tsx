@@ -1,39 +1,36 @@
-import React, { FC } from 'react';
+import React, { FC, memo } from 'react';
 import { StyleProp, TextStyle } from 'react-native';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import useTheme from '!/hooks/use-theme';
-import MessageModel from '!/models/MessageModel';
+import ReadReceiptModel from '!/models/ReadReceiptModel';
 
 interface Props {
+  readReceipts?: ReadReceiptModel[];
+  sentAt: number | null;
   color: string;
   activeColor?: string;
   fontSize?: number;
-  message?: MessageModel;
   style?: StyleProp<TextStyle>;
 }
 
-const MessageMark: FC<Props> = ({ color, activeColor, fontSize, message, style }) => {
+const MessageMark: FC<Props> = ({ readReceipts, sentAt, color, activeColor, fontSize, style }) => {
   const { colors } = useTheme();
-
-  if (!message) {
-    return null;
-  }
 
   let finalColor = color;
   let iconName = 'refresh';
 
-  if (message.remoteOpenedAt) {
+  if (readReceipts?.length && readReceipts?.every((e) => e.seenAt)) {
     iconName = 'check-all';
     finalColor = activeColor || colors.accent;
-  } else if (message.remoteReceivedAt) {
+  } else if (readReceipts?.length && readReceipts?.every((e) => e.receivedAt)) {
     iconName = 'check-all';
-  } else if (message.localSentAt) {
+  } else if (sentAt) {
     iconName = 'check';
   }
 
   return <Icon color={finalColor} name={iconName} size={fontSize} style={style} />;
 };
 
-export default React.memo(MessageMark);
+export default memo(MessageMark);

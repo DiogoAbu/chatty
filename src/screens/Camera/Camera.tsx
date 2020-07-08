@@ -1,12 +1,5 @@
 import React, { FC, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  AppState,
-  AppStateStatus,
-  BackHandler,
-  InteractionManager,
-  StatusBar,
-  View,
-} from 'react-native';
+import { AppState, AppStateStatus, BackHandler, InteractionManager, StatusBar, View } from 'react-native';
 
 import { FlashMode, RNCamera, WhiteBalance } from 'react-native-camera';
 import FileSystem from 'react-native-fs';
@@ -80,15 +73,12 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   // Handlers for the state setters
   const handleSetActiveCameraId = useCallback((value: string) => setActiveCameraId(value), []);
   const handleSetCameraIds = useCallback((value: CameraIds[]) => setCameraIds(value), []);
-  const handleSetIsCameraReady = useCallback(
-    (status: boolean, cameraRefObj?: RefObject<RNCamera>) => {
-      setIsCameraReady(status);
-      if (cameraRefObj?.current) {
-        cameraRef.current = cameraRefObj.current;
-      }
-    },
-    [],
-  );
+  const handleSetIsCameraReady = useCallback((status: boolean, cameraRefObj?: RefObject<RNCamera>) => {
+    setIsCameraReady(status);
+    if (cameraRefObj?.current) {
+      cameraRef.current = cameraRefObj.current;
+    }
+  }, []);
   const handleSetAudioEnabled = useCallback((value: boolean) => setAudioEnabled(value), []);
   const handleSaveMessage = useCallback((message?: string) => {
     messageSaved.current = message?.trim() ?? '';
@@ -138,7 +128,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       const { uri, width, height, deviceOrientation } = pictureTaken;
 
       // Save to camera roll
-      const rollUri = await CameraRoll.saveToCameraRoll(uri, 'photo');
+      const rollUri = await CameraRoll.save(uri, { type: 'photo' });
 
       const notAboveMax = pictureSelectedAmount < ATTACHMENT_MAX_AMOUNT;
 
@@ -235,7 +225,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       });
 
       // Save to camera roll
-      const rollUri = await CameraRoll.saveToCameraRoll(uri, 'video');
+      const rollUri = await CameraRoll.save(uri, { type: 'video' });
 
       const { width, height } = dimensions[quality];
 
@@ -434,9 +424,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
         isCameraAvailable ? (
           <View style={styles.elapsedTimeContainer}>
             {elapsed >= 0 ? (
-              <Title style={styles.elapsedTime}>
-                {new Date(elapsed * 1000).toISOString().substr(14, 5)}
-              </Title>
+              <Title style={styles.elapsedTime}>{new Date(elapsed * 1000).toISOString().substr(14, 5)}</Title>
             ) : null}
             {elapsed >= 0 && !audioEnabled ? (
               <Icon name='microphone-off' style={styles.microphoneIcon} />

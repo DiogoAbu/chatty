@@ -25,118 +25,113 @@ interface Props {
   handleSetTouchableIds: (ids: number[]) => void;
 }
 
-const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(
-  ({ handleSetTouchableIds }, ref) => {
-    const { animation, roundness } = useTheme();
-    const { t } = useTranslation();
+const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTouchableIds }, ref) => {
+  const { animation, roundness } = useTheme();
+  const { t } = useTranslation();
 
-    const { animValue } = useMemoOne(() => ({ animValue: new Value(0) }), []);
+  const { animValue } = useMemoOne(() => ({ animValue: new Value(0) }), []);
 
-    const animRef = useRef<Animated.BackwardCompatibleWrapper | null>(null);
-    const [isShowing, setIsShowing] = useState(false);
-    const containerRef = useRef<Animated.View | null>(null);
+  const animRef = useRef<Animated.BackwardCompatibleWrapper | null>(null);
+  const [isShowing, setIsShowing] = useState(false);
+  const containerRef = useRef<Animated.View | null>(null);
 
-    const onPress = useRef<((type: AttachmentTypes) => any) | null>(null);
+  const onPress = useRef<((type: AttachmentTypes) => any) | null>(null);
 
-    const handleOnPress = usePress((type: AttachmentTypes) => {
+  const handleOnPress = usePress((type: AttachmentTypes) => {
+    handleToggleAttachmentPicker(false);
+    onPress.current?.(type);
+  });
+
+  const handleOnPressDocument = usePress(() => handleOnPress(AttachmentTypes.document));
+  const handleOnPressImage = usePress(() => handleOnPress(AttachmentTypes.image));
+
+  const handleToggleAttachmentPicker = usePress((state?: boolean) => {
+    if (state === false) {
+      setIsShowing(false);
+    }
+    animRef.current?.stop();
+
+    animRef.current = timing(animValue, {
+      toValue: state === false ? 0 : state === true ? 1 : isShowing ? 0 : 1,
+      duration: 200 * animation.scale,
+      easing: Easing.linear,
+    });
+    animRef.current.start(() => {
+      animRef.current = null;
+    });
+
+    if (state === true) {
+      setIsShowing(true);
+    } else if (state !== false) {
+      setIsShowing((prev) => !prev);
+    }
+  });
+
+  useImperativeHandle(ref, () => ({
+    isShowing,
+    show: () => {
+      handleToggleAttachmentPicker(true);
+    },
+    hide: () => {
       handleToggleAttachmentPicker(false);
-      onPress.current?.(type);
-    });
+    },
+    toggle: (state?: boolean) => {
+      handleToggleAttachmentPicker(state);
+    },
+    onPress: (callback: (type: AttachmentTypes) => any) => {
+      onPress.current = callback;
+    },
+  }));
 
-    const handleOnPressDocument = usePress(() => handleOnPress(AttachmentTypes.document));
-    const handleOnPressImage = usePress(() => handleOnPress(AttachmentTypes.image));
+  useEffect(() => {
+    // @ts-ignore
+    const surface = containerRef.current?._component._children[0];
+    const childrenIds = getChildrenIds(surface._children);
+    childrenIds.push(surface._nativeTag);
 
-    const handleToggleAttachmentPicker = usePress((state?: boolean) => {
-      if (state === false) {
-        setIsShowing(false);
-      }
-      animRef.current?.stop();
+    handleSetTouchableIds(childrenIds);
+  }, [handleSetTouchableIds, isShowing]);
 
-      animRef.current = timing(animValue, {
-        toValue: state === false ? 0 : state === true ? 1 : isShowing ? 0 : 1,
-        duration: 200 * animation.scale,
-        easing: Easing.linear,
-      });
-      animRef.current.start(() => {
-        animRef.current = null;
-      });
+  return (
+    <Animated.View
+      pointerEvents={isShowing ? 'auto' : 'none'}
+      ref={containerRef}
+      style={[
+        styles.attachmentTypePickerContainer,
+        {
+          opacity: animValue,
+          transform: [
+            { translateY: 80, translateX: 130 }, // Tranlate to origin point
+            { scale: animValue },
+            { translateY: -80, translateX: -130 }, // Tranlate back to final position
+          ],
+        },
+      ]}
+    >
+      <Surface style={[styles.attachmentTypePicker, { borderRadius: roundness * 2 }]}>
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={handleOnPressDocument}
+          style={styles.attachmentTypeIconContainer}
+        >
+          <Fab
+            icon='file-document'
+            style={[styles.attachmentTypeIcon, { backgroundColor: Colors.blue500 }]}
+          />
+          <Text>{t('label.documents')}</Text>
+        </TouchableOpacity>
 
-      if (state === true) {
-        setIsShowing(true);
-      } else if (state !== false) {
-        setIsShowing((prev) => !prev);
-      }
-    });
-
-    useImperativeHandle(ref, () => ({
-      isShowing,
-      show: () => {
-        handleToggleAttachmentPicker(true);
-      },
-      hide: () => {
-        handleToggleAttachmentPicker(false);
-      },
-      toggle: (state?: boolean) => {
-        handleToggleAttachmentPicker(state);
-      },
-      onPress: (callback: (type: AttachmentTypes) => any) => {
-        onPress.current = callback;
-      },
-    }));
-
-    useEffect(() => {
-      // @ts-ignore
-      const surface = containerRef.current?._component._children[0];
-      const childrenIds = getChildrenIds(surface._children);
-      childrenIds.push(surface._nativeTag);
-
-      handleSetTouchableIds(childrenIds);
-    }, [handleSetTouchableIds, isShowing]);
-
-    return (
-      <Animated.View
-        pointerEvents={isShowing ? 'auto' : 'none'}
-        ref={containerRef}
-        style={[
-          styles.attachmentTypePickerContainer,
-          {
-            opacity: animValue,
-            transform: [
-              { translateY: 80, translateX: 130 }, // Tranlate to origin point
-              { scale: animValue },
-              { translateY: -80, translateX: -130 }, // Tranlate back to final position
-            ],
-          },
-        ]}
-      >
-        <Surface style={[styles.attachmentTypePicker, { borderRadius: roundness * 2 }]}>
-          <TouchableOpacity
-            activeOpacity={0.6}
-            onPress={handleOnPressDocument}
-            style={styles.attachmentTypeIconContainer}
-          >
-            <Fab
-              icon='file-document'
-              style={[styles.attachmentTypeIcon, { backgroundColor: Colors.blue500 }]}
-            />
-            <Text>{t('label.documents')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.6}
-            onPress={handleOnPressImage}
-            style={styles.attachmentTypeIconContainer}
-          >
-            <Fab
-              icon='image'
-              style={[styles.attachmentTypeIcon, { backgroundColor: Colors.yellow700 }]}
-            />
-            <Text>{t('label.images')}</Text>
-          </TouchableOpacity>
-        </Surface>
-      </Animated.View>
-    );
-  },
-);
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={handleOnPressImage}
+          style={styles.attachmentTypeIconContainer}
+        >
+          <Fab icon='image' style={[styles.attachmentTypeIcon, { backgroundColor: Colors.yellow700 }]} />
+          <Text>{t('label.images')}</Text>
+        </TouchableOpacity>
+      </Surface>
+    </Animated.View>
+  );
+});
 
 export default memo(AttachmentPicker);

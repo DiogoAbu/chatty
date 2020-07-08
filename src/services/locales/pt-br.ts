@@ -36,6 +36,8 @@ export default {
     'label.image': 'Imagem',
     'label.images': 'Imagens',
 
+    'label.findPeopleNearYou': 'Encontre pessoas perto de você',
+
     'helper.charactersLeft': 'Resta {{count}} caractere',
     'helper.charactersLeft_plural': 'Restam {{count}} caracteres',
 
@@ -77,8 +79,7 @@ export default {
     typeCodeReceivedOnEmail: 'O código foi enviado para o seu email',
     passwordChangedSuccess: 'Senha alterada com sucesso',
 
-    'forgotPass.desc':
-      'Um código de 6 dígitos será enviado ao seu email para confirmar sua identidade',
+    'forgotPass.desc': 'Um código de 6 dígitos será enviado ao seu email para confirmar sua identidade',
 
     'changePass.desc': 'Digite o código de 6 dígitos que foi enviado ao seu email',
 

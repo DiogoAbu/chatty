@@ -76,6 +76,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  messageEncrypted: {
+    fontStyle: 'italic',
+  },
   messageTime: {
     fontSize: 12,
     marginLeft: 4,

@@ -1,8 +1,8 @@
-import React, { FC, MutableRefObject } from 'react';
+import React, { FC, memo, NamedExoticComponent } from 'react';
 import { View } from 'react-native';
 
 import { Colors, Surface, Text } from 'react-native-paper';
-import { ExtractedObservables } from '@nozbe/with-observables';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
@@ -10,25 +10,18 @@ import useTranslation from '!/hooks/use-translation';
 import { AttachmentTypes } from '!/models/AttachmentModel';
 import { useStores } from '!/stores';
 import getSentAt from '!/utils/get-sent-at';
+import readReceiptChanged from '!/utils/read-receipt-changed';
 
 import MessageMark from '../../components/MessageMark';
 
-import { AttachmentPickerType } from './AttachmentPicker';
 import MessageAttachment from './MessageAttachment';
 import { withMessage, WithMessageInput, WithMessageOutput } from './queries';
 import styles from './styles';
 
-type PropsExtra = {
-  title: string;
-  isPreviousSameSender?: boolean;
-  attachmentPickerRef: MutableRefObject<AttachmentPickerType | null>;
-};
-
-type Props = ExtractedObservables<WithMessageOutput & PropsExtra>;
-
-const MessageItem: FC<Props> = ({
+const MessageItem: FC<WithMessageOutput> = ({
   message,
   attachments,
+  readReceipts,
   sender,
   room,
   title,
@@ -40,8 +33,8 @@ const MessageItem: FC<Props> = ({
   const { colors, dark, roundness } = useTheme();
   const { t } = useTranslation();
 
-  const mine = sender.id === authStore.user.id;
-  const sentAt = getSentAt(message.localCreatedAt);
+  const mine = sender?.id === authStore.user.id;
+  const sentAt = getSentAt(message.createdAt);
   const borderTopStartRadius = mine || isPreviousSameSender ? undefined : 0;
   const borderBottomEndRadius = mine ? 0 : undefined;
 
@@ -52,7 +45,7 @@ const MessageItem: FC<Props> = ({
     } else if (attachments[0].type === AttachmentTypes.image) {
       attachmentDescription = t('label.image');
     }
-  } else if (attachments.every((e) => e.type === AttachmentTypes.image)) {
+  } else if (attachments.length > 1 && attachments.every((e) => e.type === AttachmentTypes.image)) {
     attachmentDescription = t('label.images');
   }
 
@@ -74,8 +67,8 @@ const MessageItem: FC<Props> = ({
         mine ? styles.messageContainerRight : styles.messageContainerLeft,
       ]}
     >
-      {room.name && !mine && !isPreviousSameSender ? (
-        <Text style={styles.messageSenderName}>{sender.name}</Text>
+      {room?.name && !mine && !isPreviousSameSender ? (
+        <Text style={styles.messageSenderName}>{sender?.name}</Text>
       ) : null}
 
       {attachments.length ? (
@@ -101,20 +94,37 @@ const MessageItem: FC<Props> = ({
             { color: mine || dark ? colors.textOnPrimary : colors.text },
           ]}
         >
-          {message.content || attachmentDescription}
+          {!message.content && message.cipher ? (
+            <>
+              <Icon name='key' style={{ color: mine || dark ? colors.textOnPrimary : colors.text }} />
+              <Text
+                style={[
+                  styles.messageEncrypted,
+                  { color: mine || dark ? colors.textOnPrimary : colors.text },
+                ]}
+              >
+                {' '}
+                Encrypted
+              </Text>
+            </>
+          ) : (
+            message.content || attachmentDescription
+          )}
         </Text>
 
-        <Text
-          style={[styles.messageTime, { color: mine || dark ? colors.textOnPrimary : colors.text }]}
-        >
+        <Text style={[styles.messageTime, { color: mine || dark ? colors.textOnPrimary : colors.text }]}>
           {sentAt}
+          <Text style={{ color: mine || dark ? colors.textOnPrimary : colors.text, fontStyle: 'italic' }}>
+            ({message.type})
+          </Text>
         </Text>
 
         {mine ? (
           <MessageMark
             color={Colors.grey300}
             fontSize={16}
-            message={message}
+            readReceipts={readReceipts}
+            sentAt={message.sentAt}
             style={styles.messageMark}
           />
         ) : null}
@@ -123,23 +133,20 @@ const MessageItem: FC<Props> = ({
   );
 };
 
-const propsAreEqual = (prev: WithMessageInput, next: WithMessageInput) => {
+const propsAreEqual = (prev: WithMessageOutput, next: WithMessageOutput) => {
   if (prev.isPreviousSameSender !== next.isPreviousSameSender) {
     return false;
   }
   if (prev.message?.content !== next.message?.content) {
     return false;
   }
-  if (prev.message?.localSentAt !== next.message?.localSentAt) {
+  if (prev.message?.sentAt !== next.message?.sentAt) {
     return false;
   }
-  if (prev.message?.remoteReceivedAt !== next.message?.remoteReceivedAt) {
-    return false;
-  }
-  if (prev.message?.remoteOpenedAt !== next.message?.remoteOpenedAt) {
+  if (readReceiptChanged(prev.readReceipts, next.readReceipts)) {
     return false;
   }
   return true;
 };
 
-export default React.memo(withMessage(MessageItem), propsAreEqual);
+export default memo(withMessage(MessageItem), propsAreEqual) as NamedExoticComponent<WithMessageInput>;

@@ -1,10 +1,9 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { BackHandler, ListRenderItem, Platform } from 'react-native';
+import { BackHandler, ListRenderItem } from 'react-native';
 
 import { FlatList } from 'react-native-gesture-handler';
 import { Button, Divider } from 'react-native-paper';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
-import { ExtractedObservables } from '@nozbe/with-observables';
 import { useNavigation } from '@react-navigation/native';
 
 import HomeTabHeaderRight from '!/components/HomeTabHeaderRight';
@@ -14,23 +13,16 @@ import useTranslation from '!/hooks/use-translation';
 import RoomModel, { removeRoomsCascade, updateRooms } from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { HomeTabNavigationProp, StackHeaderRightProps } from '!/types';
+import { isAndroid } from '!/utils/platform';
 
 import ChatsHeaderRight from './ChatsHeaderRight';
-import { withRooms, WithRoomsOutput } from './queries';
+import { withAllRooms, WithAllRoomsInput, WithAllRoomsOutput } from './queries';
 import RoomItem from './RoomItem';
 import styles from './styles';
 
-type PropsExtra = {
-  archivedOnly?: boolean;
-};
-
-type Props = ExtractedObservables<WithRoomsOutput & PropsExtra>;
-
-const isAndroid = Platform.OS === 'android';
-
 const handleKeyExtractor = (item: RoomModel) => item.id;
 
-const RoomList: FC<Props> = ({ rooms, archivedOnly }) => {
+const RoomList: FC<WithAllRoomsOutput> = ({ rooms, archivedOnly }) => {
   const database = useDatabase();
   const navigation = useNavigation<HomeTabNavigationProp<'Chats'>>();
   const { authStore } = useStores();
@@ -126,7 +118,7 @@ const RoomList: FC<Props> = ({ rooms, archivedOnly }) => {
   useEffect(() => {
     const nav = archivedOnly ? navigation : navigation.dangerouslyGetParent();
 
-    // Show buttons only once when gogin from 0 to 1
+    // Show buttons only once when going from 0 to 1
     if (selected.length) {
       // Update navigation options
       nav?.setOptions({
@@ -166,7 +158,7 @@ const RoomList: FC<Props> = ({ rooms, archivedOnly }) => {
   ]);
 
   useFocusEffect(() => {
-    // If is selecting android back button will clear the selection
+    // If selecting, android back button will clear the selection
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (selected.length > 0) {
         handlePressBackHeader();
@@ -224,4 +216,4 @@ const RoomList: FC<Props> = ({ rooms, archivedOnly }) => {
   );
 };
 
-export default withRooms(RoomList);
+export default withAllRooms(RoomList) as FC<WithAllRoomsInput>;

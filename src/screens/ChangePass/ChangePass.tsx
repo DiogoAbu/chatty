@@ -1,15 +1,7 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, TextInput as NativeInput, View } from 'react-native';
 
-import {
-  Button,
-  Dialog,
-  HelperText,
-  Paragraph,
-  Portal,
-  Subheading,
-  TextInput,
-} from 'react-native-paper';
+import { Button, Dialog, HelperText, Paragraph, Portal, Subheading, TextInput } from 'react-native-paper';
 
 import { ONE_TIME_CODE_MAX_LENGTH } from '!/config';
 import { useChangePasswordMutation } from '!/generated/graphql';
@@ -109,6 +101,7 @@ const ChangePass: FC<Props> = ({ navigation }) => {
   });
 
   useEffect(() => {
+    isMounted.current = true;
     return () => {
       isMounted.current = false;
     };

@@ -35,14 +35,15 @@ export default function createClient(getToken: () => Promise<string>): Client {
     exchanges: [
       dedupExchange,
       cacheExchange,
-      fetchOptionsExchange(async (fetchOptions: RequestInit | (() => RequestInit) | undefined) => {
+      fetchOptionsExchange(async (fetchOptions: RequestInit) => {
         const token = await getToken();
-        return Promise.resolve({
+        return {
           ...fetchOptions,
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...fetchOptions.headers,
+            Authorization: token ? `Bearer ${token}` : '',
           },
-        });
+        };
       }),
       fetchExchange,
       subscriptionExchange({ forwardSubscription: (op) => subsClient.request(op) }),

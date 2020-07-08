@@ -43,8 +43,7 @@ const DetailsForm: FC<Props> = ({ value, onChangeText, errorMessage }) => {
         value={value}
       />
       <HelperText type={errorMessage ? 'error' : 'info'} visible>
-        {errorMessage ||
-          t('helper.charactersLeft', { count: roomNameMaxLength - value.trim().length })}
+        {errorMessage || t('helper.charactersLeft', { count: roomNameMaxLength - value.trim().length })}
       </HelperText>
 
       <Title style={{ marginTop: grid }}>{t('label.members')}</Title>

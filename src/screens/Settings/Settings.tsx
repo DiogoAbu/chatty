@@ -36,10 +36,7 @@ const Settings: FC<Props> = () => {
   });
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.contentContainer}
-      contentInsetAdjustmentBehavior='automatic'
-    >
+    <ScrollView contentContainerStyle={styles.contentContainer} contentInsetAdjustmentBehavior='automatic'>
       <List.Item
         left={({ style }) => (
           <Avatar.Image

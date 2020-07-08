@@ -70,8 +70,8 @@ const darkTheme: Theme = {
     background: '#121212',
     primary: '#7c80ee',
     accent: '#f79393',
-    text: '#dedede',
-    textOnPrimary: '#dedede',
+    text: '#ded',
+    textOnPrimary: '#ded',
     textOnAccent: '#fff',
 
     statusBar: '#121212',

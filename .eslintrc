@@ -101,7 +101,7 @@
           },
           {
             "selector": "parameter",
-            "format": ["camelCase"],
+            "format": ["camelCase", "PascalCase"],
             "leadingUnderscore": "allow"
           },
           {
@@ -121,7 +121,8 @@
           },
           {
             "selector": "property",
-            "format": ["camelCase", "PascalCase", "UPPER_CASE"]
+            "format": ["camelCase", "PascalCase", "UPPER_CASE"],
+            "leadingUnderscore": "allow"
           }
         ],
         "@typescript-eslint/no-empty-interface": 0,
@@ -157,11 +158,7 @@
         "jest": true,
         "jest/globals": true
       },
-      "files": [
-        "jest.setup.js",
-        "*.{spec,test}.{js,ts,tsx}",
-        "**/__{mocks,tests}__/**/*.{js,ts,tsx}"
-      ]
+      "files": ["jest.setup.js", "*.{spec,test}.{js,ts,tsx}", "**/__{mocks,tests}__/**/*.{js,ts,tsx}"]
     }
   ],
   "parserOptions": {
@@ -389,7 +386,7 @@
     "react-hooks/exhaustive-deps": [
       2,
       {
-        "additionalHooks": "^(useAutorun|useCode|useBackHandler|useMemoOne|useBackHandlerOnFocus|useThrottle|useDimensions|useTheme|useTranslation)$"
+        "additionalHooks": "^(useAutorun|useCode|useBackHandler|useFocusEffect|useMemoOne|useBackHandlerOnFocus|useThrottle|useDimensions|useTheme|useTranslation)$"
       }
     ],
     "react-hooks/rules-of-hooks": 2,

@@ -15,7 +15,10 @@ export class AuthStore extends BaseStore {
 
   @action
   async signIn(user: DeepPartial<UserModel>, token: string): Promise<void> {
-    const { database } = this.stores.generalStore;
+    const {
+      syncStore,
+      generalStore: { database },
+    } = this.stores;
 
     const userCreated = await upsertUser(database, user);
 
@@ -23,6 +26,7 @@ export class AuthStore extends BaseStore {
       this.user = userCreated;
       this.token = token;
       void this.persist();
+      void syncStore.sync();
     });
   }
 
@@ -40,13 +44,17 @@ export class AuthStore extends BaseStore {
       return;
     }
 
-    const { userId, token } = JSON.parse(data) as { userId: string; token: string };
-    const user = await database.collections.get<UserModel>(Tables.users).find(userId);
+    try {
+      const { userId, token } = JSON.parse(data) as { userId: string; token: string };
+      const user = await database.collections.get<UserModel>(Tables.users).find(userId);
 
-    runInAction(() => {
-      this.user = user;
-      this.token = token;
-    });
+      runInAction(() => {
+        this.user = user;
+        this.token = token;
+      });
+    } catch (err) {
+      //
+    }
   }
 
   async persist(): Promise<void> {

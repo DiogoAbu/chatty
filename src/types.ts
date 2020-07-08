@@ -1,14 +1,17 @@
+import {
+  SyncPullResult as SyncPullResultRaw,
+  SyncPushArgs as SyncPushArgsRaw,
+  SyncTableChangeSet,
+} from '@nozbe/watermelondb/sync';
 import { MaterialTopTabNavigationProp } from '@react-navigation/material-top-tabs';
 import { CompositeNavigationProp, RouteProp as RoutePropNative } from '@react-navigation/native';
 import { StackNavigationOptions, StackNavigationProp } from '@react-navigation/stack';
-import { Observable as ObservableRxJs } from 'rxjs/Observable';
 
+import { User } from './generated/graphql';
 import AttachmentModel from './models/AttachmentModel';
 import { PicturesTaken, VideoRecorded } from './screens/Camera/types';
 
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
-
-export type Observable<T> = ObservableRxJs<T>;
 
 // Table names
 export enum Tables {
@@ -19,7 +22,14 @@ export enum Tables {
   roomMembers = 'room_members',
   rooms = 'rooms',
   users = 'users',
+  readReceipts = 'read_receipts',
 }
+
+// Sync
+export type SyncDatabaseChangeSet = { [key in Tables]: SyncTableChangeSet };
+export type SyncDatabaseChangeSetPartial = { [key in Tables]?: SyncTableChangeSet };
+export type SyncPullResult = SyncPullResultRaw & { changes: SyncDatabaseChangeSet };
+export type SyncPushArgs = SyncPushArgsRaw & { changes: SyncDatabaseChangeSetPartial };
 
 export type RootStackParams = {
   Main: undefined;
@@ -56,7 +66,7 @@ export type MainStackParams = {
   Settings: undefined;
   FindFriends: undefined;
   CreateGroup: {
-    members: any[];
+    members: User[];
   };
   ChatsArchived: undefined;
 
@@ -117,9 +127,10 @@ export type MainNavigationProp<
 > = StackNavigationProp<MainStackParams & RootStackParams, RouteName>;
 
 // Route prop for Main Stack screens
-export type MainRouteProp<
-  RouteName extends keyof (MainStackParams & RootStackParams)
-> = RoutePropNative<MainStackParams & RootStackParams, RouteName>;
+export type MainRouteProp<RouteName extends keyof (MainStackParams & RootStackParams)> = RoutePropNative<
+  MainStackParams & RootStackParams,
+  RouteName
+>;
 
 // Navigation prop for Tab screens inside Stack screens
 export type HomeTabNavigationProp<RouteName extends keyof HomeTabParams> = CompositeNavigationProp<

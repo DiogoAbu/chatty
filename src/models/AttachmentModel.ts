@@ -42,6 +42,9 @@ class AttachmentModel extends Model {
   @field('remoteUri')
   remoteUri: string;
 
+  @field('cipherUri')
+  cipherUri: string;
+
   @field('type')
   type: AttachmentTypes;
 
@@ -69,6 +72,7 @@ export const attachmentSchema = tableSchema({
   columns: [
     { name: 'uri', type: 'string' },
     { name: 'remoteUri', type: 'string' },
+    { name: 'cipherUri', type: 'string' },
     { name: 'type', type: 'string' },
     { name: 'width', type: 'number' },
     { name: 'height', type: 'number' },
@@ -79,9 +83,7 @@ export const attachmentSchema = tableSchema({
   ],
 });
 
-export function attachmentUpdater(
-  changes: DeepPartial<AttachmentModel>,
-): (record: AttachmentModel) => void {
+export function attachmentUpdater(changes: DeepPartial<AttachmentModel>): (record: AttachmentModel) => void {
   return (record: AttachmentModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -91,6 +93,9 @@ export function attachmentUpdater(
     }
     if (typeof changes.remoteUri !== 'undefined') {
       record.remoteUri = changes.remoteUri;
+    }
+    if (typeof changes.cipherUri !== 'undefined') {
+      record.cipherUri = changes.cipherUri;
     }
     if (typeof changes.type !== 'undefined') {
       record.type = changes.type;
@@ -112,6 +117,9 @@ export function attachmentUpdater(
     }
     if (typeof changes.post?.id !== 'undefined') {
       record.post.id = changes.post?.id;
+    }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
     }
   };
 }
@@ -145,30 +153,19 @@ export async function prepareUpsertAttachment(
 /**
  * If filter is true, get only attachments that do not have ID, will return only attachments with new ID.
  * */
-export async function prepareAttachmentsId(
+export async function prepareAttachments(
   attachments?: DeepPartial<AttachmentModel>[],
-  filter = true,
 ): Promise<DeepPartial<AttachmentModel>[]> {
   if (!attachments?.length) {
     return [];
   }
-  let withoutId = attachments;
-
-  if (filter) {
-    // Get only attachments that do not have ID, will return only attachments with new ID.
-    withoutId = withoutId.filter((e) => !e.id);
-  }
-
-  if (!withoutId.length) {
-    return [];
-  }
 
   const wrapped = limiter.wrap(async (attachment: DeepPartial<AttachmentModel>) => {
-    const id = await UUIDGenerator.getRandomUUID();
+    const id = attachment.id || (await UUIDGenerator.getRandomUUID());
     return { ...attachment, id } as DeepPartial<AttachmentModel>;
   });
 
-  return Promise.all(withoutId.map(wrapped));
+  return Promise.all(attachments.map(wrapped));
 }
 
 export default AttachmentModel;

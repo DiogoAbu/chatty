@@ -1,12 +1,12 @@
 diff --git a/node_modules/react-native-document-picker/android/src/main/java/io/github/elyx0/reactnativedocumentpicker/DocumentPickerModule.java b/node_modules/react-native-document-picker/android/src/main/java/io/github/elyx0/reactnativedocumentpicker/DocumentPickerModule.java
-index 5985bce..de67064 100644
+index b29f6ee..c442d73 100644
 --- a/node_modules/react-native-document-picker/android/src/main/java/io/github/elyx0/reactnativedocumentpicker/DocumentPickerModule.java
 +++ b/node_modules/react-native-document-picker/android/src/main/java/io/github/elyx0/reactnativedocumentpicker/DocumentPickerModule.java
-@@ -101,6 +101,7 @@ public class DocumentPickerModule extends ReactContextBaseJavaModule {
+@@ -93,6 +93,7 @@ public class DocumentPickerModule extends ReactContextBaseJavaModule {
  		try {
  			Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
  			intent.addCategory(Intent.CATEGORY_OPENABLE);
 +      intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
-
+ 
  			intent.setType("*/*");
  			if (!args.isNull(OPTION_TYPE)) {

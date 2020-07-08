@@ -131,7 +131,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
 
     void room.addMessage({
       content: message.value.trim(),
-      senderId: authStore.user.id,
+      sender: authStore.user,
       attachments: pictures.map((e) => ({ ...e, type: AttachmentTypes.image })),
     });
 
@@ -145,9 +145,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
       headerCenter: () => (
         <Avatar.Image ImageComponent={FastImage} size={32} source={{ uri: roomPictureUri }} />
       ),
-      headerRight: () => (
-        <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeletePicture} />
-      ),
+      headerRight: () => <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeletePicture} />,
     } as HeaderOptions);
   }, [handleDeletePicture, handlePressBack, navigation, roomPictureUri]);
 
@@ -187,9 +185,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
         picturesTaken
           .filter((each, index, arr) => {
             // Is selected and uri is not already present
-            return (
-              each.isSelected && arr.findIndex((e, i) => e.uri === each.uri && i !== index) === -1
-            );
+            return each.isSelected && arr.findIndex((e, i) => e.uri === each.uri && i !== index) === -1;
           })
           .map(wrapped),
       );
