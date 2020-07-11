@@ -19,10 +19,10 @@ export enum Tables {
   comments = 'comments',
   messages = 'messages',
   posts = 'posts',
-  roomMembers = 'room_members',
+  roomMembers = 'roomMembers',
   rooms = 'rooms',
   users = 'users',
-  readReceipts = 'read_receipts',
+  readReceipts = 'readReceipts',
 }
 
 // Sync

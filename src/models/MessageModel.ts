@@ -23,10 +23,10 @@ class MessageModel extends Model {
   static table = Tables.messages;
 
   static associations: Associations = {
-    [Tables.attachments]: { type: 'has_many', foreignKey: 'message_id' },
-    [Tables.readReceipts]: { type: 'has_many', foreignKey: 'message_id' },
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'messageId' },
+    [Tables.readReceipts]: { type: 'has_many', foreignKey: 'messageId' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
   };
 
   @field('content')
@@ -38,16 +38,16 @@ class MessageModel extends Model {
   @field('type')
   type: MessageType;
 
-  @date('sent_at')
+  @date('sentAt')
   sentAt: number | null;
 
-  @date('created_at')
+  @date('createdAt')
   createdAt: number;
 
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   sender: Relation<UserModel>;
 
-  @immutableRelation(Tables.rooms, 'room_id')
+  @immutableRelation(Tables.rooms, 'roomId')
   room: Relation<RoomModel>;
 
   @children(Tables.attachments)
@@ -57,11 +57,11 @@ class MessageModel extends Model {
   readReceipts: Query<ReadReceiptModel>;
 
   @action
-  async prepareMarkAsSeen(userId: string): Promise<ReadReceiptModel> {
+  async prepareMarkAsSeen(userId: string, timestamp: number): Promise<ReadReceiptModel> {
     const readReceiptsTable = this.collections.get<ReadReceiptModel>(Tables.readReceipts);
 
     const readReceipts = await readReceiptsTable
-      .query(Q.where('user_id', userId), Q.where('message_id', this.id))
+      .query(Q.where('userId', userId), Q.where('messageId', this.id))
       .fetch();
 
     if (!readReceipts?.length) {
@@ -70,8 +70,8 @@ class MessageModel extends Model {
         record._raw.id = id;
         record.user.id = userId;
         record.message.id = this.id;
-        record.receivedAt = Date.now();
-        record.seenAt = Date.now();
+        record.receivedAt = timestamp;
+        record.seenAt = timestamp;
       });
     }
 
@@ -90,8 +90,8 @@ class MessageModel extends Model {
 
     if (!readReceipt.seenAt) {
       return readReceipt.prepareUpdate((record) => {
-        record.receivedAt = record.receivedAt ?? Date.now();
-        record.seenAt = Date.now();
+        record.receivedAt = record.receivedAt ?? timestamp;
+        record.seenAt = timestamp;
       });
     }
 
@@ -105,10 +105,10 @@ export const messageSchema = tableSchema({
     { name: 'content', type: 'string' },
     { name: 'cipher', type: 'string' },
     { name: 'type', type: 'string' },
-    { name: 'sent_at', type: 'number', isOptional: true },
-    { name: 'created_at', type: 'number' },
-    { name: 'user_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
+    { name: 'sentAt', type: 'number', isOptional: true },
+    { name: 'createdAt', type: 'number' },
+    { name: 'userId', type: 'string' },
+    { name: 'roomId', type: 'string' },
   ],
 });
 

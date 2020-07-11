@@ -80,7 +80,7 @@ const Settings: FC<Props> = () => {
             onPress={() => {
               void (async () => {
                 const roomTable = database.collections.get<RoomModel>(Tables.rooms);
-                const allRooms = await roomTable.query(Q.where('is_local_only', true)).fetch();
+                const allRooms = await roomTable.query(Q.where('isLocalOnly', true)).fetch();
 
                 const wrapped = limiter.wrap(async (each: RoomModel) => {
                   return removeRoomsCascade(database, [each.id], authStore.user.id);

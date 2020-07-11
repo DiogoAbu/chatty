@@ -57,8 +57,8 @@ export interface WithMessagesInput {
 
 const getMessages = ({ room, page }: WithMessagesInput) => ({
   messages: room.messages
-    .extend(Q.experimentalSortBy('created_at', 'desc'), Q.experimentalTake(100 * (page || 1)))
-    .observeWithColumns(['created_at', 'sent_at']),
+    .extend(Q.experimentalSortBy('createdAt', 'desc'), Q.experimentalTake(100 * (page || 1)))
+    .observeWithColumns(['createdAt', 'sentAt']),
 });
 
 export const withMessages = withObservables(['room', 'page'], getMessages);

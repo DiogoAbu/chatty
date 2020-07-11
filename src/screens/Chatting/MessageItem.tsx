@@ -103,8 +103,7 @@ const MessageItem: FC<WithMessageOutput> = ({
                   { color: mine || dark ? colors.textOnPrimary : colors.text },
                 ]}
               >
-                {' '}
-                Encrypted
+                {' ' + t('label.encrypted')}
               </Text>
             </>
           ) : (

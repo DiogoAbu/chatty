@@ -1,6 +1,7 @@
 import { action, observable, runInAction } from 'mobx';
 
-import UserModel, { upsertUser } from '!/models/UserModel';
+import UserModel, { userUpdater } from '!/models/UserModel';
+import { deriveKeyPair, derivesKeyWithPassword, generateSaltForKeyDerivation } from '!/services/encryption';
 import { DeepPartial, Tables } from '!/types';
 
 import BaseStore from './BaseStore';
@@ -14,13 +15,32 @@ export class AuthStore extends BaseStore {
   protected databaseKey = 'AuthStore';
 
   @action
-  async signIn(user: DeepPartial<UserModel>, token: string): Promise<void> {
+  async signIn(user: DeepPartial<UserModel>, token: string, password: string): Promise<void> {
     const {
       syncStore,
       generalStore: { database },
     } = this.stores;
 
-    const userCreated = await upsertUser(database, user);
+    // Using the password and a salt to derive a key that will be used to derive the pair of keys
+    const derivedSalt = user.derivedSalt || (await generateSaltForKeyDerivation());
+
+    const pass = password + user.id!;
+    const derivedKey = await derivesKeyWithPassword(pass, derivedSalt);
+
+    const { secretKey, publicKey } = await deriveKeyPair(derivedKey);
+
+    const userData: DeepPartial<UserModel> = {
+      ...user,
+      secretKey,
+      publicKey,
+      derivedSalt,
+      _raw: { _changed: 'publicKey,derivedSalt', _status: 'updated' },
+    };
+
+    const userCreated = await database.action<UserModel>(async () => {
+      await database.unsafeResetDatabase();
+      return database.collections.get<UserModel>(Tables.users).create(userUpdater(userData));
+    });
 
     runInAction(() => {
       this.user = userCreated;
@@ -79,12 +99,16 @@ export class AuthStore extends BaseStore {
 
   // Get token directly from the database local storage.
   forceGetToken = async (): Promise<string> => {
-    const data = await this.stores.generalStore.database.adapter.getLocal(this.databaseKey);
-    if (!data) {
+    try {
+      const data = await this.stores.generalStore.database.adapter.getLocal(this.databaseKey);
+      if (!data) {
+        return '';
+      }
+
+      const { token } = JSON.parse(data) as { userId: string; token: string };
+      return token;
+    } catch {
       return '';
     }
-
-    const { token } = JSON.parse(data) as { userId: string; token: string };
-    return token;
   };
 }

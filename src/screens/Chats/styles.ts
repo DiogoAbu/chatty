@@ -28,6 +28,9 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
 
+  lastMessageEncrypted: {
+    fontStyle: 'italic',
+  },
   lastMessageAttachmentIcon: {
     fontSize: 18,
   },

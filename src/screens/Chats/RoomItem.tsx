@@ -40,7 +40,7 @@ const RoomItem: FC<WithOneRoomOutput> = ({
   const { t } = useTranslation();
 
   const sentAt = getSentAt(lastMessage?.createdAt || room.lastChangeAt);
-  const lastMessagenNotRead =
+  const lastMessageNotRead =
     !lastMessage || !room?.lastReadAt
       ? false
       : new Date(lastMessage.createdAt).getTime() > new Date(room.lastReadAt).getTime();
@@ -116,7 +116,18 @@ const RoomItem: FC<WithOneRoomOutput> = ({
             />
           ) : null}
           {renderAttachmentIcon()}
-          {lastMessage.content ? (
+          {!lastMessage.content && lastMessage.cipher ? (
+            <>
+              <Icon name='key' style={{ color, fontSize }} />
+              <Text
+                ellipsizeMode='tail'
+                numberOfLines={1}
+                style={[styles.lastMessageEncrypted, { color, fontSize }]}
+              >
+                {' ' + t('label.encrypted')}
+              </Text>
+            </>
+          ) : lastMessage.content ? (
             <Text ellipsizeMode='tail' numberOfLines={1} style={{ color, fontSize }}>
               {room.name && lastMessageSender?.name ? `${lastMessageSender.name.split(' ')[0]}: ` : null}
               {lastMessage.content}
@@ -124,8 +135,15 @@ const RoomItem: FC<WithOneRoomOutput> = ({
           ) : null}
         </View>
       ) : null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lastByMe, lastMessage, lastMessageSender, renderAttachmentIcon, room.name],
+    [
+      lastByMe,
+      lastMessage,
+      lastMessageReadReceipts,
+      lastMessageSender?.name,
+      renderAttachmentIcon,
+      room.name,
+      t,
+    ],
   );
 
   const renderPicture = useCallback(
@@ -183,7 +201,7 @@ const RoomItem: FC<WithOneRoomOutput> = ({
         <Chip mode='outlined' style={styles.roomArchivedChip} textStyle={styles.roomArchivedChipText}>
           {t('label.archived')}
         </Chip>
-      ) : lastMessagenNotRead && newMessagesCount > 0 ? (
+      ) : lastMessageNotRead && newMessagesCount > 0 ? (
         <Badge
           size={26}
           style={[styles.roomMessagesBadge, { backgroundColor: colors.accent, color: colors.textOnAccent }]}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import UUIDGenerator from 'react-native-uuid-generator';
 import { Database, DirtyRaw, Q } from '@nozbe/watermelondb';
 import { synchronize, SyncPullArgs } from '@nozbe/watermelondb/sync';
@@ -49,19 +48,19 @@ const keysToOmit: { [key in Tables]: { pull: any[]; push: any[] } } = {
     pull: [],
     push: [],
   },
-  room_members: {
+  roomMembers: {
     pull: [],
     push: [],
   },
   rooms: {
     pull: [],
-    push: ['shared_key', 'is_archived', 'last_read_at', 'last_change_at', 'last_message_id'],
+    push: ['sharedKey', 'isArchived', 'lastReadAt', 'lastChangeAt', 'lastMessageId'],
   },
   users: {
-    pull: ['public_key'],
-    push: ['secret_key'],
+    pull: ['publicKey'],
+    push: ['secretKey'],
   },
-  read_receipts: {
+  readReceipts: {
     pull: [],
     push: [],
   },
@@ -115,9 +114,9 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
   //////////////////
   // Room Members //
   //////////////////
-  if (changes?.room_members?.updated?.length) {
-    const asyncFuncs = changes.room_members.updated.map(async (each) => {
-      const roomMembers = await getAllMembersOfRoom(database, each.room_id);
+  if (changes?.roomMembers?.updated?.length) {
+    const asyncFuncs = changes.roomMembers.updated.map(async (each) => {
+      const roomMembers = await getAllMembersOfRoom(database, each.roomId);
       return roomMembers.map((roomMember) => {
         return roomMember.prepareDestroyPermanently();
       });
@@ -148,20 +147,20 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       };
 
       // Cannot decrypt message sent by me
-      if (msg.cipher && msg.user_id !== userId) {
+      if (msg.cipher && msg.userId !== userId) {
         try {
-          const room = changes?.rooms?.updated.find((e) => e.id === msg.room_id);
-          if (room?.name && room.shared_key) {
-            data.message.content = await decryptContentUsingShared(msg.cipher, room.shared_key);
+          const room = changes?.rooms?.updated.find((e) => e.id === msg.roomId);
+          if (room?.name && room.sharedKey) {
+            data.message.content = await decryptContentUsingShared(msg.cipher, room.sharedKey);
           } else {
             const usersTable = database.collections.get<UserModel>(Tables.users);
 
             let senderPublicKey: string;
-            const sender = changes?.users?.updated.find((e) => e.id === msg.user_id);
+            const sender = changes?.users?.updated.find((e) => e.id === msg.userId);
             if (sender) {
-              senderPublicKey = sender.public_key;
+              senderPublicKey = sender.publicKey;
             } else {
-              const senderFound = await usersTable.find(msg.user_id);
+              const senderFound = await usersTable.find(msg.userId);
               if (!senderFound.publicKey) {
                 throw new Error('Sender user record not found');
               }
@@ -181,29 +180,29 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
         }
       }
 
-      if (msg.user_id === userId) {
+      if (msg.userId === userId) {
         return data;
       }
 
       const readReceiptsTable = database.collections.get<ReadReceiptModel>(Tables.readReceipts);
 
       const readReceipts = await readReceiptsTable
-        .query(Q.where('user_id', userId), Q.where('message_id', msg.id))
+        .query(Q.where('userId', userId), Q.where('messageId', msg.id))
         .fetch();
 
       if (readReceipts?.length) {
         return data;
       }
 
-      const readReceiptFound = changes.read_receipts.updated.find((e) => {
-        return e.user_id === userId && e.message_id === msg.id;
+      const readReceiptFound = changes.readReceipts.updated.find((e) => {
+        return e.userId === userId && e.messageId === msg.id;
       });
       if (!readReceiptFound) {
         data.readReceipt = {
           id: await UUIDGenerator.getRandomUUID(),
-          user_id: userId,
-          message_id: msg.id,
-          room_id: msg.room_id,
+          userId,
+          messageId: msg.id,
+          roomId: msg.roomId,
         };
         return data;
       }
@@ -212,16 +211,16 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
 
     const newData = await Promise.all(changes.messages.updated.map(wrapped));
     changes.messages.updated = newData.map((e) => e.message);
-    changes.read_receipts.updated.push(...newData.map((e) => e.readReceipt).filter(notEmpty));
+    changes.readReceipts.updated.push(...newData.map((e) => e.readReceipt).filter(notEmpty));
   }
 
   ///////////////////
   // Read Receipts //
   ///////////////////
-  if (changes?.read_receipts?.updated?.length) {
-    changes.read_receipts.updated = changes.read_receipts.updated.map((e) => {
-      if (e.user_id === userId && !e.received_at) {
-        return { ...e, received_at: Date.now() };
+  if (changes?.readReceipts?.updated?.length) {
+    changes.readReceipts.updated = changes.readReceipts.updated.map((e) => {
+      if (e.userId === userId && !e.receivedAt) {
+        return { ...e, receivedAt: Date.now() };
       }
       return e;
     });
@@ -274,8 +273,8 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
   // Rooms //
   ///////////
   if (changes?.rooms) {
-    changes.rooms.created = changes.rooms.created.filter((e) => !e.is_local_only);
-    changes.rooms.updated = changes.rooms.updated.filter((e) => !e.is_local_only);
+    changes.rooms.created = changes.rooms.created.filter((e) => !e.isLocalOnly);
+    changes.rooms.updated = changes.rooms.updated.filter((e) => !e.isLocalOnly);
     changes.rooms.updated = changes.rooms.updated.filter((e) => {
       return e._changed && !e._changed.split(',').every((c: string) => keysToOmit.rooms!.push.includes(c));
     });
@@ -286,14 +285,14 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
   //////////////////
   // Room Members //
   //////////////////
-  if (changes?.room_members) {
-    changes.room_members.created = changes.room_members.created.filter((e) => !e.is_local_only);
-    changes.room_members.updated = changes.room_members.updated.filter((e) => !e.is_local_only);
-    changes.room_members.created = changes.room_members.created.map((e) =>
-      omitKeys(e, keysToOmit.room_members!.push),
+  if (changes?.roomMembers) {
+    changes.roomMembers.created = changes.roomMembers.created.filter((e) => !e.isLocalOnly);
+    changes.roomMembers.updated = changes.roomMembers.updated.filter((e) => !e.isLocalOnly);
+    changes.roomMembers.created = changes.roomMembers.created.map((e) =>
+      omitKeys(e, keysToOmit.roomMembers!.push),
     );
-    changes.room_members.updated = changes.room_members.updated.map((e) =>
-      omitKeys(e, keysToOmit.room_members!.push),
+    changes.roomMembers.updated = changes.roomMembers.updated.map((e) =>
+      omitKeys(e, keysToOmit.roomMembers!.push),
     );
   }
 
@@ -304,7 +303,7 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
     const prepareMessage = (e: DirtyRaw) => {
       const msg: DirtyRaw = { ...e };
 
-      if (!msg.sent_at) {
+      if (!msg.sentAt) {
         const sentAt = Date.now();
 
         batchAsync.push(
@@ -315,14 +314,14 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
           }),
         );
 
-        msg.sent_at = sentAt;
+        msg.sentAt = sentAt;
       }
 
       return omitKeys<DirtyRaw>(msg, keysToOmit.messages!.push);
     };
 
-    changes.messages.created = changes.messages.created.filter((e) => e.user_id === userId && e.cipher);
-    changes.messages.updated = changes.messages.updated.filter((e) => e.user_id === userId && e.cipher);
+    changes.messages.created = changes.messages.created.filter((e) => e.userId === userId && e.cipher);
+    changes.messages.updated = changes.messages.updated.filter((e) => e.userId === userId && e.cipher);
     changes.messages.created = changes.messages.created.map(prepareMessage);
     changes.messages.updated = changes.messages.updated.map(prepareMessage);
   }

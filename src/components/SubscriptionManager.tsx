@@ -1,5 +1,6 @@
 import { FC, useEffect } from 'react';
 
+import { useClient } from 'urql';
 import { pipe, subscribe } from 'wonka';
 
 import {
@@ -19,7 +20,10 @@ interface Props {
 }
 
 const SubscriptionManager: FC<WithAllRoomsOutput & Props> = ({ token, userId, rooms }) => {
-  const { generalStore, syncStore } = useStores();
+  const { syncStore } = useStores();
+  const client = useClient();
+
+  const roomIds = rooms?.map((e) => e.id) || [];
 
   // //////////
   // // Room //
@@ -254,14 +258,12 @@ const SubscriptionManager: FC<WithAllRoomsOutput & Props> = ({ token, userId, ro
   // Should Sync //
   /////////////////
   useEffect(() => {
-    if (!token || !userId || !rooms?.length) {
+    if (!token || !userId) {
       return () => null;
     }
 
-    const roomIds = rooms.map((e) => e.id);
-
     const { unsubscribe } = pipe(
-      generalStore.client.subscription<ShouldSyncSubscription, ShouldSyncSubscriptionVariables>(
+      client.subscription<ShouldSyncSubscription, ShouldSyncSubscriptionVariables>(
         ShouldSyncDocument,
         { roomIds },
         { requestPolicy: 'network-only' },
@@ -271,11 +273,10 @@ const SubscriptionManager: FC<WithAllRoomsOutput & Props> = ({ token, userId, ro
         void syncStore.sync();
       }),
     );
-
     return () => {
       unsubscribe();
     };
-  }, [generalStore.client, rooms, syncStore, token, userId]);
+  }, [client, roomIds, syncStore, token, userId]);
 
   return null;
 };

@@ -1,6 +1,7 @@
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, GestureResponderEvent, InteractionManager, StatusBar, View } from 'react-native';
 
+import { Q } from '@nozbe/watermelondb';
 import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
 import { useNavigation } from '@react-navigation/native';
 import Bottleneck from 'bottleneck';
@@ -12,7 +13,7 @@ import MessageModel from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
 import { removeRoomsCascade, roomUpdater } from '!/models/RoomModel';
 import { useStores } from '!/stores';
-import { HeaderOptions, MainNavigationProp } from '!/types';
+import { HeaderOptions, MainNavigationProp, Tables } from '!/types';
 import capitalize from '!/utils/capitalize';
 import getRoomMember from '!/utils/get-room-member';
 
@@ -95,19 +96,26 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
     } as HeaderOptions);
 
     const markAsSeen = async () => {
+      const messagesNotSeen = await room.messages
+        .extend(
+          Q.where('userId', Q.notEq(authStore.user.id)),
+          Q.on(Tables.readReceipts, Q.where('seenAt', null)),
+        )
+        .fetch();
+
+      const lastReadAt = Date.now();
+
       const wrapped = limiter.wrap(async (msg: MessageModel) => {
         if (msg.sender.id !== authStore.user.id) {
-          return msg.prepareMarkAsSeen(authStore.user.id);
+          return msg.prepareMarkAsSeen(authStore.user.id, lastReadAt);
         }
         return (null as unknown) as ReadReceiptModel;
       });
-
-      const messages = await room.messages.fetch();
-      const batch = await Promise.all(messages.map(wrapped));
+      const batch = await Promise.all(messagesNotSeen.map(wrapped));
 
       const roomUpdate = room.prepareUpdate(
         roomUpdater({
-          lastReadAt: Date.now(),
+          lastReadAt,
           _raw: {
             _status: room._raw._status === 'synced' ? 'synced' : 'updated',
           },
@@ -118,7 +126,9 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
         await database.batch(roomUpdate, ...batch);
       }, 'Chatting -> markAsSeen');
 
-      await syncStore.sync();
+      if (messagesNotSeen.length > 0) {
+        await syncStore.sync();
+      }
     };
     void InteractionManager.runAfterInteractions(() => {
       void markAsSeen();

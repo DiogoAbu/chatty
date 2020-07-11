@@ -1,8 +1,8 @@
 diff --git a/node_modules/@types/react-native/index.d.ts b/node_modules/@types/react-native/index.d.ts
-index d153705..ab3e3f3 100644
+index 0f7d2b5..dbcce08 100644
 --- a/node_modules/@types/react-native/index.d.ts
 +++ b/node_modules/@types/react-native/index.d.ts
-@@ -2076,6 +2076,7 @@ export interface AccessibilityProps extends AccessibilityPropsAndroid, Accessibi
+@@ -2093,6 +2093,7 @@ export interface AccessibilityProps extends AccessibilityPropsAndroid, Accessibi
       * Accessibility State tells a person using either VoiceOver on iOS or TalkBack on Android the state of the element currently focused on.
       */
      accessibilityState?: AccessibilityState;

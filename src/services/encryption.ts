@@ -22,7 +22,7 @@ export async function generateSaltForKeyDerivation(): Promise<string> {
 /**
  * Derives a key from a password, values must the same to produce the same key.
  */
-export async function derivesKeyFromPassword(password: string, salt: string): Promise<string> {
+export async function derivesKeyWithPassword(password: string, salt: string): Promise<string> {
   const keylen = Sodium.crypto_box_SEEDBYTES;
   const opslimit = Sodium.crypto_pwhash_OPSLIMIT_MODERATE;
   const memlimit = Sodium.crypto_pwhash_MEMLIMIT_MODERATE;

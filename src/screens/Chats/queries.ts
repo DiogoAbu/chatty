@@ -22,11 +22,11 @@ const getAllRooms = ({ user, archivedOnly }: WithAllRoomsInput) => {
   }
   if (archivedOnly) {
     return {
-      rooms: user.roomsArchived.observeWithColumns(['is_archived']),
+      rooms: user.roomsArchived.observeWithColumns(['isArchived']),
     };
   }
   return {
-    rooms: user.rooms.observeWithColumns(['last_change_at', 'last_message_id', 'is_archived']),
+    rooms: user.rooms.observeWithColumns(['lastChangeAt', 'lastMessageId', 'isArchived']),
   };
 };
 
@@ -52,9 +52,9 @@ const getOneRoom = ({ database, signedUser, room }: WithOneRoomInput) => ({
   newMessagesCount: database.collections
     .get<MessageModel>(Tables.messages)
     .query(
-      Q.where('room_id', room.id),
-      Q.where('user_id', Q.notEq(signedUser.id)),
-      Q.where('created_at', Q.gt(room.lastReadAt ? new Date(room.lastReadAt).getTime() : 0)),
+      Q.where('roomId', room.id),
+      Q.where('userId', Q.notEq(signedUser.id)),
+      Q.where('createdAt', Q.gt(room.lastReadAt ? new Date(room.lastReadAt).getTime() : 0)),
     )
     .observeCount(),
   lastMessage: room.lastMessage?.observe() || of$(null),
@@ -72,7 +72,7 @@ const getOneRoom = ({ database, signedUser, room }: WithOneRoomInput) => ({
       .pipe(
         switchMap(
           (lastMessage) =>
-            lastMessage?.readReceipts?.observeWithColumns(['received_at', 'seen_at']) || of$(undefined),
+            lastMessage?.readReceipts?.observeWithColumns(['receivedAt', 'seenAt']) || of$(undefined),
         ),
       ) || of$(undefined),
 });

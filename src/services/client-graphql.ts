@@ -22,12 +22,19 @@ export default function createClient(getToken: () => Promise<string>): Client {
     {
       lazy: true,
       reconnect: true,
-      connectionParams: async () => ({
-        token: await getToken(),
-      }),
+      connectionParams: async () => {
+        const token = await getToken();
+        return {
+          authorization: token ? `Bearer ${token}` : '',
+        };
+      },
     },
     NODE_ENV === 'test' ? require('ws') : undefined,
   );
+
+  subsClient.onError((...args) => {
+    console.log('Subscription', ...args);
+  });
 
   const graphClient = createGraphQl({
     url: env.API_URL,
@@ -41,7 +48,7 @@ export default function createClient(getToken: () => Promise<string>): Client {
           ...fetchOptions,
           headers: {
             ...fetchOptions.headers,
-            Authorization: token ? `Bearer ${token}` : '',
+            authorization: token ? `Bearer ${token}` : '',
           },
         };
       }),

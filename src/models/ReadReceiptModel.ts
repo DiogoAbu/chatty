@@ -19,35 +19,35 @@ class ReadReceiptModel extends Model {
   static table = Tables.readReceipts;
 
   static associations: Associations = {
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
-    [Tables.messages]: { type: 'belongs_to', key: 'message_id' },
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
+    [Tables.messages]: { type: 'belongs_to', key: 'messageId' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
   };
 
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   user: Relation<UserModel>;
 
-  @immutableRelation(Tables.messages, 'message_id')
+  @immutableRelation(Tables.messages, 'messageId')
   message: Relation<MessageModel>;
 
-  @immutableRelation(Tables.rooms, 'room_id')
+  @immutableRelation(Tables.rooms, 'roomId')
   room: Relation<RoomModel>;
 
-  @date('received_at')
+  @date('receivedAt')
   receivedAt: number | null;
 
-  @date('seen_at')
+  @date('seenAt')
   seenAt: number | null;
 }
 
 export const readReceiptSchema = tableSchema({
   name: Tables.readReceipts,
   columns: [
-    { name: 'user_id', type: 'string' },
-    { name: 'message_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
-    { name: 'received_at', type: 'number', isOptional: true },
-    { name: 'seen_at', type: 'number', isOptional: true },
+    { name: 'userId', type: 'string' },
+    { name: 'messageId', type: 'string' },
+    { name: 'roomId', type: 'string' },
+    { name: 'receivedAt', type: 'number', isOptional: true },
+    { name: 'seenAt', type: 'number', isOptional: true },
   ],
 });
 
@@ -127,7 +127,7 @@ export async function setReadReceiptsReceivedAt(database: Database, userId: stri
   const readReceiptsTable = database.collections.get<ReadReceiptModel>(Tables.readReceipts);
 
   const readReceipts = await readReceiptsTable
-    .query(Q.where('user_id', userId), Q.where('received_at', Q.eq(null)))
+    .query(Q.where('userId', userId), Q.where('receivedAt', Q.eq(null)))
     .fetch();
 
   const receivedAt = Date.now();

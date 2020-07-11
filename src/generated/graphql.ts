@@ -66,7 +66,7 @@ export type Message = {
 };
 
 /** The message types */
-export type MessageType = 
+export type MessageType =
   | 'default'
   | 'announcement'
   | 'sharedKey';
@@ -126,7 +126,7 @@ export type Device = {
 };
 
 /** The acceptable platforms */
-export type DevicePlatform = 
+export type DevicePlatform =
   | 'ios'
   | 'android'
   | 'windows'
@@ -293,7 +293,7 @@ export type SubscriptionReadReceiptCreatedArgs = {
 
 
 export type SubscriptionShouldSyncArgs = {
-  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
+  roomIds?: Maybe<Array<Scalars['ID']>>;
 };
 
 export type UserFragmentFragment = { __typename?: 'User', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, role?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string>, isFollowingMe?: Maybe<boolean>, isFollowedByMe?: Maybe<boolean> };
@@ -450,7 +450,7 @@ export type PushChangesMutationVariables = Exact<{
 export type PushChangesMutation = { __typename?: 'Mutation', pushChanges?: Maybe<boolean> };
 
 export type ShouldSyncSubscriptionVariables = Exact<{
-  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
+  roomIds?: Maybe<Array<Scalars['ID']>>;
 }>;
 
 
@@ -768,7 +768,7 @@ export function usePushChangesMutation() {
   return Urql.useMutation<PushChangesMutation, PushChangesMutationVariables>(PushChangesDocument);
 };
 export const ShouldSyncDocument = gql`
-    subscription ShouldSync($roomIds: [ID]) {
+    subscription ShouldSync($roomIds: [ID!]) {
   shouldSync(roomIds: $roomIds)
 }
     `;

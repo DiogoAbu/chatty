@@ -11,26 +11,26 @@ class RoomMemberModel extends Model {
   static table = Tables.roomMembers;
 
   static associations: Associations = {
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
   };
 
-  @field('room_id')
+  @field('roomId')
   roomId: string;
 
-  @field('user_id')
+  @field('userId')
   userId: string;
 
-  @field('is_local_only')
+  @field('isLocalOnly')
   isLocalOnly: boolean;
 }
 
 export const roomMemberSchema = tableSchema({
   name: Tables.roomMembers,
   columns: [
-    { name: 'user_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
-    { name: 'is_local_only', type: 'boolean' },
+    { name: 'userId', type: 'string' },
+    { name: 'roomId', type: 'string' },
+    { name: 'isLocalOnly', type: 'boolean' },
   ],
 });
 
@@ -91,7 +91,7 @@ export function getId(roomMember: DeepPartial<RoomMemberModel>): string {
 
 export async function getAllMembersOfRoom(database: Database, roomId: string): Promise<RoomMemberModel[]> {
   const roomMemberTable = database.collections.get<RoomMemberModel>(Tables.roomMembers);
-  return roomMemberTable.query(Q.where('room_id', roomId)).fetch();
+  return roomMemberTable.query(Q.where('roomId', roomId)).fetch();
 }
 
 export default RoomMemberModel;

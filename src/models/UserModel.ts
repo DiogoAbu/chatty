@@ -17,7 +17,7 @@ class UserModel extends Model {
   static table = Tables.users;
 
   static associations: Associations = {
-    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'user_id' },
+    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'userId' },
   };
 
   @field('name')
@@ -26,36 +26,36 @@ class UserModel extends Model {
   @field('email')
   email: string;
 
-  @field('picture_uri')
+  @field('pictureUri')
   pictureUri: string | null;
 
   @field('role')
   role: string | null;
 
-  @field('secret_key')
+  @field('secretKey')
   secretKey: string | null;
 
-  @field('public_key')
+  @field('publicKey')
   publicKey: string | null;
 
-  @field('derived_salt')
+  @field('derivedSalt')
   derivedSalt: string | null;
 
-  @field('is_following_me')
+  @field('isFollowingMe')
   isFollowingMe: boolean | null;
 
-  @field('is_followed_by_me')
+  @field('isFollowedByMe')
   isFollowedByMe: boolean | null;
 
   @lazy
   rooms = this.collections
     .get<RoomModel>(Tables.rooms)
-    .query(Q.on(Tables.roomMembers, 'user_id', this.id), Q.where('is_local_only', false));
+    .query(Q.on(Tables.roomMembers, 'userId', this.id), Q.where('isLocalOnly', false));
 
   @lazy
   roomsArchived = this.collections
     .get<RoomModel>(Tables.rooms)
-    .query(Q.on(Tables.roomMembers, 'user_id', this.id), Q.where('is_archived', true));
+    .query(Q.on(Tables.roomMembers, 'userId', this.id), Q.where('isArchived', true));
 }
 
 export const userSchema = tableSchema({
@@ -63,13 +63,13 @@ export const userSchema = tableSchema({
   columns: [
     { name: 'name', type: 'string' },
     { name: 'email', type: 'string' },
-    { name: 'picture_uri', type: 'string', isOptional: true },
+    { name: 'pictureUri', type: 'string', isOptional: true },
     { name: 'role', type: 'string', isOptional: true },
-    { name: 'secret_key', type: 'string', isOptional: true },
-    { name: 'public_key', type: 'string', isOptional: true },
-    { name: 'derived_salt', type: 'string', isOptional: true },
-    { name: 'is_following_me', type: 'boolean', isOptional: true },
-    { name: 'is_followed_by_me', type: 'boolean', isOptional: true },
+    { name: 'secretKey', type: 'string', isOptional: true },
+    { name: 'publicKey', type: 'string', isOptional: true },
+    { name: 'derivedSalt', type: 'string', isOptional: true },
+    { name: 'isFollowingMe', type: 'boolean', isOptional: true },
+    { name: 'isFollowedByMe', type: 'boolean', isOptional: true },
   ],
 });
 

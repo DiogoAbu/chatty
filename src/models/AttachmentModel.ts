@@ -26,14 +26,14 @@ class AttachmentModel extends Model {
   static table = Tables.attachments;
 
   static associations: Associations = {
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
 
     // For rooms
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
-    [Tables.messages]: { type: 'belongs_to', key: 'message_id' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
+    [Tables.messages]: { type: 'belongs_to', key: 'messageId' },
 
     // For posts
-    [Tables.posts]: { type: 'belongs_to', key: 'post_id' },
+    [Tables.posts]: { type: 'belongs_to', key: 'postId' },
   };
 
   @field('uri')
@@ -54,16 +54,16 @@ class AttachmentModel extends Model {
   @field('height')
   height: number;
 
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   sender: Relation<UserModel>;
 
-  @immutableRelation(Tables.rooms, 'room_id')
+  @immutableRelation(Tables.rooms, 'roomId')
   room: Relation<RoomModel>;
 
-  @immutableRelation(Tables.messages, 'message_id')
+  @immutableRelation(Tables.messages, 'messageId')
   message: Relation<MessageModel>;
 
-  @immutableRelation(Tables.posts, 'post_id')
+  @immutableRelation(Tables.posts, 'postId')
   post: Relation<PostModel>;
 }
 
@@ -76,10 +76,10 @@ export const attachmentSchema = tableSchema({
     { name: 'type', type: 'string' },
     { name: 'width', type: 'number' },
     { name: 'height', type: 'number' },
-    { name: 'user_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
-    { name: 'message_id', type: 'string' },
-    { name: 'post_id', type: 'string' },
+    { name: 'userId', type: 'string' },
+    { name: 'roomId', type: 'string' },
+    { name: 'messageId', type: 'string' },
+    { name: 'postId', type: 'string' },
   ],
 });
 

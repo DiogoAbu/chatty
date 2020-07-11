@@ -33,11 +33,15 @@ export default {
     'label.video': 'Video',
     'label.image': 'Image',
     'label.images': 'Images',
+    'label.encrypted': 'Encrypted',
 
     'label.findPeopleNearYou': 'Find people near you',
+    'label.showEveryone': 'Show everyone',
+    'label.showOnlySelected': 'Show only selected',
 
     'helper.charactersLeft': 'You have {{count}} character left',
     'helper.charactersLeft_plural': 'You have {{count}} characters left',
+    'helper.youAreSelectingPeopleToCreateGroup': 'You are selecting people to create a group',
 
     'error.invalid.email': 'Invalid email',
     'error.invalid.password': 'Invalid password',

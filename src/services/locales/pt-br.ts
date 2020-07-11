@@ -35,11 +35,15 @@ export default {
     'label.video': 'Vídeo',
     'label.image': 'Imagem',
     'label.images': 'Imagens',
+    'label.encrypted': 'Criptografada',
 
     'label.findPeopleNearYou': 'Encontre pessoas perto de você',
+    'label.showEveryone': 'Ver todos',
+    'label.showOnlySelected': 'Ver selecionados',
 
     'helper.charactersLeft': 'Resta {{count}} caractere',
     'helper.charactersLeft_plural': 'Restam {{count}} caracteres',
+    'helper.youAreSelectingPeopleToCreateGroup': 'Você está selecionando pessoas para criar um grupo',
 
     'error.invalid.email': 'Email inválido',
     'error.invalid.password': 'Senha inválida',

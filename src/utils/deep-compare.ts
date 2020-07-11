@@ -34,12 +34,12 @@ function deepCompareEquals<T extends Record<string, any>>(
   });
 }
 
-export default function deepCompare<T>(next: T[] | undefined, props: string[]): T[] | undefined {
+export default function deepCompare<T>(array: T[] | undefined, props: string[]): T[] | undefined {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const prev = useRef<T[]>();
 
-  if (!deepCompareEquals<T>(prev.current, next, props)) {
-    prev.current = next;
+  if (!deepCompareEquals<T>(prev.current, array, props)) {
+    prev.current = array;
   }
 
   return prev.current;

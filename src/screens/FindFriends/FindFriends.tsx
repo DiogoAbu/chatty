@@ -141,7 +141,7 @@ const FindFriends: FC<Props> = ({ navigation }) => {
             <Loading />
           ) : (
             <View style={styles.centerCenter}>
-              <Fab color={colors.textOnAccent} icon='magnify' />
+              <Fab color={colors.textOnAccent} icon='map-marker' />
               <Title style={styles.nearTitle}>{t('label.findPeopleNearYou')}</Title>
             </View>
           )
@@ -150,7 +150,7 @@ const FindFriends: FC<Props> = ({ navigation }) => {
           <Banner
             actions={[
               {
-                label: showOnlySelected ? 'Show everyone' : 'Show only selected',
+                label: showOnlySelected ? t('label.showEveryone') : t('label.showOnlySelected'),
                 onPress: () => {
                   requestAnimationFrame(() => {
                     setShowOnlySelected((prev) => !prev);
@@ -160,7 +160,7 @@ const FindFriends: FC<Props> = ({ navigation }) => {
             ]}
             visible={selectedList.length > 0}
           >
-            You are selecting people to create a group.
+            {t('helper.youAreSelectingPeopleToCreateGroup')}
           </Banner>
         }
         maxToRenderPerBatch={2}

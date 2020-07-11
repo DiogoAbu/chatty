@@ -12,21 +12,21 @@ class CommentModel extends Model {
   static table = Tables.comments;
 
   static associations: Associations = {
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
-    [Tables.posts]: { type: 'belongs_to', key: 'post_id' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
+    [Tables.posts]: { type: 'belongs_to', key: 'postId' },
   };
 
   @field('content')
   content: string;
 
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   user: Relation<UserModel>;
 
-  @immutableRelation(Tables.posts, 'post_id')
+  @immutableRelation(Tables.posts, 'postId')
   post: Relation<PostModel>;
 
   @readonly
-  @date('created_at')
+  @date('createdAt')
   createdAt: number;
 }
 
@@ -34,9 +34,9 @@ export const commentSchema = tableSchema({
   name: Tables.comments,
   columns: [
     { name: 'content', type: 'string' },
-    { name: 'user_id', type: 'string' },
-    { name: 'post_id', type: 'string' },
-    { name: 'created_at', type: 'number' },
+    { name: 'userId', type: 'string' },
+    { name: 'postId', type: 'string' },
+    { name: 'createdAt', type: 'number' },
   ],
 });
 

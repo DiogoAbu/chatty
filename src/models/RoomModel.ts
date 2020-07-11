@@ -31,35 +31,35 @@ class RoomModel extends Model {
   static table = Tables.rooms;
 
   static associations: Associations = {
-    [Tables.messages]: { type: 'has_many', foreignKey: 'room_id' },
-    [Tables.readReceipts]: { type: 'has_many', foreignKey: 'room_id' },
-    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'room_id' },
+    [Tables.messages]: { type: 'has_many', foreignKey: 'roomId' },
+    [Tables.readReceipts]: { type: 'has_many', foreignKey: 'roomId' },
+    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'roomId' },
   };
 
   @field('name')
   name: string | null;
 
-  @field('picture_uri')
+  @field('pictureUri')
   pictureUri: string | null;
 
-  @field('is_local_only')
+  @field('isLocalOnly')
   isLocalOnly: boolean;
 
-  @field('is_archived')
+  @field('isArchived')
   isArchived: boolean;
 
-  @field('shared_key')
+  @field('sharedKey')
   sharedKey: string;
 
   // Last time read by me so we can show the badge,
   // messages after this will make up the number
-  @date('last_read_at')
+  @date('lastReadAt')
   lastReadAt: number | null;
 
-  @date('last_change_at')
+  @date('lastChangeAt')
   lastChangeAt: number;
 
-  @relation(Tables.messages, 'last_message_id')
+  @relation(Tables.messages, 'lastMessageId')
   lastMessage: Relation<MessageModel>;
 
   @children(Tables.messages)
@@ -69,7 +69,7 @@ class RoomModel extends Model {
   readReceipts: Query<ReadReceiptModel>;
 
   @lazy
-  members = this.collections.get<UserModel>(Tables.users).query(Q.on(Tables.roomMembers, 'room_id', this.id));
+  members = this.collections.get<UserModel>(Tables.users).query(Q.on(Tables.roomMembers, 'roomId', this.id));
 
   @action
   async addMessage({
@@ -146,7 +146,7 @@ class RoomModel extends Model {
       }),
     );
 
-    const roomMembers = await roomMemberDb.query(Q.where('room_id', this.id)).fetch();
+    const roomMembers = await roomMemberDb.query(Q.where('roomId', this.id)).fetch();
     batches.push(
       ...roomMembers.map((each) => {
         return each.prepareUpdate(
@@ -165,7 +165,7 @@ class RoomModel extends Model {
           isArchived: false,
           lastChangeAt: createdAt,
           lastMessage: { id },
-          _raw: { _changed: this.isLocalOnly ? 'is_local_only' : '', _status: 'updated' },
+          _raw: { _changed: this.isLocalOnly ? 'isLocalOnly' : '', _status: 'updated' },
         }),
       ),
     );
@@ -178,13 +178,13 @@ export const roomSchema = tableSchema({
   name: Tables.rooms,
   columns: [
     { name: 'name', type: 'string', isOptional: true },
-    { name: 'picture_uri', type: 'string', isOptional: true },
-    { name: 'is_local_only', type: 'boolean' },
-    { name: 'is_archived', type: 'boolean' },
-    { name: 'shared_key', type: 'string' },
-    { name: 'last_read_at', type: 'number', isOptional: true },
-    { name: 'last_change_at', type: 'number' },
-    { name: 'last_message_id', type: 'string' },
+    { name: 'pictureUri', type: 'string', isOptional: true },
+    { name: 'isLocalOnly', type: 'boolean' },
+    { name: 'isArchived', type: 'boolean' },
+    { name: 'sharedKey', type: 'string' },
+    { name: 'lastReadAt', type: 'number', isOptional: true },
+    { name: 'lastChangeAt', type: 'number' },
+    { name: 'lastMessageId', type: 'string' },
   ],
 });
 
@@ -293,7 +293,7 @@ export async function findRoom(
 
     // Find all the rooms for both members
     const memberMix = await memberTable
-      .query(Q.or(Q.where('user_id', members[0].id!), Q.where('user_id', members[1].id!)))
+      .query(Q.or(Q.where('userId', members[0].id!), Q.where('userId', members[1].id!)))
       .fetch();
 
     if (memberMix.length) {
@@ -454,7 +454,7 @@ export async function removeRoomsCascade(
     });
 
     // Get members of the room from join table
-    const roomMembers = await roomMembersTable.query(Q.where('room_id', Q.eq(room.id))).fetch();
+    const roomMembers = await roomMembersTable.query(Q.where('roomId', Q.eq(room.id))).fetch();
     const membersPrepared = roomMembers.map((roomMember) => {
       return roomMember.prepareDestroyPermanently();
     });

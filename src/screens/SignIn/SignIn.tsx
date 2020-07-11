@@ -11,7 +11,6 @@ import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import UserModel from '!/models/UserModel';
 import debug from '!/services/debug';
-import { deriveKeyPair, derivesKeyFromPassword, generateSaltForKeyDerivation } from '!/services/encryption';
 import { useStores } from '!/stores';
 import { DeepPartial, MainNavigationProp } from '!/types';
 import getValidationErrors from '!/utils/get-validation-errors';
@@ -86,7 +85,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
       }
 
       if (res.error?.graphQLErrors?.[0].extensions?.exception?.validationErrors) {
-        log('validation error');
+        log(res.error?.graphQLErrors?.[0].extensions?.exception?.validationErrors);
         const errors = getValidationErrors(res.error, ['email', 'password']);
         setEmailError(humanizeEmailError(errors?.email, t));
         setPassError(humanizePasswordError(errors?.password, t));
@@ -95,7 +94,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
       }
 
       if (!res.data?.signIn?.user || !res.data?.signIn?.token) {
-        log('no user or token');
+        log(res.error);
         setEmailError(t('error.signIn.user'));
         setIsSigningIn(false);
         return;
@@ -103,27 +102,16 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
       const { user, token } = res.data.signIn;
 
-      // Using the password and a salt to derive a key that will be used to derive the pair of keys
-      const derivedSalt = user.derivedSalt || (await generateSaltForKeyDerivation());
-
-      const pass = password + user.id!;
-      const derivedKey = await derivesKeyFromPassword(pass, derivedSalt);
-
-      const { secretKey, publicKey } = await deriveKeyPair(derivedKey);
-
       const userData: DeepPartial<UserModel> = {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
         pictureUri: user.pictureUri,
-        secretKey,
-        publicKey,
-        derivedSalt,
-        _raw: { _changed: 'public_key,derived_salt', _status: 'updated' },
+        derivedSalt: user.derivedSalt,
       };
 
-      await authStore.signIn(userData, token);
+      await authStore.signIn(userData, token, password);
       log('signed in successfully');
 
       navigation.popToTop();

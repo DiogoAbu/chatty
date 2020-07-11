@@ -13,15 +13,15 @@ class PostModel extends Model {
   static table = Tables.posts;
 
   static associations: Associations = {
-    [Tables.attachments]: { type: 'has_many', foreignKey: 'message_id' },
-    [Tables.comments]: { type: 'has_many', foreignKey: 'post_id' },
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'messageId' },
+    [Tables.comments]: { type: 'has_many', foreignKey: 'postId' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
   };
 
   @field('content')
   content: string;
 
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   user: Relation<UserModel>;
 
   @children(Tables.attachments)
@@ -31,7 +31,7 @@ class PostModel extends Model {
   comments: Query<CommentModel>;
 
   @readonly
-  @date('created_at')
+  @date('createdAt')
   createdAt: number;
 }
 
@@ -39,8 +39,8 @@ export const postSchema = tableSchema({
   name: Tables.posts,
   columns: [
     { name: 'content', type: 'string' },
-    { name: 'user_id', type: 'string' },
-    { name: 'created_at', type: 'number' },
+    { name: 'userId', type: 'string' },
+    { name: 'createdAt', type: 'number' },
   ],
 });
 

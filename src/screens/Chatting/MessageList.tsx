@@ -9,25 +9,17 @@ import {
 } from 'react-native';
 
 import { FAB as FabPaper } from 'react-native-paper';
-import { useDatabase } from '@nozbe/watermelondb/hooks';
-import Bottleneck from 'bottleneck';
-import { useClient } from 'urql';
 
 import useMethod from '!/hooks/use-method';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import MessageModel from '!/models/MessageModel';
-import { useStores } from '!/stores';
 import getSectionDate from '!/utils/get-section-date';
 
 import MessageItem from './MessageItem';
 import { withMessages, WithMessagesInput, WithMessagesOutput } from './queries';
 import SectionDateItem from './SectionDateItem';
 import styles from './styles';
-
-const limiter = new Bottleneck({
-  maxConcurrent: 1,
-});
 
 type SectionData = {
   isPreviousSameSender: boolean;
@@ -75,9 +67,6 @@ const renderSectionTitle = ({ section }: { section: SectionListData<SectionData>
 
 // Main Component
 const MessageList: FC<WithMessagesOutput> = ({ room, messages, title, attachmentPickerRef, setPage }) => {
-  const client = useClient();
-  const database = useDatabase();
-  const { authStore } = useStores();
   const { colors } = useTheme();
 
   const contentHeight = useRef(0);
@@ -136,35 +125,6 @@ const MessageList: FC<WithMessagesOutput> = ({ room, messages, title, attachment
   const handleScrollToEnd = usePress(() => {
     listRef.current?.getScrollResponder()?.scrollTo({ y: 0, animated: true });
   });
-
-  // useEffect(() => {
-  //   const markAsSeen = async () => {
-  //     const wrapped = limiter.wrap(async (msg: MessageModel) => {
-  //       if (msg.sender.id !== authStore.user.id) {
-  //         return msg.prepareMarkAsSeen(authStore.user.id);
-  //       }
-  //       return (null as unknown) as ReadReceiptModel;
-  //     });
-
-  //     const batch = await Promise.all(messages.map(wrapped));
-
-  //     const roomUpdate = room.prepareUpdate(
-  //       roomUpdater({
-  //         lastReadAt: Date.now(),
-  //         _raw: {
-  //           _status: room._raw._status === 'synced' ? 'synced' : 'updated',
-  //         },
-  //       }),
-  //     );
-
-  //     await database.action(async () => {
-  //       await database.batch(roomUpdate, ...batch);
-  //     }, 'MessageList -> prepareMarkAsSeen');
-
-  //     await sync(authStore.user.id, database, client);
-  //   };
-  //   void markAsSeen();
-  // }, [authStore.user.id, client, database, messages, room]);
 
   // Renders
   const renderItem: ListRenderItem<SectionData> = useCallback(

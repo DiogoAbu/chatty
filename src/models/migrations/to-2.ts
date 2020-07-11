@@ -7,7 +7,7 @@ export const to2 = {
   steps: [
     addColumns({
       table: Tables.rooms,
-      columns: [{ name: 'is_archived', type: 'boolean' }],
+      columns: [{ name: 'isArchived', type: 'boolean' }],
     }),
   ],
 };
