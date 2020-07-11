@@ -101,45 +101,6 @@ query GetRooms {
   }
 }
 
-subscription RoomCreated {
-  roomCreated {
-    id
-    name
-    pictureUri
-    lastMessage {
-      id
-      cipher
-      type
-      createdAt
-      sentAt
-      sender {
-        id
-        name
-        email
-        role
-        pictureUri
-        publicKey
-      }
-      readReceipts {
-        id
-        user {
-          id
-        }
-        receivedAt
-        seenAt
-      }
-    }
-    members {
-      id
-      name
-      email
-      role
-      pictureUri
-      publicKey
-    }
-  }
-}
-
 #
 # Message
 #
@@ -165,54 +126,6 @@ query GetMessages($roomId: ID, $limit: Int, $afterDate: Timestamp) {
   }
 }
 
-subscription MessageCreated($roomIds: [ID]) {
-  messageCreated(roomIds: $roomIds) {
-    id
-    cipher
-    type
-    createdAt
-    sentAt
-    sender {
-      id
-      name
-      email
-      role
-      pictureUri
-      publicKey
-    }
-    room {
-      id
-      name
-      pictureUri
-    }
-    readReceipts {
-      id
-      user {
-        id
-      }
-      receivedAt
-      seenAt
-    }
-  }
-}
-
-subscription ReadReceiptCreated($roomIds: [ID]) {
-  readReceiptCreated(roomIds: $roomIds) {
-    id
-    user {
-      id
-    }
-    message {
-      id
-    }
-    room {
-      id
-    }
-    receivedAt
-    seenAt
-  }
-}
-
 #
 # Notification
 #
@@ -226,17 +139,109 @@ mutation UnregisterDevice($data: RegisterDeviceInput!) {
 #
 # Sync
 #
-query PullChanges($lastPulledAt: Float) {
-  pullChanges(lastPulledAt: $lastPulledAt) {
-    timestamp
-    changes
-  }
+subscription ShouldSync($roomIds: [ID!]) {
+  shouldSync(roomIds: $roomIds)
 }
 
-mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
+mutation PushChanges($changes: SyncChangesInput, $lastPulledAt: Float) {
   pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
 }
 
-subscription ShouldSync($roomIds: [ID!]) {
-  shouldSync(roomIds: $roomIds)
+query PullChanges($lastPulledAt: Float) {
+  pullChanges(lastPulledAt: $lastPulledAt) {
+    timestamp
+    changes {
+      messages {
+        created {
+          ...MessageChangesFragment
+        }
+        updated {
+          ...MessageChangesFragment
+        }
+        deleted
+      }
+      readReceipts {
+        created {
+          ...ReadReceiptChangesFragment
+        }
+        updated {
+          ...ReadReceiptChangesFragment
+        }
+        deleted
+      }
+      rooms {
+        created {
+          ...RoomChangesFragment
+        }
+        updated {
+          ...RoomChangesFragment
+        }
+        deleted
+      }
+      users {
+        created {
+          ...UserChangesFragment
+        }
+        updated {
+          ...UserChangesFragment
+        }
+        deleted
+      }
+      roomMembers {
+        created {
+          ...RoomMemberChangesFragment
+        }
+        updated {
+          ...RoomMemberChangesFragment
+        }
+        deleted
+      }
+    }
+  }
+}
+
+fragment MessageChangesFragment on MessageChanges {
+  id
+  cipher
+  type
+  userId
+  roomId
+  sentAt
+  createdAt
+}
+
+fragment ReadReceiptChangesFragment on ReadReceiptChanges {
+  id
+  userId
+  roomId
+  messageId
+  receivedAt
+  seenAt
+}
+
+fragment RoomChangesFragment on RoomChanges {
+  id
+  name
+  pictureUri
+  sharedKey
+  lastChangeAt
+  lastMessageId
+  createdAt
+}
+
+fragment UserChangesFragment on UserChanges {
+  id
+  name
+  email
+  pictureUri
+  publicKey
+  role
+  isFollowingMe
+  isFollowedByMe
+}
+
+fragment RoomMemberChangesFragment on RoomMemberChanges {
+  id
+  roomId
+  userId
 }

@@ -12,8 +12,6 @@ export type Scalars = {
   Float: number;
   /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
   Timestamp: any;
-  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSON: any;
 };
 
 export type Query = {
@@ -66,7 +64,7 @@ export type Message = {
 };
 
 /** The message types */
-export type MessageType =
+export type MessageType = 
   | 'default'
   | 'announcement'
   | 'sharedKey';
@@ -126,7 +124,7 @@ export type Device = {
 };
 
 /** The acceptable platforms */
-export type DevicePlatform =
+export type DevicePlatform = 
   | 'ios'
   | 'android'
   | 'windows'
@@ -137,9 +135,115 @@ export type PullChangesResult = {
   __typename?: 'PullChangesResult';
   /** Last successful pull in milliseconds since UNIX epoch */
   timestamp: Scalars['Float'];
-  changes?: Maybe<Scalars['JSON']>;
+  changes?: Maybe<SyncChanges>;
 };
 
+export type SyncChanges = {
+  __typename?: 'SyncChanges';
+  messages?: Maybe<MessageTableChangeSet>;
+  readReceipts?: Maybe<ReadReceiptTableChangeSet>;
+  rooms?: Maybe<RoomTableChangeSet>;
+  users?: Maybe<UserTableChangeSet>;
+  roomMembers?: Maybe<RoomMemberTableChangeSet>;
+};
+
+export type MessageTableChangeSet = {
+  __typename?: 'MessageTableChangeSet';
+  created?: Maybe<Array<Maybe<MessageChanges>>>;
+  updated?: Maybe<Array<Maybe<MessageChanges>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type MessageChanges = {
+  __typename?: 'MessageChanges';
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  cipher?: Maybe<Scalars['String']>;
+  type?: Maybe<MessageType>;
+  userId?: Maybe<Scalars['ID']>;
+  roomId?: Maybe<Scalars['ID']>;
+  sentAt?: Maybe<Scalars['Float']>;
+  createdAt?: Maybe<Scalars['Float']>;
+};
+
+export type ReadReceiptTableChangeSet = {
+  __typename?: 'ReadReceiptTableChangeSet';
+  created?: Maybe<Array<Maybe<ReadReceiptChanges>>>;
+  updated?: Maybe<Array<Maybe<ReadReceiptChanges>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type ReadReceiptChanges = {
+  __typename?: 'ReadReceiptChanges';
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  userId?: Maybe<Scalars['ID']>;
+  roomId?: Maybe<Scalars['ID']>;
+  messageId?: Maybe<Scalars['ID']>;
+  receivedAt?: Maybe<Scalars['Float']>;
+  seenAt?: Maybe<Scalars['Float']>;
+};
+
+export type RoomTableChangeSet = {
+  __typename?: 'RoomTableChangeSet';
+  created?: Maybe<Array<Maybe<RoomChanges>>>;
+  updated?: Maybe<Array<Maybe<RoomChanges>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type RoomChanges = {
+  __typename?: 'RoomChanges';
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  name?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
+  sharedKey?: Maybe<Scalars['String']>;
+  lastChangeAt?: Maybe<Scalars['Float']>;
+  lastMessageId?: Maybe<Scalars['ID']>;
+  createdAt?: Maybe<Scalars['Float']>;
+};
+
+export type UserTableChangeSet = {
+  __typename?: 'UserTableChangeSet';
+  created?: Maybe<Array<Maybe<UserChanges>>>;
+  updated?: Maybe<Array<Maybe<UserChanges>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type UserChanges = {
+  __typename?: 'UserChanges';
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  name?: Maybe<Scalars['String']>;
+  email?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
+  publicKey?: Maybe<Scalars['String']>;
+  derivedSalt?: Maybe<Scalars['String']>;
+  role?: Maybe<Scalars['String']>;
+  isFollowingMe?: Maybe<Scalars['Boolean']>;
+  isFollowedByMe?: Maybe<Scalars['Boolean']>;
+};
+
+export type RoomMemberTableChangeSet = {
+  __typename?: 'RoomMemberTableChangeSet';
+  created?: Maybe<Array<Maybe<RoomMemberChanges>>>;
+  updated?: Maybe<Array<Maybe<RoomMemberChanges>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type RoomMemberChanges = {
+  __typename?: 'RoomMemberChanges';
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  /** Not a normal uuid */
+  id?: Maybe<Scalars['String']>;
+  roomId?: Maybe<Scalars['ID']>;
+  userId?: Maybe<Scalars['ID']>;
+};
 
 export type ListUsersWhere = {
   name?: Maybe<Scalars['String']>;
@@ -193,7 +297,7 @@ export type MutationCreateRoomArgs = {
 
 export type MutationPushChangesArgs = {
   lastPulledAt?: Maybe<Scalars['Float']>;
-  changes?: Maybe<Scalars['JSON']>;
+  changes?: Maybe<SyncChangesInput>;
 };
 
 
@@ -246,6 +350,102 @@ export type CreateRoomInput = {
   recipientsId?: Maybe<Array<Maybe<Scalars['ID']>>>;
 };
 
+export type SyncChangesInput = {
+  messages?: Maybe<MessageTableChangeSetInput>;
+  readReceipts?: Maybe<ReadReceiptTableChangeSetInput>;
+  rooms?: Maybe<RoomTableChangeSetInput>;
+  users?: Maybe<UserTableChangeSetInput>;
+  roomMembers?: Maybe<RoomMemberTableChangeSetInput>;
+};
+
+export type MessageTableChangeSetInput = {
+  created?: Maybe<Array<Maybe<MessageChangesInput>>>;
+  updated?: Maybe<Array<Maybe<MessageChangesInput>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type MessageChangesInput = {
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  cipher?: Maybe<Scalars['String']>;
+  type?: Maybe<MessageType>;
+  userId?: Maybe<Scalars['ID']>;
+  roomId?: Maybe<Scalars['ID']>;
+  sentAt?: Maybe<Scalars['Float']>;
+  createdAt?: Maybe<Scalars['Float']>;
+};
+
+export type ReadReceiptTableChangeSetInput = {
+  created?: Maybe<Array<Maybe<ReadReceiptChangesInput>>>;
+  updated?: Maybe<Array<Maybe<ReadReceiptChangesInput>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type ReadReceiptChangesInput = {
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  userId?: Maybe<Scalars['ID']>;
+  roomId?: Maybe<Scalars['ID']>;
+  messageId?: Maybe<Scalars['ID']>;
+  receivedAt?: Maybe<Scalars['Float']>;
+  seenAt?: Maybe<Scalars['Float']>;
+};
+
+export type RoomTableChangeSetInput = {
+  created?: Maybe<Array<Maybe<RoomChangesInput>>>;
+  updated?: Maybe<Array<Maybe<RoomChangesInput>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type RoomChangesInput = {
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  name?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
+  sharedKey?: Maybe<Scalars['String']>;
+  lastChangeAt?: Maybe<Scalars['Float']>;
+  lastMessageId?: Maybe<Scalars['ID']>;
+  createdAt?: Maybe<Scalars['Float']>;
+};
+
+export type UserTableChangeSetInput = {
+  created?: Maybe<Array<Maybe<UserChangesInput>>>;
+  updated?: Maybe<Array<Maybe<UserChangesInput>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type UserChangesInput = {
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  name?: Maybe<Scalars['String']>;
+  email?: Maybe<Scalars['String']>;
+  pictureUri?: Maybe<Scalars['String']>;
+  publicKey?: Maybe<Scalars['String']>;
+  derivedSalt?: Maybe<Scalars['String']>;
+  role?: Maybe<Scalars['String']>;
+  isFollowingMe?: Maybe<Scalars['Boolean']>;
+  isFollowedByMe?: Maybe<Scalars['Boolean']>;
+};
+
+export type RoomMemberTableChangeSetInput = {
+  created?: Maybe<Array<Maybe<RoomMemberChangesInput>>>;
+  updated?: Maybe<Array<Maybe<RoomMemberChangesInput>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type RoomMemberChangesInput = {
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  /** Not a normal uuid */
+  id?: Maybe<Scalars['String']>;
+  roomId?: Maybe<Scalars['ID']>;
+  userId?: Maybe<Scalars['ID']>;
+};
+
 export type SignInResponse = {
   __typename?: 'SignInResponse';
   user?: Maybe<User>;
@@ -275,25 +475,12 @@ export type ChangePasswordInput = {
 
 export type Subscription = {
   __typename?: 'Subscription';
-  messageCreated?: Maybe<Message>;
-  readReceiptCreated?: Maybe<ReadReceipt>;
-  roomCreated?: Maybe<Room>;
   shouldSync?: Maybe<Scalars['Boolean']>;
 };
 
 
-export type SubscriptionMessageCreatedArgs = {
-  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
-};
-
-
-export type SubscriptionReadReceiptCreatedArgs = {
-  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
-};
-
-
 export type SubscriptionShouldSyncArgs = {
-  roomIds?: Maybe<Array<Scalars['ID']>>;
+  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
 };
 
 export type UserFragmentFragment = { __typename?: 'User', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, role?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string>, isFollowingMe?: Maybe<boolean>, isFollowedByMe?: Maybe<boolean> };
@@ -382,11 +569,6 @@ export type GetRoomsQuery = { __typename?: 'Query', getRooms?: Maybe<Array<Maybe
     & RoomFragmentFragment
   )>>> };
 
-export type RoomCreatedSubscriptionVariables = Exact<{ [key: string]: never; }>;
-
-
-export type RoomCreatedSubscription = { __typename?: 'Subscription', roomCreated?: Maybe<{ __typename?: 'Room', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, lastMessage?: Maybe<{ __typename?: 'Message', id?: Maybe<string>, cipher?: Maybe<string>, type?: Maybe<MessageType>, createdAt?: Maybe<any>, sentAt?: Maybe<any>, sender?: Maybe<{ __typename?: 'User', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, role?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string> }>, readReceipts?: Maybe<Array<Maybe<{ __typename?: 'ReadReceipt', id?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number>, user?: Maybe<{ __typename?: 'User', id?: Maybe<string> }> }>>> }>, members?: Maybe<Array<Maybe<{ __typename?: 'User', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, role?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string> }>>> }> };
-
 export type CreateMessageMutationVariables = Exact<{
   data: CreateMessageInput;
 }>;
@@ -406,20 +588,6 @@ export type GetMessagesQuery = { __typename?: 'Query', getMessages?: Maybe<{ __t
         & UserFragmentFragment
       )> }>>> }> };
 
-export type MessageCreatedSubscriptionVariables = Exact<{
-  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
-}>;
-
-
-export type MessageCreatedSubscription = { __typename?: 'Subscription', messageCreated?: Maybe<{ __typename?: 'Message', id?: Maybe<string>, cipher?: Maybe<string>, type?: Maybe<MessageType>, createdAt?: Maybe<any>, sentAt?: Maybe<any>, sender?: Maybe<{ __typename?: 'User', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, role?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string> }>, room?: Maybe<{ __typename?: 'Room', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string> }>, readReceipts?: Maybe<Array<Maybe<{ __typename?: 'ReadReceipt', id?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number>, user?: Maybe<{ __typename?: 'User', id?: Maybe<string> }> }>>> }> };
-
-export type ReadReceiptCreatedSubscriptionVariables = Exact<{
-  roomIds?: Maybe<Array<Maybe<Scalars['ID']>>>;
-}>;
-
-
-export type ReadReceiptCreatedSubscription = { __typename?: 'Subscription', readReceiptCreated?: Maybe<{ __typename?: 'ReadReceipt', id?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number>, user?: Maybe<{ __typename?: 'User', id?: Maybe<string> }>, message?: Maybe<{ __typename?: 'Message', id?: Maybe<string> }>, room?: Maybe<{ __typename?: 'Room', id?: Maybe<string> }> }> };
-
 export type RegisterDeviceMutationVariables = Exact<{
   data: RegisterDeviceInput;
 }>;
@@ -434,27 +602,67 @@ export type UnregisterDeviceMutationVariables = Exact<{
 
 export type UnregisterDeviceMutation = { __typename?: 'Mutation', unregisterDevice?: Maybe<boolean> };
 
-export type PullChangesQueryVariables = Exact<{
-  lastPulledAt?: Maybe<Scalars['Float']>;
-}>;
-
-
-export type PullChangesQuery = { __typename?: 'Query', pullChanges?: Maybe<{ __typename?: 'PullChangesResult', timestamp: number, changes?: Maybe<any> }> };
-
-export type PushChangesMutationVariables = Exact<{
-  changes?: Maybe<Scalars['JSON']>;
-  lastPulledAt?: Maybe<Scalars['Float']>;
-}>;
-
-
-export type PushChangesMutation = { __typename?: 'Mutation', pushChanges?: Maybe<boolean> };
-
 export type ShouldSyncSubscriptionVariables = Exact<{
   roomIds?: Maybe<Array<Scalars['ID']>>;
 }>;
 
 
 export type ShouldSyncSubscription = { __typename?: 'Subscription', shouldSync?: Maybe<boolean> };
+
+export type PushChangesMutationVariables = Exact<{
+  changes?: Maybe<SyncChangesInput>;
+  lastPulledAt?: Maybe<Scalars['Float']>;
+}>;
+
+
+export type PushChangesMutation = { __typename?: 'Mutation', pushChanges?: Maybe<boolean> };
+
+export type PullChangesQueryVariables = Exact<{
+  lastPulledAt?: Maybe<Scalars['Float']>;
+}>;
+
+
+export type PullChangesQuery = { __typename?: 'Query', pullChanges?: Maybe<{ __typename?: 'PullChangesResult', timestamp: number, changes?: Maybe<{ __typename?: 'SyncChanges', messages?: Maybe<{ __typename?: 'MessageTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
+          { __typename?: 'MessageChanges' }
+          & MessageChangesFragmentFragment
+        )>>>, updated?: Maybe<Array<Maybe<(
+          { __typename?: 'MessageChanges' }
+          & MessageChangesFragmentFragment
+        )>>> }>, readReceipts?: Maybe<{ __typename?: 'ReadReceiptTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
+          { __typename?: 'ReadReceiptChanges' }
+          & ReadReceiptChangesFragmentFragment
+        )>>>, updated?: Maybe<Array<Maybe<(
+          { __typename?: 'ReadReceiptChanges' }
+          & ReadReceiptChangesFragmentFragment
+        )>>> }>, rooms?: Maybe<{ __typename?: 'RoomTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
+          { __typename?: 'RoomChanges' }
+          & RoomChangesFragmentFragment
+        )>>>, updated?: Maybe<Array<Maybe<(
+          { __typename?: 'RoomChanges' }
+          & RoomChangesFragmentFragment
+        )>>> }>, users?: Maybe<{ __typename?: 'UserTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
+          { __typename?: 'UserChanges' }
+          & UserChangesFragmentFragment
+        )>>>, updated?: Maybe<Array<Maybe<(
+          { __typename?: 'UserChanges' }
+          & UserChangesFragmentFragment
+        )>>> }>, roomMembers?: Maybe<{ __typename?: 'RoomMemberTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
+          { __typename?: 'RoomMemberChanges' }
+          & RoomMemberChangesFragmentFragment
+        )>>>, updated?: Maybe<Array<Maybe<(
+          { __typename?: 'RoomMemberChanges' }
+          & RoomMemberChangesFragmentFragment
+        )>>> }> }> }> };
+
+export type MessageChangesFragmentFragment = { __typename?: 'MessageChanges', id?: Maybe<string>, cipher?: Maybe<string>, type?: Maybe<MessageType>, userId?: Maybe<string>, roomId?: Maybe<string>, sentAt?: Maybe<number>, createdAt?: Maybe<number> };
+
+export type ReadReceiptChangesFragmentFragment = { __typename?: 'ReadReceiptChanges', id?: Maybe<string>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number> };
+
+export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, sharedKey?: Maybe<string>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
+
+export type UserChangesFragmentFragment = { __typename?: 'UserChanges', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string>, role?: Maybe<string>, isFollowingMe?: Maybe<boolean>, isFollowedByMe?: Maybe<boolean> };
+
+export type RoomMemberChangesFragmentFragment = { __typename?: 'RoomMemberChanges', id?: Maybe<string>, roomId?: Maybe<string>, userId?: Maybe<string> };
 
 export const UserFragmentFragmentDoc = gql`
     fragment UserFragment on User {
@@ -473,6 +681,57 @@ export const RoomFragmentFragmentDoc = gql`
   id
   name
   pictureUri
+}
+    `;
+export const MessageChangesFragmentFragmentDoc = gql`
+    fragment MessageChangesFragment on MessageChanges {
+  id
+  cipher
+  type
+  userId
+  roomId
+  sentAt
+  createdAt
+}
+    `;
+export const ReadReceiptChangesFragmentFragmentDoc = gql`
+    fragment ReadReceiptChangesFragment on ReadReceiptChanges {
+  id
+  userId
+  roomId
+  messageId
+  receivedAt
+  seenAt
+}
+    `;
+export const RoomChangesFragmentFragmentDoc = gql`
+    fragment RoomChangesFragment on RoomChanges {
+  id
+  name
+  pictureUri
+  sharedKey
+  lastChangeAt
+  lastMessageId
+  createdAt
+}
+    `;
+export const UserChangesFragmentFragmentDoc = gql`
+    fragment UserChangesFragment on UserChanges {
+  id
+  name
+  email
+  pictureUri
+  publicKey
+  role
+  isFollowingMe
+  isFollowedByMe
+}
+    `;
+export const RoomMemberChangesFragmentFragmentDoc = gql`
+    fragment RoomMemberChangesFragment on RoomMemberChanges {
+  id
+  roomId
+  userId
 }
     `;
 export const CreateAccountDocument = gql`
@@ -594,50 +853,6 @@ ${UserFragmentFragmentDoc}`;
 export function useGetRoomsQuery(options: Omit<Urql.UseQueryArgs<GetRoomsQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<GetRoomsQuery>({ query: GetRoomsDocument, ...options });
 };
-export const RoomCreatedDocument = gql`
-    subscription RoomCreated {
-  roomCreated {
-    id
-    name
-    pictureUri
-    lastMessage {
-      id
-      cipher
-      type
-      createdAt
-      sentAt
-      sender {
-        id
-        name
-        email
-        role
-        pictureUri
-        publicKey
-      }
-      readReceipts {
-        id
-        user {
-          id
-        }
-        receivedAt
-        seenAt
-      }
-    }
-    members {
-      id
-      name
-      email
-      role
-      pictureUri
-      publicKey
-    }
-  }
-}
-    `;
-
-export function useRoomCreatedSubscription<TData = RoomCreatedSubscription>(options: Omit<Urql.UseSubscriptionArgs<RoomCreatedSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<RoomCreatedSubscription, TData>) {
-  return Urql.useSubscription<RoomCreatedSubscription, TData, RoomCreatedSubscriptionVariables>({ query: RoomCreatedDocument, ...options }, handler);
-};
 export const CreateMessageDocument = gql`
     mutation CreateMessage($data: CreateMessageInput!) {
   createMessage(data: $data) {
@@ -670,64 +885,6 @@ export const GetMessagesDocument = gql`
 export function useGetMessagesQuery(options: Omit<Urql.UseQueryArgs<GetMessagesQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<GetMessagesQuery>({ query: GetMessagesDocument, ...options });
 };
-export const MessageCreatedDocument = gql`
-    subscription MessageCreated($roomIds: [ID]) {
-  messageCreated(roomIds: $roomIds) {
-    id
-    cipher
-    type
-    createdAt
-    sentAt
-    sender {
-      id
-      name
-      email
-      role
-      pictureUri
-      publicKey
-    }
-    room {
-      id
-      name
-      pictureUri
-    }
-    readReceipts {
-      id
-      user {
-        id
-      }
-      receivedAt
-      seenAt
-    }
-  }
-}
-    `;
-
-export function useMessageCreatedSubscription<TData = MessageCreatedSubscription>(options: Omit<Urql.UseSubscriptionArgs<MessageCreatedSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<MessageCreatedSubscription, TData>) {
-  return Urql.useSubscription<MessageCreatedSubscription, TData, MessageCreatedSubscriptionVariables>({ query: MessageCreatedDocument, ...options }, handler);
-};
-export const ReadReceiptCreatedDocument = gql`
-    subscription ReadReceiptCreated($roomIds: [ID]) {
-  readReceiptCreated(roomIds: $roomIds) {
-    id
-    user {
-      id
-    }
-    message {
-      id
-    }
-    room {
-      id
-    }
-    receivedAt
-    seenAt
-  }
-}
-    `;
-
-export function useReadReceiptCreatedSubscription<TData = ReadReceiptCreatedSubscription>(options: Omit<Urql.UseSubscriptionArgs<ReadReceiptCreatedSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<ReadReceiptCreatedSubscription, TData>) {
-  return Urql.useSubscription<ReadReceiptCreatedSubscription, TData, ReadReceiptCreatedSubscriptionVariables>({ query: ReadReceiptCreatedDocument, ...options }, handler);
-};
 export const RegisterDeviceDocument = gql`
     mutation RegisterDevice($data: RegisterDeviceInput!) {
   registerDevice(data: $data)
@@ -746,27 +903,6 @@ export const UnregisterDeviceDocument = gql`
 export function useUnregisterDeviceMutation() {
   return Urql.useMutation<UnregisterDeviceMutation, UnregisterDeviceMutationVariables>(UnregisterDeviceDocument);
 };
-export const PullChangesDocument = gql`
-    query PullChanges($lastPulledAt: Float) {
-  pullChanges(lastPulledAt: $lastPulledAt) {
-    timestamp
-    changes
-  }
-}
-    `;
-
-export function usePullChangesQuery(options: Omit<Urql.UseQueryArgs<PullChangesQueryVariables>, 'query'> = {}) {
-  return Urql.useQuery<PullChangesQuery>({ query: PullChangesDocument, ...options });
-};
-export const PushChangesDocument = gql`
-    mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
-  pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
-}
-    `;
-
-export function usePushChangesMutation() {
-  return Urql.useMutation<PushChangesMutation, PushChangesMutationVariables>(PushChangesDocument);
-};
 export const ShouldSyncDocument = gql`
     subscription ShouldSync($roomIds: [ID!]) {
   shouldSync(roomIds: $roomIds)
@@ -775,4 +911,75 @@ export const ShouldSyncDocument = gql`
 
 export function useShouldSyncSubscription<TData = ShouldSyncSubscription>(options: Omit<Urql.UseSubscriptionArgs<ShouldSyncSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<ShouldSyncSubscription, TData>) {
   return Urql.useSubscription<ShouldSyncSubscription, TData, ShouldSyncSubscriptionVariables>({ query: ShouldSyncDocument, ...options }, handler);
+};
+export const PushChangesDocument = gql`
+    mutation PushChanges($changes: SyncChangesInput, $lastPulledAt: Float) {
+  pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
+}
+    `;
+
+export function usePushChangesMutation() {
+  return Urql.useMutation<PushChangesMutation, PushChangesMutationVariables>(PushChangesDocument);
+};
+export const PullChangesDocument = gql`
+    query PullChanges($lastPulledAt: Float) {
+  pullChanges(lastPulledAt: $lastPulledAt) {
+    timestamp
+    changes {
+      messages {
+        created {
+          ...MessageChangesFragment
+        }
+        updated {
+          ...MessageChangesFragment
+        }
+        deleted
+      }
+      readReceipts {
+        created {
+          ...ReadReceiptChangesFragment
+        }
+        updated {
+          ...ReadReceiptChangesFragment
+        }
+        deleted
+      }
+      rooms {
+        created {
+          ...RoomChangesFragment
+        }
+        updated {
+          ...RoomChangesFragment
+        }
+        deleted
+      }
+      users {
+        created {
+          ...UserChangesFragment
+        }
+        updated {
+          ...UserChangesFragment
+        }
+        deleted
+      }
+      roomMembers {
+        created {
+          ...RoomMemberChangesFragment
+        }
+        updated {
+          ...RoomMemberChangesFragment
+        }
+        deleted
+      }
+    }
+  }
+}
+    ${MessageChangesFragmentFragmentDoc}
+${ReadReceiptChangesFragmentFragmentDoc}
+${RoomChangesFragmentFragmentDoc}
+${UserChangesFragmentFragmentDoc}
+${RoomMemberChangesFragmentFragmentDoc}`;
+
+export function usePullChangesQuery(options: Omit<Urql.UseQueryArgs<PullChangesQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<PullChangesQuery>({ query: PullChangesDocument, ...options });
 };

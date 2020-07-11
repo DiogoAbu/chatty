@@ -1,6 +1,6 @@
 import UUIDGenerator from 'react-native-uuid-generator';
 import { Database, DirtyRaw, Q } from '@nozbe/watermelondb';
-import { synchronize, SyncPullArgs } from '@nozbe/watermelondb/sync';
+import { synchronize, SyncPullArgs, SyncPullResult, SyncPushArgs } from '@nozbe/watermelondb/sync';
 import Bottleneck from 'bottleneck';
 import { Client } from 'urql';
 
@@ -11,13 +11,14 @@ import {
   PushChangesDocument,
   PushChangesMutation,
   PushChangesMutationVariables,
+  SyncChanges,
 } from '!/generated/graphql';
 import { prepareUpsertMessage } from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
 import { getAllMembersOfRoom } from '!/models/relations/RoomMemberModel';
 import UserModel, { prepareUpsertUser } from '!/models/UserModel';
 import debug from '!/services/debug';
-import { SyncDatabaseChangeSet, SyncPullResult, SyncPushArgs, Tables } from '!/types';
+import { DeepRequired, Tables } from '!/types';
 import { removeEmptys } from '!/utils/json-replacer';
 import notEmpty from '!/utils/not-empty';
 import omitKeys from '!/utils/omit-keys';
@@ -95,7 +96,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
     throw null;
   }
 
-  const changes: SyncDatabaseChangeSet = result.data.pullChanges.changes;
+  const changes = result.data.pullChanges.changes;
   const timestamp = result.data.pullChanges.timestamp;
 
   ///////////
@@ -116,7 +117,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
   //////////////////
   if (changes?.roomMembers?.updated?.length) {
     const asyncFuncs = changes.roomMembers.updated.map(async (each) => {
-      const roomMembers = await getAllMembersOfRoom(database, each.roomId);
+      const roomMembers = await getAllMembersOfRoom(database, each.roomId!);
       return roomMembers.map((roomMember) => {
         return roomMember.prepareDestroyPermanently();
       });
@@ -149,16 +150,16 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       // Cannot decrypt message sent by me
       if (msg.cipher && msg.userId !== userId) {
         try {
-          const room = changes?.rooms?.updated.find((e) => e.id === msg.roomId);
+          const room = changes.rooms!.updated!.find((e) => e.id === msg.roomId);
           if (room?.name && room.sharedKey) {
             data.message.content = await decryptContentUsingShared(msg.cipher, room.sharedKey);
           } else {
             const usersTable = database.collections.get<UserModel>(Tables.users);
 
             let senderPublicKey: string;
-            const sender = changes?.users?.updated.find((e) => e.id === msg.userId);
+            const sender = changes.users!.updated!.find((e) => e.id === msg.userId);
             if (sender) {
-              senderPublicKey = sender.publicKey;
+              senderPublicKey = sender.publicKey!;
             } else {
               const senderFound = await usersTable.find(msg.userId);
               if (!senderFound.publicKey) {
@@ -194,7 +195,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
         return data;
       }
 
-      const readReceiptFound = changes.readReceipts.updated.find((e) => {
+      const readReceiptFound = changes.readReceipts?.updated?.find((e) => {
         return e.userId === userId && e.messageId === msg.id;
       });
       if (!readReceiptFound) {
@@ -211,7 +212,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
 
     const newData = await Promise.all(changes.messages.updated.map(wrapped));
     changes.messages.updated = newData.map((e) => e.message);
-    changes.readReceipts.updated.push(...newData.map((e) => e.readReceipt).filter(notEmpty));
+    changes.readReceipts?.updated?.push(...newData.map((e) => e.readReceipt).filter(notEmpty));
   }
 
   ///////////////////
@@ -228,7 +229,10 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
 
   // Return changes to the database
   log('Pull', JSON.stringify({ changes, timestamp }, removeEmptys, 2));
-  return { changes, timestamp };
+  return {
+    changes: changes! as Omit<DeepRequired<SyncChanges>, '__typename'>,
+    timestamp,
+  };
 };
 
 /**
@@ -326,25 +330,27 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
     changes.messages.updated = changes.messages.updated.map(prepareMessage);
   }
 
-  // Clean data before sending
-  const data = JSON.parse(JSON.stringify({ changes, lastPulledAt }, removeEmptys));
+  const data: PushChangesMutationVariables = { changes, lastPulledAt };
 
-  if (!data?.changes) {
+  // Clean data before sending
+  const variables: PushChangesMutationVariables = JSON.parse(JSON.stringify(data, removeEmptys));
+
+  if (!variables?.changes) {
     log('Push empty');
     return;
   }
-  log('Push', JSON.stringify(data, null, 2));
+  log('Push', JSON.stringify(variables, null, 2));
 
   // Send changes
-  const result = await client
-    .mutation<PushChangesMutation, PushChangesMutationVariables>(PushChangesDocument, data, {
+  const res = await client
+    .mutation<PushChangesMutation, PushChangesMutationVariables>(PushChangesDocument, variables, {
       requestPolicy: 'network-only',
     })
     .toPromise();
 
-  if (result.error) {
-    log('Push error', JSON.stringify(result.error, null, 2));
-    throw new Error(result.error.message);
+  if (res.error) {
+    log('Push error', JSON.stringify(res.error, null, 2));
+    throw new Error(res.error.message);
   }
 
   // Execute database changes after push

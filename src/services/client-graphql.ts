@@ -38,6 +38,7 @@ export default function createClient(getToken: () => Promise<string>): Client {
 
   const graphClient = createGraphQl({
     url: env.API_URL,
+    maskTypename: true,
     fetchOptions: {},
     exchanges: [
       dedupExchange,

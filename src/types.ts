@@ -1,8 +1,3 @@
-import {
-  SyncPullResult as SyncPullResultRaw,
-  SyncPushArgs as SyncPushArgsRaw,
-  SyncTableChangeSet,
-} from '@nozbe/watermelondb/sync';
 import { MaterialTopTabNavigationProp } from '@react-navigation/material-top-tabs';
 import { CompositeNavigationProp, RouteProp as RoutePropNative } from '@react-navigation/native';
 import { StackNavigationOptions, StackNavigationProp } from '@react-navigation/stack';
@@ -12,6 +7,7 @@ import AttachmentModel from './models/AttachmentModel';
 import { PicturesTaken, VideoRecorded } from './screens/Camera/types';
 
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+export type DeepRequired<T> = { [P in keyof T]-?: DeepRequired<T[P]> };
 
 // Table names
 export enum Tables {
@@ -24,12 +20,6 @@ export enum Tables {
   users = 'users',
   readReceipts = 'readReceipts',
 }
-
-// Sync
-export type SyncDatabaseChangeSet = { [key in Tables]: SyncTableChangeSet };
-export type SyncDatabaseChangeSetPartial = { [key in Tables]?: SyncTableChangeSet };
-export type SyncPullResult = SyncPullResultRaw & { changes: SyncDatabaseChangeSet };
-export type SyncPushArgs = SyncPushArgsRaw & { changes: SyncDatabaseChangeSetPartial };
 
 export type RootStackParams = {
   Main: undefined;
