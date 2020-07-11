@@ -7,7 +7,6 @@ import com.swmansion.gesturehandler.react.RNGestureHandlerEnabledRootView;
 
 import android.content.Intent;
 import android.content.res.Configuration;
-
 public class MainActivity extends ReactActivity {
 
   /**
@@ -19,6 +18,9 @@ public class MainActivity extends ReactActivity {
     return "Chatty";
   }
 
+  /**
+   * React native Gesture handler
+   */
   @Override
   protected ReactActivityDelegate createReactActivityDelegate() {
     return new ReactActivityDelegate(this, getMainComponentName()) {
@@ -29,6 +31,9 @@ public class MainActivity extends ReactActivity {
     };
   }
 
+  /**
+   * React native Orientation
+   */
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
