@@ -1,16 +1,18 @@
 import React, { FC, useCallback, useEffect, useState } from 'react';
-import { ListRenderItemInfo, Platform } from 'react-native';
+import { Alert, InteractionManager, ListRenderItemInfo, Platform } from 'react-native';
 
 import { FlatList } from 'react-native-gesture-handler';
 import { Appbar, Divider } from 'react-native-paper';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 
+import { ROOM_NAME_MAX_LENGTH } from '!/config';
 import { User } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTranslation from '!/hooks/use-translation';
 import { createRoom } from '!/models/RoomModel';
 import UserModel from '!/models/UserModel';
+import { generateSharedKeyAndMessages } from '!/services/encryption';
 import { useStores } from '!/stores';
 import { DeepPartial, MainNavigationProp, MainRouteProp, StackHeaderRightProps } from '!/types';
 
@@ -27,7 +29,7 @@ const handleKeyExtractor = (item: User) => item.id!;
 
 const CreateGroup: FC<Props> = ({ navigation, route }) => {
   const database = useDatabase();
-  const { authStore } = useStores();
+  const { authStore, syncStore } = useStores();
   const { t } = useTranslation();
 
   const { members: initialMembers } = route.params;
@@ -52,7 +54,7 @@ const CreateGroup: FC<Props> = ({ navigation, route }) => {
 
   const handleCreateRoom = usePress<[], void>(async () => {
     const name = roomName.trim();
-    if (!name) {
+    if (!name || name.length > ROOM_NAME_MAX_LENGTH) {
       setErrorMessage(t('error.invalid.roomName'));
       return;
     }
@@ -69,11 +71,23 @@ const CreateGroup: FC<Props> = ({ navigation, route }) => {
       isFollowedByMe: friend.isFollowedByMe,
     }));
     const allMembers = [authStore.user, ...memberUsers];
-    const roomId = await createRoom(database, authStore.user, room, allMembers);
+    const roomCreated = await createRoom(database, authStore.user, room, allMembers);
 
-    requestAnimationFrame(() => {
-      // Make it so the first screen is Home and we're at the Chatting screen
-      navigation.navigate('Chatting', { roomId });
+    const sharedKey = await generateSharedKeyAndMessages(
+      database,
+      roomCreated,
+      allMembers,
+      authStore.user.id,
+    );
+
+    if (!sharedKey) {
+      Alert.alert(t('title.oops'), t('alert.groupCreationFailed'));
+    }
+
+    void syncStore.sync();
+
+    void InteractionManager.runAfterInteractions(() => {
+      navigation.navigate('Chatting', { roomId: roomCreated.id });
     });
   }, 2000);
 

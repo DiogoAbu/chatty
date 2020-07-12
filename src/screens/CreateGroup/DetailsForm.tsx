@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { Avatar, HelperText, TextInput, Title } from 'react-native-paper';
 
+import { ROOM_NAME_MAX_LENGTH } from '!/config';
 import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
@@ -15,8 +16,6 @@ interface Props {
   errorMessage: string;
 }
 
-const roomNameMaxLength = 30;
-
 const DetailsForm: FC<Props> = ({ value, onChangeText, errorMessage }) => {
   const { colors, grid, gridBigger } = useTheme();
   const { t } = useTranslation();
@@ -27,7 +26,7 @@ const DetailsForm: FC<Props> = ({ value, onChangeText, errorMessage }) => {
       <Avatar.Icon
         color={colors.textOnPrimary}
         icon='image-plus'
-        size={Math.min(300, winWidth - grid * 10)}
+        size={Math.min(200, winWidth - grid * 10)}
         style={[styles.detailsAvatar, { margin: gridBigger }]}
       />
 
@@ -36,14 +35,14 @@ const DetailsForm: FC<Props> = ({ value, onChangeText, errorMessage }) => {
         blurOnSubmit
         error={!!errorMessage}
         label={t('label.groupName')}
-        maxLength={roomNameMaxLength}
+        maxLength={ROOM_NAME_MAX_LENGTH}
         mode='outlined'
         onChangeText={onChangeText}
         returnKeyType='done'
         value={value}
       />
       <HelperText type={errorMessage ? 'error' : 'info'} visible>
-        {errorMessage || t('helper.charactersLeft', { count: roomNameMaxLength - value.trim().length })}
+        {errorMessage || t('helper.charactersLeft', { count: ROOM_NAME_MAX_LENGTH - value.trim().length })}
       </HelperText>
 
       <Title style={{ marginTop: grid }}>{t('label.members')}</Title>

@@ -17,6 +17,7 @@ import ForgotPass from '!/screens/ForgotPass/ForgotPass';
 import PreparePicture from '!/screens/PreparePicture/PreparePicture';
 import PrepareVideo from '!/screens/PrepareVideo/PrepareVideo';
 import Settings from '!/screens/Settings/Settings';
+import SignIn from '!/screens/SignIn/SignIn';
 import Welcome from '!/screens/Welcome/Welcome';
 import { useStores } from '!/stores';
 import { MainStackParams } from '!/types';
@@ -88,6 +89,7 @@ const MainStack: FC<unknown> = () => {
 
         <Stack.Screen component={Welcome} name='Welcome' options={{ headerShown: false }} />
 
+        <Stack.Screen component={SignIn} name='SignIn' options={{ title: t('signIn') }} />
         <Stack.Screen component={ForgotPass} name='ForgotPass' options={{ title: t('forgotPassword') }} />
         <Stack.Screen component={ChangePass} name='ChangePass' options={{ title: t('changePassword') }} />
       </Stack.Navigator>

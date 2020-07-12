@@ -54,6 +54,7 @@ const getOneRoom = ({ database, signedUser, room }: WithOneRoomInput) => ({
     .query(
       Q.where('roomId', room.id),
       Q.where('userId', Q.notEq(signedUser.id)),
+      Q.where('type', Q.notEq('sharedKey')),
       Q.where('createdAt', Q.gt(room.lastReadAt ? new Date(room.lastReadAt).getTime() : 0)),
     )
     .observeCount(),

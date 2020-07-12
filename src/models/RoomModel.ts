@@ -56,6 +56,7 @@ class RoomModel extends Model {
   @date('lastReadAt')
   lastReadAt: number | null;
 
+  // Last time something changed inside the room
   @date('lastChangeAt')
   lastChangeAt: number;
 
@@ -321,7 +322,7 @@ export async function createRoom(
   members?: DeepPartial<UserModel>[],
   messages?: DeepPartial<MessageModel>[],
   readReceipts?: DeepPartial<ReadReceiptModel>[],
-): Promise<string> {
+): Promise<RoomModel> {
   let room = { ...roomFromServer };
 
   let formerMembersPrepared: RoomMemberModel[] = [];
@@ -374,7 +375,7 @@ export async function createRoom(
     // Prepare messages
     messagesWithId.map((message) => {
       // Is more recent than last message
-      if (message.createdAt! > room.lastChangeAt!) {
+      if (message.createdAt! > room.lastChangeAt! && message.type !== 'sharedKey') {
         room.lastChangeAt = message.createdAt;
         room.lastMessage = { id: message.id! };
       }
@@ -400,11 +401,11 @@ export async function createRoom(
   // Execute all promises
   const batch = await Promise.all(funcsAsync);
 
-  return database.action<string>(async () => {
+  return database.action<RoomModel>(async () => {
     await database.batch(...batch, ...formerMembersPrepared);
 
-    return room.id!;
-  }, 'RoomModel -> createRoomAndMembers');
+    return room;
+  }, 'RoomModel -> createRoom');
 }
 
 async function removeUserIfNoRooms(user: UserModel, isLocalOnly: boolean) {

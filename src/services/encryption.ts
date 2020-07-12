@@ -1,4 +1,5 @@
 import Sodium from 'react-native-sodium';
+import UUIDGenerator from 'react-native-uuid-generator';
 import { Database } from '@nozbe/watermelondb';
 import Bottleneck from 'bottleneck';
 import { Base64 } from 'js-base64';
@@ -107,10 +108,10 @@ export async function decryptContentUsingPair(
 /**
  * Symmetric encryption, same key for encrypting and decrypting.
  */
-export async function generateSharedKey(
+export async function generateSharedKeyAndMessages(
   database: Database,
-  room: RoomModel,
-  members: UserModel[],
+  room: DeepPartial<RoomModel>,
+  members: DeepPartial<UserModel>[],
   senderId: string,
 ): Promise<string | null> {
   try {
@@ -133,13 +134,14 @@ export async function generateSharedKey(
     const roomFound = { id: room.id, sharedKey };
 
     // For each room member
-    const wrapped = limiter.wrap(async (member: UserModel) => {
+    const wrapped = limiter.wrap(async (member: DeepPartial<UserModel>) => {
       // Encode the shared key with the member's public key
       const cipher = await encryptContentUsingPair(sharedKey, member.publicKey!, sender.secretKey!);
 
       // Send to each the shared key
       const message: DeepPartial<MessageModel> = {
-        cipher: `${member.id} ${cipher}`,
+        id: await UUIDGenerator.getRandomUUID(),
+        cipher: `${member.id!}${cipher}`,
         type: 'sharedKey',
         sender: { id: sender.id },
         room: { id: roomFound.id },
@@ -151,15 +153,15 @@ export async function generateSharedKey(
 
     const batch: any[] = await Promise.all(members.map(wrapped));
 
-    await database.action<void>(async () => {
-      batch.push(await prepareUpsertRoom(database, roomFound));
+    batch.push(await prepareUpsertRoom(database, roomFound));
 
+    await database.action<void>(async () => {
       await database.batch(...batch);
-    }, 'generateSharedKey');
+    }, 'generateSharedKeyAndMessages');
 
     return sharedKey;
   } catch (err) {
-    console.error('generateSharedKey', err);
+    console.error('generateSharedKeyAndMessages', err);
     throw err;
   }
 }
@@ -169,9 +171,12 @@ export async function generateSharedKey(
  */
 export async function encryptContentUsingShared(content: string, sharedKey: string): Promise<string> {
   try {
-    const nonce = await Sodium.randombytes_buf(Sodium.crypto_secretbox_NONCEBYTES);
-    const cipher = await Sodium.crypto_secretbox_easy(content, nonce, sharedKey);
-    return nonce + cipher;
+    const message = Base64.encode(content);
+    const nonce = await Sodium.randombytes_buf(Sodium.crypto_box_NONCEBYTES);
+
+    const cipher = await Sodium.crypto_secretbox_easy(message, nonce, sharedKey);
+
+    return nonce.concat(NONCE_CIPHER_SEPARATOR).concat(cipher);
   } catch (err) {
     console.error('encryptContentUsingShared', err);
     throw err;
@@ -181,17 +186,17 @@ export async function encryptContentUsingShared(content: string, sharedKey: stri
 /**
  * Decrypt content with the room's shared key.
  */
-export async function decryptContentUsingShared(cipher: string, sharedKey: string): Promise<string> {
+export async function decryptContentUsingShared(cipherWithNonce: string, sharedKey: string): Promise<string> {
   try {
-    if (cipher.length < Sodium.crypto_secretbox_NONCEBYTES + Sodium.crypto_secretbox_MACBYTES) {
+    if (cipherWithNonce.length < Sodium.crypto_secretbox_NONCEBYTES + Sodium.crypto_secretbox_MACBYTES) {
       throw 'Short message';
     }
 
-    const nonce = cipher.slice(0, Sodium.crypto_secretbox_NONCEBYTES);
-    const cipherText = cipher.slice(Sodium.crypto_secretbox_NONCEBYTES);
+    const [nonce, cipher] = cipherWithNonce.split(NONCE_CIPHER_SEPARATOR);
 
-    const content = await Sodium.crypto_secretbox_open_easy(cipherText, nonce, sharedKey);
-    return content;
+    const content = await Sodium.crypto_secretbox_open_easy(cipher, nonce, sharedKey);
+
+    return Base64.decode(content);
   } catch (err) {
     console.error('decryptContentUsingShared', err);
     throw err;

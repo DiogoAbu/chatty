@@ -1,10 +1,11 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, TextInput as NativeInput, View } from 'react-native';
+import { Alert, InteractionManager, ScrollView, TextInput as NativeInput, View } from 'react-native';
 
 import { Button, Dialog, HelperText, Paragraph, Portal, Subheading, TextInput } from 'react-native-paper';
 
 import { ONE_TIME_CODE_MAX_LENGTH } from '!/config';
 import { useChangePasswordMutation } from '!/generated/graphql';
+import useFocusEffect from '!/hooks/use-focus-effect';
 import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
@@ -35,6 +36,7 @@ const ChangePass: FC<Props> = ({ navigation }) => {
 
   const isMounted = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
+  const codeRef = useRef<NativeInput>(null);
   const passRef = useRef<NativeInput>(null);
 
   // Shift input focus
@@ -100,6 +102,15 @@ const ChangePass: FC<Props> = ({ navigation }) => {
     });
   });
 
+  useFocusEffect(() => {
+    void InteractionManager.runAfterInteractions(() => {
+      codeRef.current?.focus();
+      setTimeout(() => {
+        codeRef.current?.focus();
+      }, 0);
+    });
+  }, []);
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -121,7 +132,6 @@ const ChangePass: FC<Props> = ({ navigation }) => {
           <TextInput
             autoCapitalize='none'
             autoCorrect={false}
-            autoFocus
             blurOnSubmit={false}
             error={!!oneTimeCodeError}
             keyboardType='numeric'
@@ -129,6 +139,7 @@ const ChangePass: FC<Props> = ({ navigation }) => {
             maxLength={ONE_TIME_CODE_MAX_LENGTH}
             mode='outlined'
             onSubmitEditing={focusPass}
+            ref={codeRef}
             returnKeyType='next'
             textContentType='oneTimeCode'
             {...oneTimeCodeInput}

@@ -200,7 +200,6 @@ export type RoomChanges = {
   id?: Maybe<Scalars['ID']>;
   name?: Maybe<Scalars['String']>;
   pictureUri?: Maybe<Scalars['String']>;
-  sharedKey?: Maybe<Scalars['String']>;
   lastChangeAt?: Maybe<Scalars['Float']>;
   lastMessageId?: Maybe<Scalars['ID']>;
   createdAt?: Maybe<Scalars['Float']>;
@@ -405,7 +404,6 @@ export type RoomChangesInput = {
   id?: Maybe<Scalars['ID']>;
   name?: Maybe<Scalars['String']>;
   pictureUri?: Maybe<Scalars['String']>;
-  sharedKey?: Maybe<Scalars['String']>;
   lastChangeAt?: Maybe<Scalars['Float']>;
   lastMessageId?: Maybe<Scalars['ID']>;
   createdAt?: Maybe<Scalars['Float']>;
@@ -658,7 +656,7 @@ export type MessageChangesFragmentFragment = { __typename?: 'MessageChanges', id
 
 export type ReadReceiptChangesFragmentFragment = { __typename?: 'ReadReceiptChanges', id?: Maybe<string>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number> };
 
-export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, sharedKey?: Maybe<string>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
+export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
 
 export type UserChangesFragmentFragment = { __typename?: 'UserChanges', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string>, role?: Maybe<string>, isFollowingMe?: Maybe<boolean>, isFollowedByMe?: Maybe<boolean> };
 
@@ -709,7 +707,6 @@ export const RoomChangesFragmentFragmentDoc = gql`
   id
   name
   pictureUri
-  sharedKey
   lastChangeAt
   lastMessageId
   createdAt

@@ -1,14 +1,12 @@
 import React, { FC } from 'react';
 
 import { createSharedElementStackNavigator } from 'react-navigation-shared-element';
-import { CardStyleInterpolators } from '@react-navigation/stack';
 import { TransitionSpec } from '@react-navigation/stack/lib/typescript/src/types';
 
 import Header from '!/components/Header';
 import PictureScrollerModal from '!/screens/PictureScrollerModal/PictureScrollerModal';
 import PictureViewerModal from '!/screens/PictureViewerModal/PictureViewerModal';
 import RoomInfoModal from '!/screens/RoomInfoModal/RoomInfoModal';
-import SignIn from '!/screens/SignIn/SignIn';
 import VideoPlayerModal from '!/screens/VideoPlayerModal/VideoPlayerModal';
 import { RootStackParams } from '!/types';
 
@@ -94,16 +92,6 @@ const RootStack: FC<unknown> = () => {
       />
 
       <AnimationStack.Screen component={VideoPlayerModal} name='VideoPlayerModal' />
-
-      <AnimationStack.Screen
-        component={SignIn}
-        name='SignIn'
-        options={{
-          headerShown: false,
-          cardStyle: { backgroundColor: 'rgba(0,0,0,0.5)' },
-          cardStyleInterpolator: CardStyleInterpolators.forFadeFromBottomAndroid,
-        }}
-      />
     </AnimationStack.Navigator>
   );
 };

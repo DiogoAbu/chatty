@@ -69,6 +69,7 @@ export default {
     'alert.noFilesFound': 'None of the files could be found',
     'alert.maybeFileIsShortcut': 'Maybe the file was deleted but the shortcut of it remained',
     'alert.sendValidFiles?': 'Should we send only the valid files?',
+    'alert.groupCreationFailed': 'Group creation failed',
 
     'messageInput.placeholder': 'Type a message...',
     'headerSearch.placeholder': 'Find by name or email',

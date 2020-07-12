@@ -223,7 +223,6 @@ fragment RoomChangesFragment on RoomChanges {
   id
   name
   pictureUri
-  sharedKey
   lastChangeAt
   lastMessageId
   createdAt

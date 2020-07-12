@@ -45,11 +45,10 @@ const FriendItem: FC<Props> = ({ friend, isSelected, isSelecting, toggleSelected
       isFollowedByMe: friend.isFollowedByMe,
     };
     const members = [authStore.user, friendUser];
-    const roomId = await createRoom(database, authStore.user, room, members);
+    const roomCreated = await createRoom(database, authStore.user, room, members);
 
     requestAnimationFrame(() => {
-      // Make it so the first screen is Home and we're at the Chatting screen
-      navigation.navigate('Chatting', { roomId });
+      navigation.navigate('Chatting', { roomId: roomCreated.id });
     });
   });
 

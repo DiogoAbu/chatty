@@ -5,6 +5,7 @@ import Bottleneck from 'bottleneck';
 import { Client } from 'urql';
 
 import {
+  MessageChanges,
   PullChangesDocument,
   PullChangesQuery,
   PullChangesQueryVariables,
@@ -16,6 +17,7 @@ import {
 import { prepareUpsertMessage } from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
 import { getAllMembersOfRoom } from '!/models/relations/RoomMemberModel';
+import { prepareUpsertRoom } from '!/models/RoomModel';
 import UserModel, { prepareUpsertUser } from '!/models/UserModel';
 import debug from '!/services/debug';
 import { DeepRequired, Tables } from '!/types';
@@ -51,11 +53,11 @@ const keysToOmit: { [key in Tables]: { pull: any[]; push: any[] } } = {
   },
   roomMembers: {
     pull: [],
-    push: [],
+    push: ['isLocalOnly'],
   },
   rooms: {
     pull: [],
-    push: ['sharedKey', 'isArchived', 'lastReadAt', 'lastChangeAt', 'lastMessageId'],
+    push: ['sharedKey', 'isLocalOnly', 'isArchived', 'lastReadAt', 'lastChangeAt', 'lastMessageId'],
   },
   users: {
     pull: ['publicKey'],
@@ -96,8 +98,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
     throw null;
   }
 
-  const changes = result.data.pullChanges.changes;
-  const timestamp = result.data.pullChanges.timestamp;
+  const { changes, timestamp } = result.data.pullChanges;
 
   ///////////
   // Users //
@@ -106,7 +107,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
     changes.users.updated = changes.users.updated.map((each) => {
       if (each.id === userId) {
         // Do not overwrite public key
-        return omitKeys(each, keysToOmit.users!.pull);
+        return omitKeys(each, keysToOmit.users.pull);
       }
       return each;
     });
@@ -141,27 +142,72 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
   // Messages //
   //////////////
   if (changes?.messages?.updated?.length) {
-    const wrapped = limiter.wrap(async (msg: DirtyRaw) => {
+    changes.messages.updated.sort((a, b) => b.sentAt! - a.sentAt!);
+
+    const decryptSharedKey = limiter.wrap(async (msg: MessageChanges) => {
+      try {
+        if (msg.type !== 'sharedKey') {
+          return;
+        }
+        if (!msg.cipher || !msg.cipher.startsWith(userId)) {
+          return;
+        }
+        const cipher = msg.cipher.replace(userId, '');
+
+        const usersTable = database.collections.get<UserModel>(Tables.users);
+
+        let senderPublicKey: string;
+        const sender = changes.users!.updated!.find((e) => e.id === msg.userId);
+        if (sender?.publicKey) {
+          senderPublicKey = sender.publicKey;
+        } else {
+          const senderFound = await usersTable.find(msg.userId!);
+          if (!senderFound.publicKey) {
+            throw new Error('Sender user record not found');
+          }
+          senderPublicKey = senderFound.publicKey;
+        }
+
+        const signedUser = await usersTable.find(userId);
+        const sharedKey = await decryptContentUsingPair(cipher, senderPublicKey, signedUser.secretKey!);
+
+        changes.rooms!.updated = changes.rooms?.updated?.map((room) => {
+          if (room.id === msg.roomId) {
+            return { ...room, sharedKey };
+          }
+          return room;
+        });
+      } catch (err) {
+        console.log(`Failed to get shared key from message ${msg.id as string}`);
+        console.log(err);
+        return;
+      }
+    });
+
+    await Promise.all(changes.messages.updated.map(decryptSharedKey));
+
+    const decryptAndAddReadReceipt = limiter.wrap(async (msg: MessageChanges) => {
       const data: { message: DirtyRaw; readReceipt: DirtyRaw | null } = {
         message: msg,
         readReceipt: null,
       };
 
-      // Cannot decrypt message sent by me
-      if (msg.cipher && msg.userId !== userId) {
+      if (msg.cipher && msg.type === 'default') {
         try {
           const room = changes.rooms!.updated!.find((e) => e.id === msg.roomId);
-          if (room?.name && room.sharedKey) {
+          if (room?.name) {
+            // @ts-expect-error
             data.message.content = await decryptContentUsingShared(msg.cipher, room.sharedKey);
-          } else {
+          } else if (msg.userId !== userId) {
+            // Cannot decrypt message sent by me to someone else
             const usersTable = database.collections.get<UserModel>(Tables.users);
 
             let senderPublicKey: string;
             const sender = changes.users!.updated!.find((e) => e.id === msg.userId);
-            if (sender) {
-              senderPublicKey = sender.publicKey!;
+            if (sender?.publicKey) {
+              senderPublicKey = sender.publicKey;
             } else {
-              const senderFound = await usersTable.find(msg.userId);
+              const senderFound = await usersTable.find(msg.userId!);
               if (!senderFound.publicKey) {
                 throw new Error('Sender user record not found');
               }
@@ -176,7 +222,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
             );
           }
         } catch (err) {
-          console.log(`Failed to decrypt pulled message ${msg.id as string}`);
+          console.log(`Failed to handle pulled message ${msg.id as string}`);
           console.log(err);
         }
       }
@@ -188,7 +234,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       const readReceiptsTable = database.collections.get<ReadReceiptModel>(Tables.readReceipts);
 
       const readReceipts = await readReceiptsTable
-        .query(Q.where('userId', userId), Q.where('messageId', msg.id))
+        .query(Q.where('userId', userId), Q.where('messageId', msg.id!))
         .fetch();
 
       if (readReceipts?.length) {
@@ -210,7 +256,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       return data;
     });
 
-    const newData = await Promise.all(changes.messages.updated.map(wrapped));
+    const newData = await Promise.all(changes.messages.updated.map(decryptAndAddReadReceipt));
     changes.messages.updated = newData.map((e) => e.message);
     changes.readReceipts?.updated?.push(...newData.map((e) => e.readReceipt).filter(notEmpty));
   }
@@ -277,13 +323,20 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
   // Rooms //
   ///////////
   if (changes?.rooms) {
+    const updateToSynced = (e: DirtyRaw) => {
+      batchAsync.push(
+        prepareUpsertRoom(database, {
+          id: e.id,
+          _raw: { _status: 'synced', _changed: '' },
+        }),
+      );
+    };
     changes.rooms.created = changes.rooms.created.filter((e) => !e.isLocalOnly);
     changes.rooms.updated = changes.rooms.updated.filter((e) => !e.isLocalOnly);
-    changes.rooms.updated = changes.rooms.updated.filter((e) => {
-      return e._changed && !e._changed.split(',').every((c: string) => keysToOmit.rooms!.push.includes(c));
-    });
     changes.rooms.created = changes.rooms.created.map((e) => omitKeys(e, keysToOmit.rooms!.push));
     changes.rooms.updated = changes.rooms.updated.map((e) => omitKeys(e, keysToOmit.rooms!.push));
+    changes.rooms.created.map(updateToSynced);
+    changes.rooms.updated.map(updateToSynced);
   }
 
   //////////////////

@@ -71,6 +71,7 @@ export default {
     'alert.noFilesFound': 'Nenhum arquivo foi encontrado',
     'alert.maybeFileIsShortcut': 'Talvez o arquivo foi removido, mas seu atalho permaneceu',
     'alert.sendValidFiles?': 'Prosseguir enviando somente os arquivos válidos?',
+    'alert.groupCreationFailed': 'Criação do grupo falhou',
 
     'messageInput.placeholder': 'Digite algo...',
     'headerSearch.placeholder': 'Procure por nome ou email',

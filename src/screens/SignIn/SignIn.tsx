@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, InteractionManager, ScrollView } from 'react-native';
 
-import { Button, HelperText, Surface, TextInput, Title } from 'react-native-paper';
+import { Button, HelperText, Surface, TextInput } from 'react-native-paper';
 
 import { useSignInMutation } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
@@ -27,7 +27,7 @@ interface Props {
 
 const SignIn: FC<Props> = ({ navigation }) => {
   const { authStore } = useStores();
-  const { colors, roundness } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
 
   const [, signInExec] = useSignInMutation();
@@ -114,7 +114,6 @@ const SignIn: FC<Props> = ({ navigation }) => {
       await authStore.signIn(userData, token, password);
       log('signed in successfully');
 
-      navigation.popToTop();
       requestAnimationFrame(() => {
         setIsSigningIn(false);
         navigation.reset({
@@ -135,15 +134,20 @@ const SignIn: FC<Props> = ({ navigation }) => {
     });
   });
 
-  const handleGoBack = usePress(() => {
-    requestAnimationFrame(() => {
-      navigation.goBack();
-    });
-  });
-
   useFocusEffect(() => {
+    navigation.setOptions({
+      title: t('label.signInWithEmail'),
+    });
+
+    void InteractionManager.runAfterInteractions(() => {
+      emailRef.current?.focus();
+      setTimeout(() => {
+        emailRef.current?.focus();
+      }, 0);
+    });
+
     setIsSigningIn(false);
-  }, []);
+  }, [navigation, t]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -159,13 +163,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
       keyboardShouldPersistTaps='handled'
       ref={scrollRef}
     >
-      <TouchableWithoutFeedback onPress={handleGoBack}>
-        <View style={styles.touchable} />
-      </TouchableWithoutFeedback>
-
-      <Surface style={[{ borderRadius: roundness * 4 }, styles.formContent]}>
-        <Title style={styles.title}>Entrar com email</Title>
-
+      <Surface style={styles.formContent}>
         <TextInput
           autoCapitalize='none'
           autoCompleteType='email'
