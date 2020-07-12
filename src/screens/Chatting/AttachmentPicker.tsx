@@ -101,9 +101,9 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
         {
           opacity: animValue,
           transform: [
-            { translateY: 80, translateX: 130 }, // Tranlate to origin point
+            { translateY: 80, translateX: 130 }, // Translate to origin point
             { scale: animValue },
-            { translateY: -80, translateX: -130 }, // Tranlate back to final position
+            { translateY: -80, translateX: -130 }, // Translate back to final position
           ],
         },
       ]}

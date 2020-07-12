@@ -32,6 +32,7 @@ interface Props {
   whiteBalance: keyof WhiteBalance;
   cameraAspectRatio: string;
   cameraStyle: StyleProp<ViewStyle>;
+  initialCameraType?: 'front' | 'back';
 
   handleSetActiveCameraId: (activeId: string) => any;
   handleSetCameraIds: (ids: CameraIds[]) => any;
@@ -55,6 +56,7 @@ const CameraPreview: FC<Props> = ({
   cameraAspectRatio,
   cameraStyle,
   activeCameraId,
+  initialCameraType,
   handleSetIsCameraReady,
   handleSetCameraIds,
   handleSetActiveCameraId,
@@ -143,6 +145,7 @@ const CameraPreview: FC<Props> = ({
       ratio={cameraAspectRatio}
       ref={cameraRef}
       style={[styles.camera, cameraStyle]}
+      type={initialCameraType}
       useNativeZoom={false}
       whiteBalance={whiteBalance}
       zoom={zoom}

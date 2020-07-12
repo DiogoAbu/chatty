@@ -14,6 +14,7 @@ import { Provider as UrqlProvider } from 'urql';
 
 import Fab from './components/Fab';
 import SubscriptionManager from './components/SubscriptionManager';
+import SyncManager from './components/SyncManager';
 import RootStack from './navigators/RootStack';
 import { darkTheme, lightTheme } from './services/theme';
 import { Stores } from './stores/Stores';
@@ -44,7 +45,7 @@ const AppWithStores: FC = () => {
 
               <Fab />
 
-              {/* <SyncManager token={authStore.token} userId={authStore.user?.id} /> */}
+              <SyncManager />
 
               <SubscriptionManager
                 token={authStore.token}

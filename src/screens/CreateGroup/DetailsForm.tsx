@@ -1,10 +1,12 @@
 import React, { FC } from 'react';
 import { View } from 'react-native';
 
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Avatar, HelperText, TextInput, Title } from 'react-native-paper';
 
 import { ROOM_NAME_MAX_LENGTH } from '!/config';
 import useDimensions from '!/hooks/use-dimensions';
+import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 
@@ -17,18 +19,26 @@ interface Props {
 }
 
 const DetailsForm: FC<Props> = ({ value, onChangeText, errorMessage }) => {
+  const [winWidth] = useDimensions('window');
   const { colors, grid, gridBigger } = useTheme();
   const { t } = useTranslation();
-  const [winWidth] = useDimensions('window');
+
+  const handleOpenAttachmentPicker = usePress(() => {
+    requestAnimationFrame(() => {
+      // a
+    });
+  });
 
   return (
     <View style={[styles.detailsContainer, { padding: grid }]}>
-      <Avatar.Icon
-        color={colors.textOnPrimary}
-        icon='image-plus'
-        size={Math.min(200, winWidth - grid * 10)}
-        style={[styles.detailsAvatar, { margin: gridBigger }]}
-      />
+      <TouchableOpacity onPress={handleOpenAttachmentPicker}>
+        <Avatar.Icon
+          color={colors.textOnPrimary}
+          icon='image-plus'
+          size={Math.min(200, winWidth - grid * 10)}
+          style={[styles.detailsAvatar, { margin: gridBigger }]}
+        />
+      </TouchableOpacity>
 
       <TextInput
         autoCapitalize='sentences'

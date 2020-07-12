@@ -61,6 +61,10 @@ export type MainStackParams = {
   ChatsArchived: undefined;
 
   Camera: {
+    disableTakePicture?: boolean;
+    disableRecordVideo?: boolean;
+    initialCameraType?: 'front' | 'back';
+    nextScreenName: keyof (MainStackParams & RootStackParams);
     roomId: string;
     roomTitle: string;
     roomPictureUri: string;

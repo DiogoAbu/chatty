@@ -86,6 +86,8 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
     shouldBlurRemoveRoom.current = false;
     requestAnimationFrame(() => {
       navigation.navigate('Camera', {
+        nextScreenName: 'PreparePicture',
+        initialCameraType: 'back',
         roomId: room.id,
         roomTitle: title,
         roomPictureUri: pictureUri,
@@ -146,7 +148,7 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
             return;
           }
 
-          // Let the user decide if it`s gonna send only the valid files
+          // Some files valid
           const anyValid = checkedFiles.some((e) => e !== false);
 
           let alertMessage =
@@ -157,10 +159,8 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
               : t('alert.noFilesFound');
 
           alertMessage += '.';
-
-          alertMessage += '\n' + t('alert.maybeFileIsShortcut') + '.';
-
-          alertMessage += anyValid ? '\n\n' + t('alert.sendValidFiles?') : '';
+          alertMessage += `\n${t('alert.maybeFileIsShortcut')}.`;
+          alertMessage += anyValid ? `\n\n${t('alert.sendValidFiles?')}` : '';
 
           const buttons: AlertButton[] = [];
 
@@ -169,6 +169,7 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
             text: t('label.return'),
           });
 
+          // Ask if the user wants to send only the valid files
           if (anyValid) {
             buttons.push({
               onPress: async () => addMessagesWithDocs(checkedFiles),

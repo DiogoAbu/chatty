@@ -1,54 +1,38 @@
 import { FC, useEffect, useRef } from 'react';
 
-import { useDatabase } from '@nozbe/watermelondb/hooks';
-import { useClient } from 'urql';
+import NetInfo from '@react-native-community/netinfo';
 
 import useMethod from '!/hooks/use-method';
-import debug from '!/services/debug';
-import sync from '!/services/sync';
+import { useStores } from '!/stores';
 
-const log = debug.extend('sync-manager');
+const SyncManager: FC<unknown> = () => {
+  const { syncStore } = useStores();
 
-interface Props {
-  userId: string;
-  token: string;
-}
+  const timeout = useRef<number | null>(null);
 
-const SyncManager: FC<Props> = ({ userId }) => {
-  const client = useClient();
-  const database = useDatabase();
-
-  const syncing = useRef(false);
-
-  const syncChanges = useMethod(() => {
-    if (syncing.current || !userId) {
-      log('skipped. Reason: ' + (syncing.current ? 'sync in progress' : !userId ? 'no user' : 'none'));
-      return;
-    }
-    syncing.current = true;
-
-    const timeout = setTimeout(() => {
-      log('force finished');
-      syncing.current = false;
-    }, 21000);
-
-    sync(userId, database, client)
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        clearTimeout(timeout);
-        syncing.current = false;
+  const syncTimeout = useMethod(() => {
+    timeout.current = setTimeout(() => {
+      syncStore.sync().finally(() => {
+        syncTimeout();
       });
+    }, 20000);
   });
 
   useEffect(() => {
-    void syncChanges();
-    const interval = setInterval(syncChanges, 10000);
+    const unsubscribe = NetInfo.addEventListener(() => {
+      void syncStore.sync();
+    });
+
+    syncTimeout();
+
     return () => {
-      clearInterval(interval);
+      unsubscribe();
+
+      if (timeout.current) {
+        clearTimeout(timeout.current);
+      }
     };
-  }, [syncChanges]);
+  }, [syncStore, syncTimeout]);
 
   return null;
 };

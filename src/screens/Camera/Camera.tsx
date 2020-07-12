@@ -57,7 +57,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   const cameraRef = useRef<RNCamera | null>(null);
   const isTakingPicture = useRef(false);
   const isRecording = useRef(false);
-  const elapsedInterval = useRef<NodeJS.Timeout | null>(null);
+  const elapsedInterval = useRef<number | null>(null);
 
   // Pictures
   const [picsTaken, setPicsTaken] = useState<PicturesTaken[]>([]);
@@ -88,12 +88,10 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   const isCameraBusy = !isCameraReady || elapsed >= 0;
   const pictureSelectedAmount = picsTaken.filter((e) => e.isSelected).length;
 
-  const handleGoToPreparePicture = usePress((pictures?: PicturesTaken[]) => {
+  const handleGoToNextScreen = usePress((pictures?: PicturesTaken[]) => {
     requestAnimationFrame(() => {
-      navigation.navigate('PreparePicture', {
-        roomId: params.roomId,
-        roomTitle: params.roomTitle,
-        roomPictureUri: params.roomPictureUri,
+      navigation.navigate(params.nextScreenName, {
+        ...params,
         skipStatusBar: true,
         initialMessage: messageSaved.current,
         picturesTaken: pictures || picsTaken,
@@ -106,6 +104,9 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
   // Handlers
   const handleTakePicture = usePress(async () => {
+    if (params.disableTakePicture) {
+      return;
+    }
     if (!cameraRef.current || isTakingPicture.current) {
       return;
     }
@@ -143,7 +144,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
       if (picsTaken.length === 0) {
         // Go to screen passing newly added picture
-        handleGoToPreparePicture(picsTaken.concat(newPic));
+        handleGoToNextScreen(picsTaken.concat(newPic));
       }
 
       requestAnimationFrame(() => {
@@ -202,6 +203,9 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   }, [animation.scale, isRecordingAnim]);
 
   const handleShootVideo = usePress(async () => {
+    if (params.disableRecordVideo) {
+      return;
+    }
     if (!cameraRef.current || isRecording.current) {
       handleStopShootingVideo();
     }
@@ -400,7 +404,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   // Stop recording if app is no longer active
   const handleAppStateChange = useCallback(
     (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'background') {
+      if (nextAppState !== 'active') {
         handleStopShootingVideo();
         if (elapsedInterval.current) {
           clearInterval(elapsedInterval.current);
@@ -540,6 +544,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
           handleSetCameraIds={handleSetCameraIds}
           handleSetIsCameraReady={handleSetIsCameraReady}
           handleStopRecording={handleStopShootingVideo}
+          initialCameraType={params.initialCameraType}
           isLandscape={isLandscape}
           whiteBalance={whiteBalance}
           winHeight={winHeight}
@@ -562,7 +567,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       {picsTaken.length > 0 && (
         <PictureList
           handleClearPicturesTaken={handleClearPicturesTaken}
-          handleGoToPreparePicture={handleGoToPreparePicture}
+          handleGoToPreparePicture={handleGoToNextScreen}
           handleTogglePictureSelection={handleTogglePictureSelection}
           picsTaken={picsTaken}
         />
