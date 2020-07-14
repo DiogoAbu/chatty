@@ -114,7 +114,7 @@ git push origin TAGNAME
 ```
 
 ## Built with
-*Check the projects to know more*
+*Check out the projects to know more*
 
 * [Apollo GraphQL](https://www.apollographql.com) - The [server](https://github.com/DiogoAbu/chatty-server)
 * [React Native](https://facebook.github.io/react-native) - The [app](https://github.com/DiogoAbu/chatty)
