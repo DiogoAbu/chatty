@@ -49,7 +49,8 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
   public void onCreate() {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);
-    initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
+    // Disable to fix fetch FormData error
+    // initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
   }
 
   /**

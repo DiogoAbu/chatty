@@ -18,3 +18,6 @@
   **[] $VALUES;
   public *;
 }
+
+# react-native-svg
+-keep public class com.horcrux.svg.** {*;}

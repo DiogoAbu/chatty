@@ -347,7 +347,7 @@
     "no-underscore-dangle": [
       2,
       {
-        "allow": ["_raw", "_status", "_changed", "_locale", "_calendar", "_children", "_nativeTag"]
+        "allow": ["_raw", "_status", "_changed", "_data", "_locale", "_calendar", "_children", "_nativeTag"]
       }
     ],
     "no-unexpected-multiline": 2,

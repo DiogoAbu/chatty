@@ -94,7 +94,7 @@ const Welcome: FC<Props> = ({ navigation }) => {
           onPress={handleSignInWithEmail}
           style={styles.button}
         >
-          {t('label.signInWithEmail')}
+          {t('label.continueWithEmail')}
         </Button>
       </View>
     </View>

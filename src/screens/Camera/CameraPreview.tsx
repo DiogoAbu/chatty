@@ -4,6 +4,8 @@ import { StyleProp, ViewStyle } from 'react-native';
 import { FlashMode, RNCamera, WhiteBalance } from 'react-native-camera';
 import { call, Node, useCode } from 'react-native-reanimated';
 
+import CameraMask from '!/components/CameraMask';
+
 import styles from './styles';
 import { CameraIds } from './types';
 
@@ -33,6 +35,7 @@ interface Props {
   cameraAspectRatio: string;
   cameraStyle: StyleProp<ViewStyle>;
   initialCameraType?: 'front' | 'back';
+  showCameraMask?: boolean;
 
   handleSetActiveCameraId: (activeId: string) => any;
   handleSetCameraIds: (ids: CameraIds[]) => any;
@@ -57,6 +60,7 @@ const CameraPreview: FC<Props> = ({
   cameraStyle,
   activeCameraId,
   initialCameraType,
+  showCameraMask,
   handleSetIsCameraReady,
   handleSetCameraIds,
   handleSetActiveCameraId,
@@ -91,7 +95,9 @@ const CameraPreview: FC<Props> = ({
         // @ts-ignore
         ids = (await cameraRef.current.getCameraIdsAsync()).map((each: any) => {
           // Set back camera as active
-          if (each.type === BACK_TYPE) {
+          if (initialCameraType === 'front' && each.type === FRONT_TYPE) {
+            activeId = each.id;
+          } else if (initialCameraType === 'back' && each.type === BACK_TYPE) {
             activeId = each.id;
           }
           each.cameraType = getCameraType(each.deviceType);
@@ -112,7 +118,13 @@ const CameraPreview: FC<Props> = ({
       handleSetCameraIds(ids);
       handleSetActiveCameraId(activeId);
     },
-    [handleSetActiveCameraId, handleSetCameraIds, handleSetIsCameraReady, handleSetAudioEnabled],
+    [
+      handleSetAudioEnabled,
+      handleSetCameraIds,
+      handleSetActiveCameraId,
+      handleSetIsCameraReady,
+      initialCameraType,
+    ],
   );
 
   const handleAudioConnected = useCallback(() => {
@@ -131,25 +143,27 @@ const CameraPreview: FC<Props> = ({
   }, [translationY]);
 
   return (
-    <RNCamera
-      // @ts-ignore
-      cameraId={activeCameraId}
-      flashMode={flashMode}
-      maxZoom={MAX_ZOOM}
-      onAudioConnected={handleAudioConnected}
-      onAudioInterrupted={handleAudioInterrupted}
-      onCameraReady={handleCameraReady}
-      onRecordingEnd={handleRecordingEnd}
-      onRecordingStart={handleRecordingStart}
-      onStatusChange={handleStatusChange}
-      ratio={cameraAspectRatio}
-      ref={cameraRef}
-      style={[styles.camera, cameraStyle]}
-      type={initialCameraType}
-      useNativeZoom={false}
-      whiteBalance={whiteBalance}
-      zoom={zoom}
-    />
+    <>
+      <RNCamera
+        // @ts-ignore
+        cameraId={activeCameraId}
+        flashMode={flashMode}
+        maxZoom={MAX_ZOOM}
+        onAudioConnected={handleAudioConnected}
+        onAudioInterrupted={handleAudioInterrupted}
+        onCameraReady={handleCameraReady}
+        onRecordingEnd={handleRecordingEnd}
+        onRecordingStart={handleRecordingStart}
+        onStatusChange={handleStatusChange}
+        ratio={cameraAspectRatio}
+        ref={cameraRef}
+        style={[styles.camera, cameraStyle]}
+        useNativeZoom={false}
+        whiteBalance={whiteBalance}
+        zoom={zoom}
+      />
+      {showCameraMask ? <CameraMask /> : null}
+    </>
   );
 };
 

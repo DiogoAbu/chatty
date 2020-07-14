@@ -10,6 +10,7 @@ const styles = StyleSheet.create({
   formContent: {
     margin: 0,
     padding: 16,
+    paddingTop: 20,
     elevation: 8,
   },
   inputBottom: {
@@ -18,6 +19,10 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     paddingVertical: 8,
+  },
+
+  accountHelperText: {
+    textAlign: 'center',
   },
 });
 

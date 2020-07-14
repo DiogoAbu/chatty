@@ -9,6 +9,9 @@ import { PicturesTaken, VideoRecorded } from './screens/Camera/types';
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 export type DeepRequired<T> = { [P in keyof T]-?: DeepRequired<T[P]> };
 
+export type ColorSchemePreferred = 'light' | 'dark' | 'auto';
+export type ColorSchemeCurrent = 'light' | 'dark';
+
 // Table names
 export enum Tables {
   attachments = 'attachments',
@@ -61,13 +64,15 @@ export type MainStackParams = {
   ChatsArchived: undefined;
 
   Camera: {
+    screenNameAfterPicture?: keyof (MainStackParams & RootStackParams);
+    screenNameAfterVideo?: keyof (MainStackParams & RootStackParams);
     disableTakePicture?: boolean;
     disableRecordVideo?: boolean;
     initialCameraType?: 'front' | 'back';
-    nextScreenName: keyof (MainStackParams & RootStackParams);
-    roomId: string;
-    roomTitle: string;
-    roomPictureUri: string;
+    showCameraMask?: boolean;
+    roomId?: string;
+    roomTitle?: string;
+    roomPictureUri?: string;
   };
   PreparePicture: {
     roomId: string;
@@ -95,6 +100,10 @@ export type MainStackParams = {
   SignIn: undefined;
   ForgotPass: undefined;
   ChangePass: undefined;
+  EditProfile?: {
+    isEditing?: boolean;
+    picturesTaken?: PicturesTaken[];
+  };
 };
 
 // Tab screens with params
@@ -153,3 +162,48 @@ export interface HeaderOptions extends StackNavigationOptions {
 export type StackHeaderRightProps = {
   tintColor?: string;
 };
+
+// Cloudinary response
+/* eslint-disable @typescript-eslint/naming-convention */
+export interface MediaUploaded {
+  access_mode: string;
+  asset_id: string;
+  bytes: number;
+  created_at: string;
+  etag: string;
+  existing: boolean;
+  format: string;
+  height: number;
+  info: MediaUploadedInfo;
+  original_filename: string;
+  placeholder: boolean;
+  public_id: string;
+  resource_type: string;
+  secure_url: string;
+  signature: string;
+  tags: string[];
+  type: string;
+  url: string;
+  version_id: string;
+  version: string;
+  width: number;
+}
+
+export interface MediaUploadedInfo {
+  categorization: MediaUploadedCategorization;
+}
+
+export interface MediaUploadedCategorization {
+  google_tagging: GoogleTagging;
+}
+
+export interface GoogleTagging {
+  data: GoogleTaggingData[];
+  status: string;
+}
+
+export interface GoogleTaggingData {
+  confidence: number;
+  tag: string;
+}
+/* eslint-enable @typescript-eslint/naming-convention */

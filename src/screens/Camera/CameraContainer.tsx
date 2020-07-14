@@ -33,6 +33,7 @@ interface Props {
   isLandscape: boolean;
   cameraAspectRatio: string;
   initialCameraType?: 'front' | 'back';
+  showCameraMask?: boolean;
 
   handleSetActiveCameraId: (activeId: string) => any;
   handleSetCameraIds: (ids: CameraIds[]) => any;
@@ -60,6 +61,7 @@ const CameraContainer: FC<Props> = ({
   isLandscape,
   cameraAspectRatio,
   initialCameraType,
+  showCameraMask,
   handleStopRecording,
   handleSetIsCameraReady,
   handleSetCameraIds,
@@ -134,6 +136,7 @@ const CameraContainer: FC<Props> = ({
           handleSetCameraIds={handleSetCameraIds}
           handleSetIsCameraReady={handleSetIsCameraReady}
           initialCameraType={initialCameraType}
+          showCameraMask={showCameraMask}
           translationY={transY}
           whiteBalance={whiteBalance}
         />

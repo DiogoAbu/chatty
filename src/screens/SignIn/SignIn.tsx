@@ -118,7 +118,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
         setIsSigningIn(false);
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Home' }],
+          routes: [{ name: 'EditProfile' }],
         });
       });
     } catch (err) {
@@ -136,7 +136,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
   useFocusEffect(() => {
     navigation.setOptions({
-      title: t('label.signInWithEmail'),
+      title: t('label.continueWithEmail'),
     });
 
     void InteractionManager.runAfterInteractions(() => {
@@ -211,8 +211,11 @@ const SignIn: FC<Props> = ({ navigation }) => {
           onPress={handleSignIn}
           style={styles.button}
         >
-          {t('signIn')}
+          {t('label.continue')}
         </Button>
+        <HelperText style={styles.accountHelperText} type='info' visible>
+          {t('helper.autoCreateAccount')}
+        </HelperText>
 
         <Button disabled={isSigningIn} mode='text' onPress={handleForgotPass} style={styles.button}>
           {t('forgotPassword')}

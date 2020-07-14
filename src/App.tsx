@@ -3,7 +3,8 @@ import 'mobx-react-lite/batchingForReactNative';
 import '!/services/why-did-you-render';
 import '!/services/localize';
 
-import React, { FC, useRef } from 'react';
+import React, { FC, useEffect, useRef } from 'react';
+import { Appearance } from 'react-native';
 
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import { Provider as UrqlProvider } from 'urql';
 import Fab from './components/Fab';
 import SubscriptionManager from './components/SubscriptionManager';
 import SyncManager from './components/SyncManager';
+import useMethod from './hooks/use-method';
 import RootStack from './navigators/RootStack';
 import { darkTheme, lightTheme } from './services/theme';
 import { Stores } from './stores/Stores';
@@ -25,11 +27,22 @@ const AppWithStores: FC = () => {
 
   const navigationContainer = useRef<NavigationContainerRef | null>(null);
 
+  const handleSchemeChange = useMethod(({ colorScheme }) => {
+    stores.themeStore.setColorSchemeCurrent(colorScheme);
+  });
+
+  useEffect(() => {
+    Appearance.addChangeListener(handleSchemeChange);
+    return () => {
+      Appearance.addChangeListener(handleSchemeChange);
+    };
+  }, [handleSchemeChange]);
+
   return useObserver(() => {
     const {
       generalStore,
       authStore,
-      themeStore: { isDarkMode },
+      themeStore: { colorSchemeCurrent },
     } = stores;
 
     if (!stores.hydrationComplete) {
@@ -39,8 +52,11 @@ const AppWithStores: FC = () => {
     return (
       <UrqlProvider value={generalStore.client}>
         <DatabaseProvider database={generalStore.database}>
-          <PaperProvider theme={isDarkMode ? darkTheme : lightTheme}>
-            <NavigationContainer ref={navigationContainer} theme={isDarkMode ? darkTheme : lightTheme}>
+          <PaperProvider theme={colorSchemeCurrent === 'dark' ? darkTheme : lightTheme}>
+            <NavigationContainer
+              ref={navigationContainer}
+              theme={colorSchemeCurrent === 'dark' ? darkTheme : lightTheme}
+            >
               <RootStack />
 
               <Fab />

@@ -88,9 +88,9 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   const isCameraBusy = !isCameraReady || elapsed >= 0;
   const pictureSelectedAmount = picsTaken.filter((e) => e.isSelected).length;
 
-  const handleGoToNextScreen = usePress((pictures?: PicturesTaken[]) => {
+  const handleGoToPreparePicture = usePress((pictures?: PicturesTaken[]) => {
     requestAnimationFrame(() => {
-      navigation.navigate(params.nextScreenName, {
+      navigation.navigate(params.screenNameAfterPicture || 'PreparePicture', {
         ...params,
         skipStatusBar: true,
         initialMessage: messageSaved.current,
@@ -124,6 +124,8 @@ const Camera: FC<Props> = ({ navigation, route }) => {
         quality: 0.66,
         orientation: 'auto',
         writeExif: true,
+        base64: false,
+        width: 1920,
       });
 
       const { uri, width, height, deviceOrientation } = pictureTaken;
@@ -144,7 +146,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
       if (picsTaken.length === 0) {
         // Go to screen passing newly added picture
-        handleGoToNextScreen(picsTaken.concat(newPic));
+        handleGoToPreparePicture(picsTaken.concat(newPic));
       }
 
       requestAnimationFrame(() => {
@@ -242,10 +244,10 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       };
 
       requestAnimationFrame(() => {
-        navigation.navigate('PrepareVideo', {
-          roomId: params.roomId,
-          roomTitle: params.roomTitle,
-          roomPictureUri: params.roomPictureUri,
+        navigation.navigate(params.screenNameAfterVideo || 'PrepareVideo', {
+          roomId: params.roomId!,
+          roomTitle: params.roomTitle!,
+          roomPictureUri: params.roomPictureUri!,
           videoRecorded,
         });
       });
@@ -503,6 +505,8 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       if (elapsedInterval.current) {
         clearInterval(elapsedInterval.current);
       }
+      StatusBar.setBackgroundColor(getStatusBarColor(4, colors, dark, mode));
+      StatusBar.setTranslucent(false);
     };
   }, [colors, dark, handleClearPicturesTaken, handleStopShootingVideo, mode, picsTaken.length]);
 
@@ -546,6 +550,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
           handleStopRecording={handleStopShootingVideo}
           initialCameraType={params.initialCameraType}
           isLandscape={isLandscape}
+          showCameraMask={params.showCameraMask}
           whiteBalance={whiteBalance}
           winHeight={winHeight}
           winWidth={winWidth}
@@ -567,7 +572,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       {picsTaken.length > 0 && (
         <PictureList
           handleClearPicturesTaken={handleClearPicturesTaken}
-          handleGoToPreparePicture={handleGoToNextScreen}
+          handleGoToPreparePicture={handleGoToPreparePicture}
           handleTogglePictureSelection={handleTogglePictureSelection}
           picsTaken={picsTaken}
         />

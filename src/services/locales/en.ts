@@ -11,6 +11,10 @@ export default {
     'title.settings': 'Settings',
     'title.chatsArchived': 'Archived chats',
     'title.oops': 'Oops!',
+    'title.editProfile': 'Profile',
+
+    'title.removePicture': 'Remove picture?',
+    'title.closeTheApp': 'Close the app?',
 
     'label.welcome': 'Welcome',
     'label.email': 'Email',
@@ -18,16 +22,24 @@ export default {
     'label.newPassword': 'New password',
     'label.digitCode': 'Code',
     'label.confirm': 'Confirm',
+    'label.userName': 'Name',
     'label.groupName': 'Group name',
     'label.members': 'Members',
     'label.selectAll': 'Select all',
     'label.deselectAll': 'Deselect all',
     'label.archived': 'Archived',
     'label.archivedNumber': 'Archived ({{count}})',
+    'label.save': 'Save',
     'label.goBack': 'Go Back',
     'label.return': 'Return',
+    'label.continue': 'Continue',
     'label.signInWithSocialNetwork': 'Sign in with your social network account',
-    'label.signInWithEmail': 'Sign in with email',
+    'label.continueWithEmail': 'Continue with email',
+    'label.tapToChangeIt': 'Tap to change it',
+    'label.colorScheme': 'Color scheme',
+    'label.colorScheme.auto': 'Automatic',
+    'label.colorScheme.dark': 'Dark',
+    'label.colorScheme.light': 'Light',
 
     'label.documents': 'Documents',
     'label.video': 'Video',
@@ -39,9 +51,14 @@ export default {
     'label.showEveryone': 'Show everyone',
     'label.showOnlySelected': 'Show only selected',
 
+    'label.no': 'No',
+    'label.yes': 'Yes',
+
     'helper.charactersLeft': 'You have {{count}} character left',
     'helper.charactersLeft_plural': 'You have {{count}} characters left',
     'helper.youAreSelectingPeopleToCreateGroup': 'You are selecting people to create a group',
+    'helper.autoCreateAccount': 'An account will be automatically created for you',
+    'helper.fieldRequired': 'Required',
 
     'error.invalid.email': 'Invalid email',
     'error.invalid.password': 'Invalid password',
@@ -70,6 +87,8 @@ export default {
     'alert.maybeFileIsShortcut': 'Maybe the file was deleted but the shortcut of it remained',
     'alert.sendValidFiles?': 'Should we send only the valid files?',
     'alert.groupCreationFailed': 'Group creation failed',
+    'alert.doYouWantTheRemoveTheCurrentPicture': 'Do you want the remove the current picture?',
+    'alert.youCanAlwaysChangeYourProfileLater': 'You can always change your profile later.',
 
     'messageInput.placeholder': 'Type a message...',
     'headerSearch.placeholder': 'Find by name or email',
@@ -88,7 +107,6 @@ export default {
 
     'holdToCreateGroup.desc': 'To create a Group Chat, tap and hold on a Person',
 
-    signIn: 'Sign in',
     signOut: 'Sign out',
     forgotPassword: 'Forgot password',
     changePassword: 'Change password',

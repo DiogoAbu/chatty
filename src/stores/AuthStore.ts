@@ -17,7 +17,6 @@ export class AuthStore extends BaseStore {
   @action
   async signIn(user: DeepPartial<UserModel>, token: string, password: string): Promise<void> {
     const {
-      syncStore,
       generalStore: { database },
     } = this.stores;
 
@@ -46,7 +45,6 @@ export class AuthStore extends BaseStore {
       this.user = userCreated;
       this.token = token;
       void this.persist();
-      void syncStore.sync();
     });
   }
 

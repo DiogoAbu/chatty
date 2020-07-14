@@ -13,6 +13,10 @@ export default {
     'title.settings': 'Configurações',
     'title.chatsArchived': 'Conversas arquivadas',
     'title.oops': 'Oops!',
+    'title.editProfile': 'Perfil',
+
+    'title.removePicture': 'Apagar foto?',
+    'title.closeTheApp': 'Fechar o app?',
 
     'label.welcome': 'Bem-vindo',
     'label.email': 'Email',
@@ -20,16 +24,24 @@ export default {
     'label.newPassword': 'Nova senha',
     'label.digitCode': 'Código',
     'label.confirm': 'Confirmar',
+    'label.userName': 'Nome',
     'label.groupName': 'Nome do grupo',
     'label.members': 'Membros',
     'label.selectAll': 'Selecionar todos',
     'label.deselectAll': 'Deselecionar todos',
     'label.archived': 'Arquivada',
     'label.archivedNumber': 'Arquivadas ({{count}})',
+    'label.save': 'Salvar',
     'label.goBack': 'Voltar',
     'label.return': 'Retornar',
+    'label.continue': 'Continuar',
     'label.signInWithSocialNetwork': 'Entre com sua rede social preferida',
-    'label.signInWithEmail': 'Entrar com email',
+    'label.continueWithEmail': 'Continuar com email',
+    'label.tapToChangeIt': 'Toque para trocar',
+    'label.colorScheme': 'Esquema de cores',
+    'label.colorScheme.auto': 'Automático',
+    'label.colorScheme.dark': 'Escuro',
+    'label.colorScheme.light': 'Claro',
 
     'label.documents': 'Documentos',
     'label.video': 'Vídeo',
@@ -41,9 +53,14 @@ export default {
     'label.showEveryone': 'Ver todos',
     'label.showOnlySelected': 'Ver selecionados',
 
+    'label.no': 'Não',
+    'label.yes': 'Sim',
+
     'helper.charactersLeft': 'Resta {{count}} caractere',
     'helper.charactersLeft_plural': 'Restam {{count}} caracteres',
     'helper.youAreSelectingPeopleToCreateGroup': 'Você está selecionando pessoas para criar um grupo',
+    'helper.autoCreateAccount': 'Uma conta será criada automaticamente para você',
+    'helper.fieldRequired': 'Obrigatório',
 
     'error.invalid.email': 'Email inválido',
     'error.invalid.password': 'Senha inválida',
@@ -72,6 +89,8 @@ export default {
     'alert.maybeFileIsShortcut': 'Talvez o arquivo foi removido, mas seu atalho permaneceu',
     'alert.sendValidFiles?': 'Prosseguir enviando somente os arquivos válidos?',
     'alert.groupCreationFailed': 'Criação do grupo falhou',
+    'alert.doYouWantTheRemoveTheCurrentPicture': 'Deseja excluir a foto atual?',
+    'alert.youCanAlwaysChangeYourProfileLater': 'Você pode mudar seu perfil depois.',
 
     'messageInput.placeholder': 'Digite algo...',
     'headerSearch.placeholder': 'Procure por nome ou email',
@@ -90,7 +109,6 @@ export default {
 
     'holdToCreateGroup.desc': 'Para criar um Grupo, toque e segure em uma pessoa',
 
-    signIn: 'Entrar',
     signOut: 'Sair',
     forgotPassword: 'Esqueceu a senha?',
     changePassword: 'Mudar a senha',

@@ -6,34 +6,39 @@ import { Avatar, Divider, List } from 'react-native-paper';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 import Bottleneck from 'bottleneck';
-import { Observer } from 'mobx-react-lite';
 
 import usePress from '!/hooks/use-press';
 import RoomModel, { removeRoomsCascade } from '!/models/RoomModel';
 import { useStores } from '!/stores';
-import { Tables } from '!/types';
+import { MainNavigationProp, MainRouteProp, Tables } from '!/types';
 
+import ColorSchemeItem from './ColorSchemeItem';
 import styles from './styles';
 
 const limiter = new Bottleneck({
   maxConcurrent: 1,
 });
 
-type Props = any;
+interface Props {
+  navigation: MainNavigationProp<'Settings'>;
+  route: MainRouteProp<'Settings'>;
+}
 
-const Settings: FC<Props> = () => {
+const Settings: FC<Props> = ({ navigation }) => {
   const database = useDatabase();
-  const { authStore, generalStore, themeStore } = useStores();
+  const { authStore, generalStore } = useStores();
+
+  const handleEditProfile = usePress(() => {
+    requestAnimationFrame(() => {
+      navigation.navigate('EditProfile', {
+        isEditing: true,
+      });
+    });
+  });
 
   useEffect(() => {
     generalStore.setFab();
   }, [generalStore]);
-
-  const handleToggleDarkMode = usePress(() => {
-    requestAnimationFrame(() => {
-      themeStore.toggleDarkMode();
-    });
-  });
 
   return (
     <ScrollView contentContainerStyle={styles.contentContainer} contentInsetAdjustmentBehavior='automatic'>
@@ -46,6 +51,7 @@ const Settings: FC<Props> = () => {
             style={[style, styles.avatar]}
           />
         )}
+        onPress={handleEditProfile}
         style={styles.avatarContainer}
         title={authStore.user.name}
         titleStyle={styles.avatarTitle}
@@ -53,21 +59,7 @@ const Settings: FC<Props> = () => {
 
       <Divider />
 
-      <List.Item
-        left={(props) => (
-          <Observer>
-            {() => (
-              <List.Icon
-                {...props}
-                icon={themeStore.isDarkMode ? 'lightbulb-off' : 'lightbulb'}
-                style={[props.style, styles.noMarginRight]}
-              />
-            )}
-          </Observer>
-        )}
-        onPress={handleToggleDarkMode}
-        title='Toggle dark mode'
-      />
+      <ColorSchemeItem />
 
       <Divider />
 
