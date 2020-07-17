@@ -3,7 +3,7 @@ import { CompositeNavigationProp, RouteProp as RoutePropNative } from '@react-na
 import { StackNavigationOptions, StackNavigationProp } from '@react-navigation/stack';
 
 import { User } from './generated/graphql';
-import AttachmentModel from './models/AttachmentModel';
+import AttachmentModel, { AttachmentTypes } from './models/AttachmentModel';
 import { PicturesTaken, VideoRecorded } from './screens/Camera/types';
 
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
@@ -45,7 +45,10 @@ export type RootStackParams = {
     title: string;
     attachment: DeepPartial<AttachmentModel>;
   };
-  SignIn: undefined;
+  AttachmentPickerModal: {
+    callbackScreen: keyof (MainStackParams & RootStackParams);
+    types?: Array<keyof typeof AttachmentTypes | 'camera'>;
+  };
 };
 
 // Stack screens with params
@@ -56,10 +59,18 @@ export type MainStackParams = {
   Chatting: {
     roomId: string;
   };
-  Settings: undefined;
+  Settings?: {
+    reload?: boolean;
+  };
   FindFriends: undefined;
   CreateGroup: {
+    id?: string;
+    name?: string;
+    pictureUri?: string;
+    createdAt?: number;
     members: User[];
+    attachmentType?: keyof typeof AttachmentTypes | 'camera';
+    picturesTaken?: PicturesTaken[];
   };
   ChatsArchived: undefined;
 
@@ -102,6 +113,7 @@ export type MainStackParams = {
   ChangePass: undefined;
   EditProfile?: {
     isEditing?: boolean;
+    attachmentType?: keyof typeof AttachmentTypes | 'camera';
     picturesTaken?: PicturesTaken[];
   };
 };
@@ -155,6 +167,7 @@ export interface HeaderOptions extends StackNavigationOptions {
   subtitle?: string;
   handlePressBack?: () => void;
   headerCenter?: (props: StackHeaderRightProps) => React.ReactNode;
+  handlePressCenter?: () => void;
   skipInset?: boolean;
 }
 

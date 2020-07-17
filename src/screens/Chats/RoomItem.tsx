@@ -39,7 +39,7 @@ const RoomItem: FC<WithOneRoomOutput> = ({
   const { grid, colors } = useTheme();
   const { t } = useTranslation();
 
-  const sentAt = getSentAt(lastMessage?.createdAt || room.lastChangeAt);
+  const sentAt = getSentAt(lastMessage?.createdAt || room.lastChangeAt || room.createdAt);
   const lastMessageNotRead =
     !lastMessage || !room?.lastReadAt
       ? false

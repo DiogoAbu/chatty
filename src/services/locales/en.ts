@@ -1,3 +1,5 @@
+// import 'moment/locale/en';
+
 export default {
   translation: {
     you: 'you',
@@ -45,6 +47,7 @@ export default {
     'label.video': 'Video',
     'label.image': 'Image',
     'label.images': 'Images',
+    'label.camera': 'Camera',
     'label.encrypted': 'Encrypted',
 
     'label.findPeopleNearYou': 'Find people near you',

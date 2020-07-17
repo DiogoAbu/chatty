@@ -86,7 +86,6 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
     shouldBlurRemoveRoom.current = false;
     requestAnimationFrame(() => {
       navigation.navigate('Camera', {
-        nextScreenName: 'PreparePicture',
         initialCameraType: 'back',
         roomId: room.id,
         roomTitle: title,
@@ -124,12 +123,11 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
       shouldBlurRemoveRoom.current = false;
       try {
         const filesChosen = await DocumentPicker.pickMultiple({
-          type:
-            type === AttachmentTypes.image ? [DocumentPicker.types.images] : [DocumentPicker.types.allFiles],
+          type: type === 'image' ? [DocumentPicker.types.images] : [DocumentPicker.types.allFiles],
         });
 
         // Prepare documents
-        if (type === AttachmentTypes.document) {
+        if (type === 'document') {
           // Try to access the file
           const checkFiles = limiter.wrap(async (file: DocumentPickerResponse) => {
             try {

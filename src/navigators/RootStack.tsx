@@ -1,9 +1,11 @@
 import React, { FC } from 'react';
 
 import { createSharedElementStackNavigator } from 'react-navigation-shared-element';
+import { CardStyleInterpolators } from '@react-navigation/stack';
 import { TransitionSpec } from '@react-navigation/stack/lib/typescript/src/types';
 
 import Header from '!/components/Header';
+import AttachmentPickerModal from '!/screens/AttachmentPickerModal/AttachmentPickerModal';
 import PictureScrollerModal from '!/screens/PictureScrollerModal/PictureScrollerModal';
 import PictureViewerModal from '!/screens/PictureViewerModal/PictureViewerModal';
 import RoomInfoModal from '!/screens/RoomInfoModal/RoomInfoModal';
@@ -92,6 +94,16 @@ const RootStack: FC<unknown> = () => {
       />
 
       <AnimationStack.Screen component={VideoPlayerModal} name='VideoPlayerModal' />
+
+      <AnimationStack.Screen
+        component={AttachmentPickerModal}
+        name='AttachmentPickerModal'
+        options={{
+          headerShown: false,
+          cardStyle: { backgroundColor: 'rgba(0,0,0,0.6)' },
+          cardStyleInterpolator: CardStyleInterpolators.forFadeFromBottomAndroid,
+        }}
+      />
     </AnimationStack.Navigator>
   );
 };

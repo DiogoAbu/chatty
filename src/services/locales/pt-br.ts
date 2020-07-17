@@ -47,6 +47,7 @@ export default {
     'label.video': 'Vídeo',
     'label.image': 'Imagem',
     'label.images': 'Imagens',
+    'label.camera': 'Câmera',
     'label.encrypted': 'Criptografada',
 
     'label.findPeopleNearYou': 'Encontre pessoas perto de você',

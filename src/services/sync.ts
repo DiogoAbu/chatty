@@ -17,7 +17,7 @@ import {
 import { prepareUpsertMessage } from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
 import { getAllMembersOfRoom } from '!/models/relations/RoomMemberModel';
-import { prepareUpsertRoom } from '!/models/RoomModel';
+import RoomModel, { prepareUpsertRoom } from '!/models/RoomModel';
 import UserModel, { prepareUpsertUser } from '!/models/UserModel';
 import debug from '!/services/debug';
 import { DeepRequired, Tables } from '!/types';
@@ -162,7 +162,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
           senderPublicKey = sender.publicKey;
         } else {
           const senderFound = await usersTable.find(msg.userId!);
-          if (!senderFound.publicKey) {
+          if (!senderFound?.publicKey) {
             throw new Error('Sender user record not found');
           }
           senderPublicKey = senderFound.publicKey;
@@ -194,10 +194,23 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
 
       if (msg.cipher && msg.type === 'default') {
         try {
+          let sharedKey: string;
           const room = changes.rooms!.updated!.find((e) => e.id === msg.roomId);
-          if (room?.name) {
+          // @ts-expect-error Get sharedKey added above
+          if (room?.sharedKey) {
             // @ts-expect-error
-            data.message.content = await decryptContentUsingShared(msg.cipher, room.sharedKey);
+            sharedKey = room.sharedKey;
+          } else {
+            const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
+            const roomFound = await roomsTable.find(msg.roomId!);
+            if (!roomFound?.sharedKey) {
+              throw new Error('Room record not found');
+            }
+            sharedKey = roomFound.sharedKey;
+          }
+
+          if (sharedKey) {
+            data.message.content = await decryptContentUsingShared(msg.cipher, sharedKey);
           } else if (msg.userId !== userId) {
             // Cannot decrypt message sent by me to someone else
             const usersTable = database.collections.get<UserModel>(Tables.users);
@@ -208,7 +221,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
               senderPublicKey = sender.publicKey;
             } else {
               const senderFound = await usersTable.find(msg.userId!);
-              if (!senderFound.publicKey) {
+              if (!senderFound?.publicKey) {
                 throw new Error('Sender user record not found');
               }
               senderPublicKey = senderFound.publicKey;

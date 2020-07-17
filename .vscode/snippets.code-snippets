@@ -20,43 +20,43 @@
   "use-autorun": {
     "scope": "typescript,typescriptreact",
     "prefix": "useAutorun",
-    "body": ["useAutorun$2(", "() => {", "  $0", "},", "{ name: '$1' },", "[],", ");", ""],
+    "body": ["useAutorun$2(", "() => {", "  $0", "},", "{ name: '$1' },", "[],", ");"],
     "description": "useAutorun"
   },
   "use-press": {
     "scope": "typescript,typescriptreact",
     "prefix": "usePress",
-    "body": ["const handle${1/(.*)/${1:/capitalize}/} = usePress$2(() => {", "  $0", "});", ""],
+    "body": ["const handle${1/(.*)/${1:/capitalize}/} = usePress$2(() => {", "  $0", "});"],
     "description": "usePress"
   },
   "use-theme": {
     "scope": "typescript,typescriptreact",
     "prefix": "useTheme",
-    "body": ["const { $1 } = useTheme$0();", ""],
+    "body": ["const { $2 } = useTheme$1();$0"],
     "description": "useTheme"
   },
   "use-translation": {
     "scope": "typescript,typescriptreact",
     "prefix": "useTranslation",
-    "body": ["const { t } = useTranslation$0();", ""],
+    "body": ["const { t } = useTranslation$1();$0"],
     "description": "useTranslation"
   },
   "use-stores": {
     "scope": "typescript,typescriptreact",
     "prefix": "useStores",
-    "body": ["const { $1 } = useStores$0();", ""],
+    "body": ["const { $2 } = useStores$1();$0"],
     "description": "useStores"
   },
   "use-database": {
     "scope": "typescript,typescriptreact",
     "prefix": "useDatabase",
-    "body": ["const database = useDatabase$0();", ""],
+    "body": ["const database = useDatabase$1();$0"],
     "description": "useDatabase"
   },
   "use-navigation": {
     "scope": "typescript,typescriptreact",
     "prefix": "useNavigation",
-    "body": ["const navigation = useNavigation$0();", ""],
+    "body": ["const navigation = useNavigation$1();$0"],
     "description": "useNavigation"
   },
   "with-observables-imports": {
@@ -74,8 +74,7 @@
       "}",
       "export const with${1/(.*)/${1:/capitalize}/} = withObservables<With${1/(.*)/${1:/capitalize}/}Input, With${1/(.*)/${1:/capitalize}/}Output>(['${1}'], ({ ${1} }) => ({",
       "  ${1}: ${1}.observe(),${0}",
-      "}));",
-      ""
+      "}));"
     ],
     "description": "withObservables"
   },
@@ -91,8 +90,7 @@
       "}",
       "export const with${1/(.*)/${1:/capitalize}/} = withObservables<With${1/(.*)/${1:/capitalize}/}Input, With${1/(.*)/${1:/capitalize}/}Output>(['${1}'], ({ ${1} }) => ({",
       "  ${1}: ${1}.observe(),${0}",
-      "}));",
-      ""
+      "}));"
     ],
     "description": "withObservables"
   }

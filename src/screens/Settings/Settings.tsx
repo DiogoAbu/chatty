@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import FastImage from 'react-native-fast-image';
@@ -7,6 +7,7 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 import Bottleneck from 'bottleneck';
 
+import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import RoomModel, { removeRoomsCascade } from '!/models/RoomModel';
 import { useStores } from '!/stores';
@@ -24,9 +25,11 @@ interface Props {
   route: MainRouteProp<'Settings'>;
 }
 
-const Settings: FC<Props> = ({ navigation }) => {
+const Settings: FC<Props> = ({ navigation, route }) => {
   const database = useDatabase();
   const { authStore, generalStore } = useStores();
+
+  const [, setReload] = useState(false);
 
   const handleEditProfile = usePress(() => {
     requestAnimationFrame(() => {
@@ -39,6 +42,12 @@ const Settings: FC<Props> = ({ navigation }) => {
   useEffect(() => {
     generalStore.setFab();
   }, [generalStore]);
+
+  useFocusEffect(() => {
+    if (route.params?.reload) {
+      setReload((prev) => !prev);
+    }
+  }, [route.params?.reload]);
 
   return (
     <ScrollView contentContainerStyle={styles.contentContainer} contentInsetAdjustmentBehavior='automatic'>

@@ -1,6 +1,6 @@
 import UUIDGenerator from 'react-native-uuid-generator';
 import { Database, Model, Q, Query, Relation, tableSchema } from '@nozbe/watermelondb';
-import { action, children, date, field, lazy, relation } from '@nozbe/watermelondb/decorators';
+import { action, children, date, field, lazy, readonly, relation } from '@nozbe/watermelondb/decorators';
 import { Associations } from '@nozbe/watermelondb/Model';
 import Bottleneck from 'bottleneck';
 
@@ -59,6 +59,10 @@ class RoomModel extends Model {
   // Last time something changed inside the room
   @date('lastChangeAt')
   lastChangeAt: number;
+
+  @readonly
+  @date('createdAt')
+  createdAt: number;
 
   @relation(Tables.messages, 'lastMessageId')
   lastMessage: Relation<MessageModel>;
@@ -186,6 +190,7 @@ export const roomSchema = tableSchema({
     { name: 'lastReadAt', type: 'number', isOptional: true },
     { name: 'lastChangeAt', type: 'number' },
     { name: 'lastMessageId', type: 'string' },
+    { name: 'createdAt', type: 'number' },
   ],
 });
 
@@ -332,9 +337,6 @@ export async function createRoom(
 
   const roomFound = await findRoom(database, room, members);
   if (roomFound) {
-    // Update room to be used outside of this scope
-    room = { ...roomFound._raw, _raw: room._raw };
-
     // Room came with ID, and local one is different
     if (room.id && room.id !== roomFound.id) {
       // Remove users from join table
@@ -343,6 +345,12 @@ export async function createRoom(
         return roomMember.prepareDestroyPermanently();
       });
     }
+
+    room = {
+      ...roomFound._raw,
+      ...room,
+      id: roomFound.id,
+    };
   } else {
     // Make sure room has ID
     room.id = room.id ?? (await UUIDGenerator.getRandomUUID());

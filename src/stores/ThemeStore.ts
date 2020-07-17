@@ -30,7 +30,10 @@ export class ThemeStore extends BaseStore {
 
   @action
   setColorSchemeCurrent(colorScheme?: ColorSchemeCurrent): void {
+    console.log('preferred', this.colorSchemePreferred);
+    console.log('colorScheme', colorScheme);
     if (this.colorSchemePreferred === 'auto' && colorScheme) {
+      console.log('changed');
       this.colorSchemeCurrent = colorScheme;
     }
     void this.persist();
@@ -52,8 +55,8 @@ export class ThemeStore extends BaseStore {
     } = JSON.parse(data);
 
     runInAction(() => {
-      this.colorSchemePreferred = colorSchemePreferred;
       this.colorSchemeCurrent = colorSchemeCurrent;
+      this.setColorSchemePreferred(colorSchemePreferred);
     });
   }
 

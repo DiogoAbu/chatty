@@ -43,9 +43,6 @@ const RoomList: FC<WithAllRoomsOutput> = ({ rooms, archivedOnly }) => {
       return true;
     });
 
-    available.sort((a, b) => b.lastChangeAt - a.lastChangeAt);
-    archived.sort((a, b) => b.lastChangeAt - a.lastChangeAt);
-
     return [available, archived];
   }, [rooms]);
 

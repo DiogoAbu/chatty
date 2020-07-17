@@ -20,13 +20,18 @@ const getAllRooms = ({ user, archivedOnly }: WithAllRoomsInput) => {
   if (!user?.rooms) {
     return null;
   }
+
+  let rooms;
   if (archivedOnly) {
-    return {
-      rooms: user.roomsArchived.observeWithColumns(['isArchived']),
-    };
+    rooms = user.roomsArchived;
+  } else {
+    rooms = user.rooms;
   }
+
   return {
-    rooms: user.rooms.observeWithColumns(['lastChangeAt', 'lastMessageId', 'isArchived']),
+    rooms: rooms
+      .extend(Q.experimentalSortBy('lastChangeAt', 'desc'))
+      .observeWithColumns(['lastChangeAt', 'lastMessageId', 'isArchived']),
   };
 };
 

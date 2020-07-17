@@ -6,6 +6,7 @@ import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
 import { useNavigation } from '@react-navigation/native';
 import Bottleneck from 'bottleneck';
 
+import { User } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTranslation from '!/hooks/use-translation';
@@ -62,6 +63,31 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
     }
   });
 
+  const handlePressCenter = usePress(() => {
+    requestAnimationFrame(() => {
+      if (room.name) {
+        navigation.navigate('CreateGroup', {
+          id: room.id,
+          name: room.name!,
+          pictureUri: room.pictureUri!,
+          createdAt: room.createdAt,
+          members: members.map<User>((member) => ({
+            id: member.id,
+            name: member.name,
+            pictureUri: member.pictureUri!,
+            email: member.email,
+            role: member.role!,
+            publicKey: member.publicKey!,
+            isFollowingMe: member.isFollowingMe!,
+            isFollowedByMe: member.isFollowedByMe!,
+          })),
+        });
+      } else {
+        // navigation.navigate('');
+      }
+    });
+  });
+
   const handleTappingOutside = useCallback((event: GestureResponderEvent) => {
     event.persist();
 
@@ -93,6 +119,7 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
       title,
       subtitle,
       handlePressBack,
+      handlePressCenter,
     } as HeaderOptions);
 
     const markAsSeen = async () => {
@@ -140,7 +167,17 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
         void removeRoomsCascade(database, [room.id], authStore.user.id);
       }
     };
-  }, [authStore.user.id, database, handlePressBack, navigation, room, subtitle, syncStore, title]);
+  }, [
+    authStore.user.id,
+    database,
+    handlePressBack,
+    handlePressCenter,
+    navigation,
+    room,
+    subtitle,
+    syncStore,
+    title,
+  ]);
 
   // Hide FAB
   useEffect(() => {

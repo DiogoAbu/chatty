@@ -1,13 +1,12 @@
 import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { TouchableOpacity } from 'react-native';
 
-import { Colors, FAB as Fab, Surface, Text } from 'react-native-paper';
+import { Surface } from 'react-native-paper';
 import Animated, { Easing, timing, Value } from 'react-native-reanimated';
 import { useMemoOne } from 'use-memo-one';
 
+import AttachmentIcon from '!/components/AttachmentIcon';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import useTranslation from '!/hooks/use-translation';
 import { AttachmentTypes } from '!/models/AttachmentModel';
 import getChildrenIds from '!/utils/get-children-ids';
 
@@ -18,7 +17,7 @@ export interface AttachmentPickerType {
   show: () => void;
   hide: () => void;
   toggle: () => void;
-  onPress: (callback: (type: AttachmentTypes) => any) => void;
+  onPress: (callback: (type: keyof typeof AttachmentTypes) => any) => void;
 }
 
 interface Props {
@@ -27,7 +26,6 @@ interface Props {
 
 const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTouchableIds }, ref) => {
   const { animation, roundness } = useTheme();
-  const { t } = useTranslation();
 
   const { animValue } = useMemoOne(() => ({ animValue: new Value(0) }), []);
 
@@ -35,15 +33,12 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
   const [isShowing, setIsShowing] = useState(false);
   const containerRef = useRef<Animated.View | null>(null);
 
-  const onPress = useRef<((type: AttachmentTypes) => any) | null>(null);
+  const onPress = useRef<((type: keyof typeof AttachmentTypes) => any) | null>(null);
 
-  const handleOnPress = usePress((type: AttachmentTypes) => {
+  const handleOnPress = usePress((type: keyof typeof AttachmentTypes) => {
     handleToggleAttachmentPicker(false);
     onPress.current?.(type);
   });
-
-  const handleOnPressDocument = usePress(() => handleOnPress(AttachmentTypes.document));
-  const handleOnPressImage = usePress(() => handleOnPress(AttachmentTypes.image));
 
   const handleToggleAttachmentPicker = usePress((state?: boolean) => {
     if (state === false) {
@@ -78,7 +73,7 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
     toggle: (state?: boolean) => {
       handleToggleAttachmentPicker(state);
     },
-    onPress: (callback: (type: AttachmentTypes) => any) => {
+    onPress: (callback: (type: keyof typeof AttachmentTypes) => any) => {
       onPress.current = callback;
     },
   }));
@@ -109,26 +104,8 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
       ]}
     >
       <Surface style={[styles.attachmentTypePicker, { borderRadius: roundness * 2 }]}>
-        <TouchableOpacity
-          activeOpacity={0.6}
-          onPress={handleOnPressDocument}
-          style={styles.attachmentTypeIconContainer}
-        >
-          <Fab
-            icon='file-document'
-            style={[styles.attachmentTypeIcon, { backgroundColor: Colors.blue500 }]}
-          />
-          <Text>{t('label.documents')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.6}
-          onPress={handleOnPressImage}
-          style={styles.attachmentTypeIconContainer}
-        >
-          <Fab icon='image' style={[styles.attachmentTypeIcon, { backgroundColor: Colors.yellow700 }]} />
-          <Text>{t('label.images')}</Text>
-        </TouchableOpacity>
+        <AttachmentIcon onPress={handleOnPress} type='document' />
+        <AttachmentIcon onPress={handleOnPress} type='image' />
       </Surface>
     </Animated.View>
   );

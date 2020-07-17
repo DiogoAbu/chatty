@@ -27,14 +27,14 @@ const AppWithStores: FC = () => {
 
   const navigationContainer = useRef<NavigationContainerRef | null>(null);
 
-  const handleSchemeChange = useMethod(({ colorScheme }) => {
-    stores.themeStore.setColorSchemeCurrent(colorScheme);
+  const handleSchemeChange = useMethod(({ colorScheme }: Appearance.AppearancePreferences) => {
+    stores.themeStore.setColorSchemeCurrent(colorScheme!);
   });
 
   useEffect(() => {
     Appearance.addChangeListener(handleSchemeChange);
     return () => {
-      Appearance.addChangeListener(handleSchemeChange);
+      Appearance.removeChangeListener(handleSchemeChange);
     };
   }, [handleSchemeChange]);
 
