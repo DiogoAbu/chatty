@@ -22,7 +22,6 @@
       Server
     </a>
   </h3>
-  <img src="https://github.com/DiogoAbu/chatty/workflows/Build%20and%20Release/badge.svg?branch=master" />
 </div>
 
 <div align="center">
@@ -92,19 +91,25 @@ You will need to provide the keystore password to build it as a release variant:
 Kindly open an issue [here](https://github.com/DiogoAbu/chatty/issues/new/choose) name it and label it accordingly.
 
 ### Releases
-We use Github Actions to test, build, and release the app.
+We use Github Actions to test, build, and release the app. This is a breakdown of each [workflow](https://github.com/DiogoAbu/chatty/blob/master/.github/workflows).
 
-When a push happens on `master`, `beta`, or `maintenance branchs` it will trigger some [workflow](https://github.com/DiogoAbu/chatty/blob/master/.github/workflows)
-
-**Android workflow:**
-- Set up the environment (gradle, node).
+**Release workflow**
+- Triggered by pushs on `master`, `beta`, or `maintenance branchs`.
+- Set up the environment (node).
 - Run tests.
 - Analize commits to define next version.
 - Update version on package.json and on the native side.
 - Commit the changes.
-- Build APK.
-- Create a release with notes and the APK.
+- Publish a new tagged release with notes.
 
+**Android workflow**
+- Triggered when a release is published.
+- Set up the environment (gradle, node).
+- Get version from package.json.
+- Build APK.
+- Upload APK to release tagged with current version.
+
+### Notes
 **Associate tag with commit**
 ```bash
 git tag -d TAGNAME
