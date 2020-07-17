@@ -65,11 +65,8 @@ To start developing, follow these steps:
 *On VS Code you can use the extension Conventional Commits (vscode-conventional-commits)*
 
 ### Running the app
-You can run the app with three different environments defined by the dotenv files.
-
-You will need to provide the keystore password to build it as a release variant:
-
-`yarn cross-env RELEASE_KEY_ALIAS=alias RELEASE_KEY_ALIAS_PASSWORD=alias_password RELEASE_KEY_PASSWORD=key_password yarn android-*`
+You can run the app with three different environments defined by the dotenv files. The keystore
+password and alias are required to build a release variant.
 
 **Dev**
   - Will read the `.env` and run as a debug variant.
@@ -116,6 +113,10 @@ git tag -d TAGNAME
 git tag TAGNAME COMMIT_HASH
 git push origin :TAGNAME
 git push origin TAGNAME
+```
+**Get file as a base64 string**
+```bash
+openssl base64 -A -in file.ext
 ```
 
 ## Built with
