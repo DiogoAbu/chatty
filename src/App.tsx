@@ -16,6 +16,7 @@ import { Provider as UrqlProvider } from 'urql';
 import Fab from './components/Fab';
 import SubscriptionManager from './components/SubscriptionManager';
 import SyncManager from './components/SyncManager';
+import { CollapsibleHeaderProvider } from './contexts/collapsible-header';
 import useMethod from './hooks/use-method';
 import RootStack from './navigators/RootStack';
 import { darkTheme, lightTheme } from './services/theme';
@@ -53,22 +54,24 @@ const AppWithStores: FC = () => {
       <UrqlProvider value={generalStore.client}>
         <DatabaseProvider database={generalStore.database}>
           <PaperProvider theme={colorSchemeCurrent === 'dark' ? darkTheme : lightTheme}>
-            <NavigationContainer
-              ref={navigationContainer}
-              theme={colorSchemeCurrent === 'dark' ? darkTheme : lightTheme}
-            >
-              <RootStack />
+            <CollapsibleHeaderProvider>
+              <NavigationContainer
+                ref={navigationContainer}
+                theme={colorSchemeCurrent === 'dark' ? darkTheme : lightTheme}
+              >
+                <RootStack />
 
-              <Fab />
+                <Fab />
 
-              <SyncManager />
+                <SyncManager />
 
-              <SubscriptionManager
-                token={authStore.token}
-                user={authStore.user}
-                userId={authStore.user?.id}
-              />
-            </NavigationContainer>
+                <SubscriptionManager
+                  token={authStore.token}
+                  user={authStore.user}
+                  userId={authStore.user?.id}
+                />
+              </NavigationContainer>
+            </CollapsibleHeaderProvider>
           </PaperProvider>
         </DatabaseProvider>
       </UrqlProvider>

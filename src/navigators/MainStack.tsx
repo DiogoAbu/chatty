@@ -40,6 +40,7 @@ const MainStack: FC<unknown> = () => {
         initialRouteName={authStore.token ? (authStore.user.name ? 'Home' : 'EditProfile') : 'Welcome'}
         screenOptions={{
           header: Header,
+          headerTransparent: true,
           cardStyle: { backgroundColor: colors.background },
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

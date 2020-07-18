@@ -1,12 +1,14 @@
 import React, { FC, useCallback } from 'react';
-import { Dimensions, StatusBar } from 'react-native';
+import { Dimensions, StatusBar, StyleSheet } from 'react-native';
 
 import { overlay } from 'react-native-paper';
+import Animated from 'react-native-reanimated';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useNavigation } from '@react-navigation/native';
 import color from 'color';
 
 import HomeTabHeaderRight from '!/components/HomeTabHeaderRight';
+import { useCollapsibleHeader } from '!/contexts/collapsible-header';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
@@ -21,6 +23,8 @@ const HomeTab: FC<unknown> = () => {
   const navigation = useNavigation();
   const { colors, dark, mode } = useTheme();
   const { t } = useTranslation();
+
+  const { containerPaddingTop } = useCollapsibleHeader();
 
   // Tab bar options
   const backgroundColor =
@@ -98,24 +102,33 @@ const HomeTab: FC<unknown> = () => {
   }, [navigation, updateStatusBar]);
 
   return (
-    <Tab.Navigator
-      backBehavior='initialRoute'
-      initialLayout={{ width: Dimensions.get('window').width }}
-      initialRouteName='Chats'
-      tabBarOptions={{
-        activeTintColor: backgroundIsDark ? colors.text : colors.textOnPrimary,
-        pressColor: backgroundIsDark ? colors.text : colors.textOnPrimary,
-        style: { backgroundColor },
-        indicatorStyle: { backgroundColor: dark ? colors.primary : colors.surface },
-        tabStyle: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-        iconStyle: { paddingTop: 2 },
-        showIcon: false,
+    <Animated.View
+      style={{
+        flex: 1,
+        backgroundColor: colors.primary,
+        transform: [{ translateY: containerPaddingTop }],
+        ...StyleSheet.absoluteFillObject,
       }}
     >
-      <Tab.Screen component={Chats} name='Chats' options={{ title: t('title.chats') }} />
+      <Tab.Navigator
+        backBehavior='initialRoute'
+        initialLayout={{ width: Dimensions.get('window').width }}
+        initialRouteName='Chats'
+        tabBarOptions={{
+          activeTintColor: backgroundIsDark ? colors.text : colors.textOnPrimary,
+          pressColor: backgroundIsDark ? colors.text : colors.textOnPrimary,
+          style: { backgroundColor },
+          indicatorStyle: { backgroundColor: dark ? colors.primary : colors.surface },
+          tabStyle: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+          iconStyle: { paddingTop: 2 },
+          showIcon: false,
+        }}
+      >
+        <Tab.Screen component={Chats} name='Chats' options={{ title: t('title.chats') }} />
 
-      <Tab.Screen component={Feed} name='Feed' options={{ title: t('title.feed') }} />
-    </Tab.Navigator>
+        <Tab.Screen component={Feed} name='Feed' options={{ title: t('title.feed') }} />
+      </Tab.Navigator>
+    </Animated.View>
   );
 };
 

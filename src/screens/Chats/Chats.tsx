@@ -5,6 +5,7 @@ import usePress from '!/hooks/use-press';
 import { useStores } from '!/stores';
 import { HomeTabNavigationProp } from '!/types';
 
+import BigList from './BigList';
 import RoomList from './RoomList';
 
 interface Props {
@@ -24,6 +25,7 @@ const Chats: FC<Props> = ({ navigation }) => {
     generalStore.setFab('message-text', handleFabPress);
   }, [generalStore, handleFabPress]);
 
+  return <BigList />;
   return <RoomList user={authStore.user} />;
 };
 
