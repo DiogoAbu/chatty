@@ -12,19 +12,23 @@ import styles from './styles';
 
 interface Props extends StackHeaderRightProps {
   archivedOnly?: boolean;
+  isAllSelectedMuted?: boolean;
   handleSelectAll: () => any;
   handleDeselectAll: () => any;
-  handleDeleteSelected: () => any;
   handleArchiveSelected: () => any;
+  handleShowMuteOptions: () => any;
+  handleUnmuteSelected: () => any;
 }
 
 const ChatsHeaderRight: FC<Props> = ({
   tintColor: textColor,
   archivedOnly,
+  isAllSelectedMuted,
   handleSelectAll,
   handleDeselectAll,
-  handleDeleteSelected,
   handleArchiveSelected,
+  handleShowMuteOptions,
+  handleUnmuteSelected,
 }) => {
   const { t } = useTranslation();
   const {
@@ -64,7 +68,11 @@ const ChatsHeaderRight: FC<Props> = ({
   return (
     <>
       <Animated.View style={[styles.headerActionsContainer, { opacity: opacity.current }]}>
-        <Appbar.Action color={textColor} icon='delete' onPress={hijackOnPress(handleDeleteSelected)} />
+        <Appbar.Action
+          color={textColor}
+          icon={isAllSelectedMuted ? 'volume-high' : 'volume-off'}
+          onPress={hijackOnPress(isAllSelectedMuted ? handleUnmuteSelected : handleShowMuteOptions)}
+        />
         <Appbar.Action
           color={textColor}
           icon={archivedOnly ? 'package-up' : 'package-down'}

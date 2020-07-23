@@ -200,6 +200,10 @@ export type RoomChanges = {
   id?: Maybe<Scalars['ID']>;
   name?: Maybe<Scalars['String']>;
   pictureUri?: Maybe<Scalars['String']>;
+  isMuted?: Maybe<Scalars['Boolean']>;
+  shouldStillNotify?: Maybe<Scalars['Boolean']>;
+  mutedUntil?: Maybe<Scalars['Float']>;
+  lastReadAt?: Maybe<Scalars['Float']>;
   lastChangeAt?: Maybe<Scalars['Float']>;
   lastMessageId?: Maybe<Scalars['ID']>;
   createdAt?: Maybe<Scalars['Float']>;
@@ -257,7 +261,7 @@ export type ListUsersOrder = {
 export type Mutation = {
   __typename?: 'Mutation';
   registerDevice?: Maybe<Scalars['Boolean']>;
-  unregisterDevice?: Maybe<Scalars['Boolean']>;
+  unregisterDevices?: Maybe<Scalars['Boolean']>;
   createMessage?: Maybe<Message>;
   createRoom?: Maybe<Room>;
   pushChanges?: Maybe<Scalars['Boolean']>;
@@ -279,8 +283,8 @@ export type MutationRegisterDeviceArgs = {
 };
 
 
-export type MutationUnregisterDeviceArgs = {
-  data?: Maybe<RegisterDeviceInput>;
+export type MutationUnregisterDevicesArgs = {
+  data?: Maybe<UnregisterDevicesInput>;
 };
 
 
@@ -330,9 +334,13 @@ export type MutationStopFollowingArgs = {
 };
 
 export type RegisterDeviceInput = {
-  name?: Maybe<Scalars['String']>;
-  token?: Maybe<Scalars['String']>;
-  platform?: Maybe<DevicePlatform>;
+  name: Scalars['String'];
+  token: Scalars['String'];
+  platform: DevicePlatform;
+};
+
+export type UnregisterDevicesInput = {
+  tokens: Array<Scalars['String']>;
 };
 
 export type CreateMessageInput = {
@@ -404,6 +412,10 @@ export type RoomChangesInput = {
   id?: Maybe<Scalars['ID']>;
   name?: Maybe<Scalars['String']>;
   pictureUri?: Maybe<Scalars['String']>;
+  isMuted?: Maybe<Scalars['Boolean']>;
+  shouldStillNotify?: Maybe<Scalars['Boolean']>;
+  mutedUntil?: Maybe<Scalars['Float']>;
+  lastReadAt?: Maybe<Scalars['Float']>;
   lastChangeAt?: Maybe<Scalars['Float']>;
   lastMessageId?: Maybe<Scalars['ID']>;
   createdAt?: Maybe<Scalars['Float']>;
@@ -523,7 +535,7 @@ export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type MeQuery = { __typename?: 'Query', me?: Maybe<(
-    { __typename?: 'User', lastAccessAt?: Maybe<any>, createdAt?: Maybe<any> }
+    { __typename?: 'User', lastAccessAt?: Maybe<any>, createdAt?: Maybe<any>, devices?: Maybe<Array<Maybe<{ __typename?: 'Device', name?: Maybe<string>, platform?: Maybe<DevicePlatform>, createdAt?: Maybe<any> }>>> }
     & UserFragmentFragment
   )> };
 
@@ -593,12 +605,12 @@ export type RegisterDeviceMutationVariables = Exact<{
 
 export type RegisterDeviceMutation = { __typename?: 'Mutation', registerDevice?: Maybe<boolean> };
 
-export type UnregisterDeviceMutationVariables = Exact<{
-  data: RegisterDeviceInput;
+export type UnregisterDevicesMutationVariables = Exact<{
+  data: UnregisterDevicesInput;
 }>;
 
 
-export type UnregisterDeviceMutation = { __typename?: 'Mutation', unregisterDevice?: Maybe<boolean> };
+export type UnregisterDevicesMutation = { __typename?: 'Mutation', unregisterDevices?: Maybe<boolean> };
 
 export type ShouldSyncSubscriptionVariables = Exact<{
   roomIds?: Maybe<Array<Scalars['ID']>>;
@@ -656,7 +668,7 @@ export type MessageChangesFragmentFragment = { __typename?: 'MessageChanges', id
 
 export type ReadReceiptChangesFragmentFragment = { __typename?: 'ReadReceiptChanges', id?: Maybe<string>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number> };
 
-export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
+export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, isMuted?: Maybe<boolean>, shouldStillNotify?: Maybe<boolean>, mutedUntil?: Maybe<number>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
 
 export type UserChangesFragmentFragment = { __typename?: 'UserChanges', id?: Maybe<string>, name?: Maybe<string>, email?: Maybe<string>, pictureUri?: Maybe<string>, publicKey?: Maybe<string>, role?: Maybe<string>, isFollowingMe?: Maybe<boolean>, isFollowedByMe?: Maybe<boolean> };
 
@@ -707,6 +719,9 @@ export const RoomChangesFragmentFragmentDoc = gql`
   id
   name
   pictureUri
+  isMuted
+  shouldStillNotify
+  mutedUntil
   lastChangeAt
   lastMessageId
   createdAt
@@ -784,6 +799,11 @@ export const MeDocument = gql`
     ...UserFragment
     lastAccessAt
     createdAt
+    devices {
+      name
+      platform
+      createdAt
+    }
   }
 }
     ${UserFragmentFragmentDoc}`;
@@ -891,14 +911,14 @@ export const RegisterDeviceDocument = gql`
 export function useRegisterDeviceMutation() {
   return Urql.useMutation<RegisterDeviceMutation, RegisterDeviceMutationVariables>(RegisterDeviceDocument);
 };
-export const UnregisterDeviceDocument = gql`
-    mutation UnregisterDevice($data: RegisterDeviceInput!) {
-  unregisterDevice(data: $data)
+export const UnregisterDevicesDocument = gql`
+    mutation UnregisterDevices($data: UnregisterDevicesInput!) {
+  unregisterDevices(data: $data)
 }
     `;
 
-export function useUnregisterDeviceMutation() {
-  return Urql.useMutation<UnregisterDeviceMutation, UnregisterDeviceMutationVariables>(UnregisterDeviceDocument);
+export function useUnregisterDevicesMutation() {
+  return Urql.useMutation<UnregisterDevicesMutation, UnregisterDevicesMutationVariables>(UnregisterDevicesDocument);
 };
 export const ShouldSyncDocument = gql`
     subscription ShouldSync($roomIds: [ID!]) {

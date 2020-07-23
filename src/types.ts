@@ -1,9 +1,10 @@
 import { MaterialTopTabNavigationProp } from '@react-navigation/material-top-tabs';
 import { CompositeNavigationProp, RouteProp as RoutePropNative } from '@react-navigation/native';
 import { StackNavigationOptions, StackNavigationProp } from '@react-navigation/stack';
+import { DurationInputArg1, DurationInputArg2 } from 'moment';
 
 import { User } from './generated/graphql';
-import AttachmentModel, { AttachmentTypes } from './models/AttachmentModel';
+import AttachmentModel, { AttachmentType } from './models/AttachmentModel';
 import { PicturesTaken, VideoRecorded } from './screens/Camera/types';
 
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
@@ -47,7 +48,7 @@ export type RootStackParams = {
   };
   AttachmentPickerModal: {
     callbackScreen: keyof (MainStackParams & RootStackParams);
-    types?: Array<keyof typeof AttachmentTypes | 'camera'>;
+    types?: Array<AttachmentType | 'camera'>;
   };
 };
 
@@ -69,7 +70,7 @@ export type MainStackParams = {
     pictureUri?: string;
     createdAt?: number;
     members: User[];
-    attachmentType?: keyof typeof AttachmentTypes | 'camera';
+    attachmentType?: AttachmentType | 'camera';
     picturesTaken?: PicturesTaken[];
   };
   ChatsArchived: undefined;
@@ -111,9 +112,9 @@ export type MainStackParams = {
   SignIn: undefined;
   ForgotPass: undefined;
   ChangePass: undefined;
-  EditProfile?: {
+  CreateProfile?: {
     isEditing?: boolean;
-    attachmentType?: keyof typeof AttachmentTypes | 'camera';
+    attachmentType?: AttachmentType | 'camera';
     picturesTaken?: PicturesTaken[];
   };
 };
@@ -174,6 +175,11 @@ export interface HeaderOptions extends StackNavigationOptions {
 // For the Header render left/right
 export type StackHeaderRightProps = {
   tintColor?: string;
+};
+
+export type MuteUntilOption = {
+  key: string;
+  value: [DurationInputArg1, DurationInputArg2];
 };
 
 // Cloudinary response

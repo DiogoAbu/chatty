@@ -10,10 +10,10 @@ import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import RoomModel from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp, Tables } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -45,7 +45,7 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
     void room.addMessage({
       content: message.value.trim(),
       sender: authStore.user,
-      attachments: [{ ...videoRecorded, type: AttachmentTypes.video }],
+      attachments: [{ ...videoRecorded, type: 'video' }],
     });
 
     // Chatting -> Camera -> Prepare
@@ -60,7 +60,11 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
     navigation.setOptions({
       handlePressBack,
       headerCenter: () => (
-        <Avatar.Image ImageComponent={FastImage} size={32} source={{ uri: roomPictureUri }} />
+        <Avatar.Image
+          ImageComponent={FastImage}
+          size={32}
+          source={{ uri: transformUri(roomPictureUri, { width: 64 }) }}
+        />
       ),
       headerRight: () => <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeleteVideo} />,
     } as HeaderOptions);

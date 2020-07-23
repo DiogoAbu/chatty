@@ -5,12 +5,12 @@ import { Colors, FAB as Fab, Text } from 'react-native-paper';
 
 import usePress from '!/hooks/use-press';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
+import { AttachmentType } from '!/models/AttachmentModel';
 
 interface Props {
-  type: keyof typeof AttachmentTypes | 'camera';
-  onPress?: (type: keyof typeof AttachmentTypes) => void;
-  onPressCamera?: (type: keyof typeof AttachmentTypes | 'camera') => void;
+  type: AttachmentType | 'camera';
+  onPress?: (type: AttachmentType) => void;
+  onPressCamera?: (type: AttachmentType | 'camera') => void;
 }
 
 const AttachmentIcon: FC<Props> = ({ type, onPress, onPressCamera }) => {

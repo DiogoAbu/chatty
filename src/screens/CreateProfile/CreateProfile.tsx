@@ -31,15 +31,16 @@ import { uploadMedia } from '!/services/remote-media';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp, StackHeaderRightProps } from '!/types';
 import getStatusBarColor from '!/utils/get-status-bar-color';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
 interface Props {
-  navigation: MainNavigationProp<'EditProfile'>;
-  route: MainRouteProp<'EditProfile'>;
+  navigation: MainNavigationProp<'CreateProfile'>;
+  route: MainRouteProp<'CreateProfile'>;
 }
 
-const EditProfile: FC<Props> = ({ navigation, route }) => {
+const CreateProfile: FC<Props> = ({ navigation, route }) => {
   const database = useDatabase();
   const [winWidth] = useDimensions('window');
   const { authStore, syncStore } = useStores();
@@ -62,7 +63,7 @@ const EditProfile: FC<Props> = ({ navigation, route }) => {
   const handleOpenAttachmentPicker = usePress(() => {
     requestAnimationFrame(() => {
       navigation.navigate('AttachmentPickerModal', {
-        callbackScreen: 'EditProfile',
+        callbackScreen: 'CreateProfile',
         types: ['camera', 'image'],
       });
     });
@@ -206,7 +207,7 @@ const EditProfile: FC<Props> = ({ navigation, route }) => {
       requestAnimationFrame(() => {
         setPictureUri('');
         navigation.navigate('Camera', {
-          screenNameAfterPicture: 'EditProfile',
+          screenNameAfterPicture: 'CreateProfile',
           disableRecordVideo: true,
           initialCameraType: 'front',
           showCameraMask: true,
@@ -289,21 +290,21 @@ const EditProfile: FC<Props> = ({ navigation, route }) => {
                 <Avatar.Image
                   ImageComponent={FastImage}
                   size={avatarSize}
-                  source={{ uri: pictureUri }}
+                  source={{ uri: transformUri(pictureUri, { width: avatarSize }) }}
                   style={styles.avatar}
                 />
               ) : params?.picturesTaken?.[0] ? (
                 <Avatar.Image
                   ImageComponent={FastImage}
                   size={avatarSize}
-                  source={{ uri: params.picturesTaken[0].uri }}
+                  source={{ uri: transformUri(params.picturesTaken[0].uri, { width: avatarSize }) }}
                   style={styles.avatar}
                 />
               ) : authStore.user.pictureUri ? (
                 <Avatar.Image
                   ImageComponent={FastImage}
                   size={avatarSize}
-                  source={{ uri: authStore.user.pictureUri }}
+                  source={{ uri: transformUri(authStore.user.pictureUri, { width: avatarSize }) }}
                   style={styles.avatar}
                 />
               ) : (
@@ -373,4 +374,4 @@ const EditProfile: FC<Props> = ({ navigation, route }) => {
   );
 };
 
-export default EditProfile;
+export default CreateProfile;

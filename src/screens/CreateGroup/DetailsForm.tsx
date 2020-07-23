@@ -19,6 +19,7 @@ import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import { upsertRoom } from '!/models/RoomModel';
 import { MainNavigationProp, MainRouteProp } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -153,21 +154,21 @@ const DetailsForm: FC<Props> = ({
             <Avatar.Image
               ImageComponent={FastImage}
               size={avatarSize}
-              source={{ uri: pictureUri }}
+              source={{ uri: transformUri(pictureUri, { width: avatarSize }) }}
               style={styles.detailsAvatar}
             />
           ) : params?.picturesTaken?.[0] ? (
             <Avatar.Image
               ImageComponent={FastImage}
               size={avatarSize}
-              source={{ uri: params.picturesTaken[0].uri }}
+              source={{ uri: transformUri(params.picturesTaken[0].uri, { width: avatarSize }) }}
               style={styles.detailsAvatar}
             />
           ) : params.pictureUri ? (
             <Avatar.Image
               ImageComponent={FastImage}
               size={avatarSize}
-              source={{ uri: params.pictureUri }}
+              source={{ uri: transformUri(params.pictureUri, { width: avatarSize }) }}
               style={styles.detailsAvatar}
             />
           ) : (

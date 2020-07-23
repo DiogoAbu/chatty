@@ -12,7 +12,7 @@ import ChangePass from '!/screens/ChangePass/ChangePass';
 import ChatsArchived from '!/screens/Chats/ChatsArchived';
 import Chatting from '!/screens/Chatting/Chatting';
 import CreateGroup from '!/screens/CreateGroup/CreateGroup';
-import EditProfile from '!/screens/EditProfile/EditProfile';
+import CreateProfile from '!/screens/CreateProfile/CreateProfile';
 import FindFriends from '!/screens/FindFriends/FindFriends';
 import ForgotPass from '!/screens/ForgotPass/ForgotPass';
 import PreparePicture from '!/screens/PreparePicture/PreparePicture';
@@ -37,7 +37,7 @@ const MainStack: FC<unknown> = () => {
 
     return (
       <Stack.Navigator
-        initialRouteName={authStore.token ? (authStore.user.name ? 'Home' : 'EditProfile') : 'Welcome'}
+        initialRouteName={authStore.token ? (authStore.user.name ? 'Home' : 'CreateProfile') : 'Welcome'}
         screenOptions={{
           header: Header,
           cardStyle: { backgroundColor: colors.background },
@@ -91,9 +91,9 @@ const MainStack: FC<unknown> = () => {
         <Stack.Screen component={Welcome} name='Welcome' options={{ headerShown: false }} />
 
         <Stack.Screen
-          component={EditProfile}
-          name='EditProfile'
-          options={{ title: t('title.editProfile') }}
+          component={CreateProfile}
+          name='CreateProfile'
+          options={{ title: t('title.createProfile') }}
         />
         <Stack.Screen component={SignIn} name='SignIn' />
         <Stack.Screen component={ForgotPass} name='ForgotPass' options={{ title: t('forgotPassword') }} />

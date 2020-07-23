@@ -10,6 +10,7 @@ import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import { useStores } from '!/stores';
 import { MainNavigationProp, MainRouteProp } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -48,6 +49,8 @@ const RoomInfoModal: FC<Props> = ({ navigation, route }) => {
     generalStore.setFab();
   });
 
+  console.log(transformUri(roomPictureUri));
+
   return (
     <>
       <TouchableOpacity
@@ -70,7 +73,7 @@ const RoomInfoModal: FC<Props> = ({ navigation, route }) => {
           >
             <SharedElement id={friendId || roomId}>
               <ImageBackground
-                source={{ uri: roomPictureUri }}
+                source={{ uri: transformUri(roomPictureUri, { width: size, height: size }) }}
                 style={[
                   { width: size, height: size, backgroundColor: colors.primary },
                   styles.pictureContainer,

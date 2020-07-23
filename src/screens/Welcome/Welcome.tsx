@@ -19,7 +19,7 @@ interface Props {
 }
 
 const Welcome: FC<Props> = ({ navigation }) => {
-  const { authStore, generalStore } = useStores();
+  const { authStore, deviceTokenStore, generalStore } = useStores();
   const { colors, fonts } = useTheme();
   const { t } = useTranslation();
 
@@ -35,15 +35,19 @@ const Welcome: FC<Props> = ({ navigation }) => {
     StatusBar.setBarStyle(colors.statusBarText);
     StatusBar.setTranslucent(false);
 
-    // Sign out here so the other screens that depend on the user will be already disposed
-    void authStore.signOut();
     generalStore.setFab();
+
+    // Sign out here so the other screens that depend on the user will be already disposed
+    void authStore
+      .signOut()
+      .then(async () => deviceTokenStore.unregister())
+      .catch(() => null);
 
     // Hit the server to wake it up
     const fetchControl = new AbortController();
     const fetchTimeout = setTimeout(() => {
       fetchControl.abort();
-    }, 10000);
+    }, 5000);
 
     void fetch(Config.API_URL, { method: 'GET', signal: fetchControl.signal }).catch(() => null);
 
@@ -51,7 +55,7 @@ const Welcome: FC<Props> = ({ navigation }) => {
       clearTimeout(fetchTimeout);
       fetchControl.abort();
     };
-  }, [authStore, colors.statusBar, colors.statusBarText, generalStore]);
+  }, [authStore, colors.statusBar, colors.statusBarText, deviceTokenStore, generalStore]);
 
   return (
     <View style={[{ backgroundColor: colors.background }, styles.container]}>

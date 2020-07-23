@@ -25,12 +25,12 @@ import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import RoomModel from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp, Tables } from '!/types';
 import getLocalImageDimensions from '!/utils/get-local-image-dimensions';
 import getStatusBarColor from '!/utils/get-status-bar-color';
+import transformUri from '!/utils/transform-uri';
 
 import { PicturesTaken } from '../Camera/types';
 
@@ -132,7 +132,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
     void room.addMessage({
       content: message.value.trim(),
       sender: authStore.user,
-      attachments: pictures.map((e) => ({ ...e, type: AttachmentTypes.image })),
+      attachments: pictures.map((e) => ({ ...e, type: 'image' })),
     });
 
     // Chatting -> Camera -> Prepare
@@ -143,7 +143,11 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
     navigation.setOptions({
       handlePressBack,
       headerCenter: () => (
-        <Avatar.Image ImageComponent={FastImage} size={32} source={{ uri: roomPictureUri }} />
+        <Avatar.Image
+          ImageComponent={FastImage}
+          size={32}
+          source={{ uri: transformUri(roomPictureUri, { width: 64 }) }}
+        />
       ),
       headerRight: () => <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeletePicture} />,
     } as HeaderOptions);

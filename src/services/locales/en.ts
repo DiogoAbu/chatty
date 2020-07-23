@@ -13,10 +13,11 @@ export default {
     'title.settings': 'Settings',
     'title.chatsArchived': 'Archived chats',
     'title.oops': 'Oops!',
-    'title.editProfile': 'Profile',
+    'title.createProfile': 'Profile',
 
     'title.removePicture': 'Remove picture?',
     'title.closeTheApp': 'Close the app?',
+    'title.muteOptions': 'Mute Options',
 
     'label.welcome': 'Welcome',
     'label.email': 'Email',
@@ -56,6 +57,14 @@ export default {
 
     'label.no': 'No',
     'label.yes': 'Yes',
+
+    'label.h': '{{count}} hour',
+    'label.h_plural': '{{count}} hours',
+    'label.w': '{{count}} week',
+    'label.w_plural': '{{count}} weeks',
+    'label.y': '{{count}} year',
+    'label.y_plural': '{{count}} years',
+    'label.displaySilentNotifications': 'Display silent notifications?',
 
     'helper.charactersLeft': 'You have {{count}} character left',
     'helper.charactersLeft_plural': 'You have {{count}} characters left',

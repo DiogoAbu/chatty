@@ -13,10 +13,11 @@ export default {
     'title.settings': 'Configurações',
     'title.chatsArchived': 'Conversas arquivadas',
     'title.oops': 'Oops!',
-    'title.editProfile': 'Perfil',
+    'title.createProfile': 'Perfil',
 
     'title.removePicture': 'Apagar foto?',
     'title.closeTheApp': 'Fechar o app?',
+    'title.muteOptions': 'Mute Options',
 
     'label.welcome': 'Bem-vindo',
     'label.email': 'Email',
@@ -56,6 +57,14 @@ export default {
 
     'label.no': 'Não',
     'label.yes': 'Sim',
+
+    'label.h': '{{count}} hour',
+    'label.h_plural': '{{count}} hours',
+    'label.w': '{{count}} week',
+    'label.w_plural': '{{count}} weeks',
+    'label.y': '{{count}} year',
+    'label.y_plural': '{{count}} years',
+    'label.displaySilentNotifications': 'Display silent notifications?',
 
     'helper.charactersLeft': 'Resta {{count}} caractere',
     'helper.charactersLeft_plural': 'Restam {{count}} caracteres',

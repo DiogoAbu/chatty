@@ -51,6 +51,15 @@ class RoomModel extends Model {
   @field('sharedKey')
   sharedKey: string;
 
+  @field('isMuted')
+  isMuted: boolean;
+
+  @field('shouldStillNotify')
+  shouldStillNotify: boolean;
+
+  @date('mutedUntil')
+  mutedUntil: number | null;
+
   // Last time read by me so we can show the badge,
   // messages after this will make up the number
   @date('lastReadAt')
@@ -187,6 +196,9 @@ export const roomSchema = tableSchema({
     { name: 'isLocalOnly', type: 'boolean' },
     { name: 'isArchived', type: 'boolean' },
     { name: 'sharedKey', type: 'string' },
+    { name: 'isMuted', type: 'boolean' },
+    { name: 'shouldStillNotify', type: 'boolean' },
+    { name: 'mutedUntil', type: 'number', isOptional: true },
     { name: 'lastReadAt', type: 'number', isOptional: true },
     { name: 'lastChangeAt', type: 'number' },
     { name: 'lastMessageId', type: 'string' },
@@ -213,6 +225,15 @@ export function roomUpdater(changes: DeepPartial<RoomModel>): (record: RoomModel
     }
     if (typeof changes.sharedKey !== 'undefined') {
       record.sharedKey = changes.sharedKey;
+    }
+    if (typeof changes.isMuted !== 'undefined') {
+      record.isMuted = changes.isMuted;
+    }
+    if (typeof changes.shouldStillNotify !== 'undefined') {
+      record.shouldStillNotify = changes.shouldStillNotify;
+    }
+    if (typeof changes.mutedUntil !== 'undefined') {
+      record.mutedUntil = changes.mutedUntil;
     }
     if (typeof changes.lastReadAt !== 'undefined') {
       record.lastReadAt = changes.lastReadAt;

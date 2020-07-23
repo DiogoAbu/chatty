@@ -53,6 +53,11 @@ query Me {
     ...UserFragment
     lastAccessAt
     createdAt
+    devices {
+      name
+      platform
+      createdAt
+    }
   }
 }
 
@@ -132,8 +137,8 @@ query GetMessages($roomId: ID, $limit: Int, $afterDate: Timestamp) {
 mutation RegisterDevice($data: RegisterDeviceInput!) {
   registerDevice(data: $data)
 }
-mutation UnregisterDevice($data: RegisterDeviceInput!) {
-  unregisterDevice(data: $data)
+mutation UnregisterDevices($data: UnregisterDevicesInput!) {
+  unregisterDevices(data: $data)
 }
 
 #
@@ -223,6 +228,9 @@ fragment RoomChangesFragment on RoomChanges {
   id
   name
   pictureUri
+  isMuted
+  shouldStillNotify
+  mutedUntil
   lastChangeAt
   lastMessageId
   createdAt

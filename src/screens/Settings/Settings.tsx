@@ -12,6 +12,7 @@ import usePress from '!/hooks/use-press';
 import RoomModel, { removeRoomsCascade } from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { MainNavigationProp, MainRouteProp, Tables } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import ColorSchemeItem from './ColorSchemeItem';
 import styles from './styles';
@@ -31,9 +32,9 @@ const Settings: FC<Props> = ({ navigation, route }) => {
 
   const [, setReload] = useState(false);
 
-  const handleEditProfile = usePress(() => {
+  const handleCreateProfile = usePress(() => {
     requestAnimationFrame(() => {
-      navigation.navigate('EditProfile', {
+      navigation.navigate('CreateProfile', {
         isEditing: true,
       });
     });
@@ -56,11 +57,11 @@ const Settings: FC<Props> = ({ navigation, route }) => {
           <Avatar.Image
             ImageComponent={FastImage}
             size={60}
-            source={{ uri: authStore.user.pictureUri! }}
+            source={{ uri: transformUri(authStore.user.pictureUri!, { width: 128 }) }}
             style={[style, styles.avatar]}
           />
         )}
-        onPress={handleEditProfile}
+        onPress={handleCreateProfile}
         style={styles.avatarContainer}
         title={authStore.user.name}
         titleStyle={styles.avatarTitle}

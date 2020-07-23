@@ -11,11 +11,11 @@ import FadeIcon from '!/components/FadeIcon';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import { useStores } from '!/stores';
 import { HomeTabNavigationProp, ListItemSideProps } from '!/types';
 import getRoomMember from '!/utils/get-room-member';
 import getSentAt from '!/utils/get-sent-at';
+import transformUri from '!/utils/transform-uri';
 
 import MessageMark from '../../components/MessageMark';
 
@@ -83,17 +83,17 @@ const RoomItem: FC<WithOneRoomOutput> = ({
 
   const renderAttachmentIcon = useCallback(
     () =>
-      lastMessageAttachments?.some((e) => e.type === AttachmentTypes.image) ? (
+      lastMessageAttachments?.some((e) => e.type === 'image') ? (
         <Icon
           name={lastMessageAttachments.length > 1 ? 'image-album' : 'image'}
           style={[styles.lastMessageAttachmentIcon, styles.marginRight, { color: colors.accent }]}
         />
-      ) : lastMessageAttachments?.some((e) => e.type === AttachmentTypes.video) ? (
+      ) : lastMessageAttachments?.some((e) => e.type === 'video') ? (
         <Icon
           name='video'
           style={[styles.lastMessageAttachmentIcon, styles.marginRight, { color: colors.accent }]}
         />
-      ) : lastMessageAttachments?.some((e) => e.type === AttachmentTypes.document) ? (
+      ) : lastMessageAttachments?.some((e) => e.type === 'document') ? (
         <Icon
           name='paperclip'
           style={[styles.lastMessageAttachmentIcon, styles.marginRight, { color: colors.accent }]}
@@ -152,7 +152,7 @@ const RoomItem: FC<WithOneRoomOutput> = ({
         <Avatar.Image
           ImageComponent={FastImage}
           size={58}
-          source={{ uri: pictureUri }}
+          source={{ uri: transformUri(pictureUri, { width: 58 }) }}
           style={[style, { marginRight: grid }]}
         />
       ) : (
@@ -197,19 +197,24 @@ const RoomItem: FC<WithOneRoomOutput> = ({
           {sentAt}
         </Caption>
       ) : null}
-      {room.isArchived ? (
-        <Chip mode='outlined' style={styles.roomArchivedChip} textStyle={styles.roomArchivedChipText}>
-          {t('label.archived')}
-        </Chip>
-      ) : lastMessageNotRead && newMessagesCount > 0 ? (
-        <Badge
-          size={26}
-          style={[styles.roomMessagesBadge, { backgroundColor: colors.accent, color: colors.textOnAccent }]}
-          visible
-        >
-          {newMessagesCount}
-        </Badge>
-      ) : null}
+      <View style={styles.roomRightDetailsContainer}>
+        {room.isMuted ? (
+          <Icon color={colors.text} name='volume-off' size={20} style={styles.roomRightIcon} />
+        ) : null}
+        {room.isArchived ? (
+          <Chip mode='outlined' style={styles.roomArchivedChip} textStyle={styles.roomArchivedChipText}>
+            {t('label.archived')}
+          </Chip>
+        ) : lastMessageNotRead && newMessagesCount > 0 ? (
+          <Badge
+            size={26}
+            style={[styles.roomMessagesBadge, { backgroundColor: colors.accent, color: colors.textOnAccent }]}
+            visible
+          >
+            {newMessagesCount}
+          </Badge>
+        ) : null}
+      </View>
     </View>
   );
 

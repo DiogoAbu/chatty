@@ -12,7 +12,14 @@ export class AuthStore extends BaseStore {
   @observable
   token = '';
 
+  deviceToken = '';
+
   protected databaseKey = 'AuthStore';
+
+  @action
+  setDeviceToken(deviceToken: string): void {
+    this.deviceToken = deviceToken;
+  }
 
   @action
   async signIn(user: DeepPartial<UserModel>, token: string, password: string): Promise<void> {
@@ -63,12 +70,17 @@ export class AuthStore extends BaseStore {
     }
 
     try {
-      const { userId, token } = JSON.parse(data) as { userId: string; token: string };
+      const { userId, token, deviceToken } = JSON.parse(data) as {
+        userId: string;
+        token: string;
+        deviceToken: string;
+      };
       const user = await database.collections.get<UserModel>(Tables.users).find(userId);
 
       runInAction(() => {
         this.user = user;
         this.token = token;
+        this.deviceToken = deviceToken;
       });
     } catch (err) {
       //
@@ -79,6 +91,7 @@ export class AuthStore extends BaseStore {
     const serializableObj = {
       userId: this.user?.id,
       token: this.token,
+      deviceToken: this.deviceToken,
     };
     await this.stores.generalStore.database.adapter.setLocal(
       this.databaseKey,
@@ -91,6 +104,7 @@ export class AuthStore extends BaseStore {
     runInAction(() => {
       this.user = (undefined as unknown) as UserModel;
       this.token = '';
+      this.deviceToken = '';
     });
     await this.stores.generalStore.database.adapter.removeLocal(this.databaseKey);
   }

@@ -7,7 +7,7 @@ import { useMemoOne } from 'use-memo-one';
 import AttachmentIcon from '!/components/AttachmentIcon';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import { AttachmentTypes } from '!/models/AttachmentModel';
+import { AttachmentType } from '!/models/AttachmentModel';
 import getChildrenIds from '!/utils/get-children-ids';
 
 import styles from './styles';
@@ -17,7 +17,7 @@ export interface AttachmentPickerType {
   show: () => void;
   hide: () => void;
   toggle: () => void;
-  onPress: (callback: (type: keyof typeof AttachmentTypes) => any) => void;
+  onPress: (callback: (type: AttachmentType) => any) => void;
 }
 
 interface Props {
@@ -33,9 +33,9 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
   const [isShowing, setIsShowing] = useState(false);
   const containerRef = useRef<Animated.View | null>(null);
 
-  const onPress = useRef<((type: keyof typeof AttachmentTypes) => any) | null>(null);
+  const onPress = useRef<((type: AttachmentType) => any) | null>(null);
 
-  const handleOnPress = usePress((type: keyof typeof AttachmentTypes) => {
+  const handleOnPress = usePress((type: AttachmentType) => {
     handleToggleAttachmentPicker(false);
     onPress.current?.(type);
   });
@@ -73,7 +73,7 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
     toggle: (state?: boolean) => {
       handleToggleAttachmentPicker(state);
     },
-    onPress: (callback: (type: keyof typeof AttachmentTypes) => any) => {
+    onPress: (callback: (type: AttachmentType) => any) => {
       onPress.current = callback;
     },
   }));

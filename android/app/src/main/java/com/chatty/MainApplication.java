@@ -13,6 +13,7 @@ import java.util.List;
 
 import com.nozbe.watermelondb.WatermelonDBPackage;
 import com.brentvatne.react.ReactVideoPackage;
+import com.chatty.device.DevicePackage;
 
 public class MainApplication extends MultiDexApplication implements ReactApplication {
 
@@ -31,6 +32,7 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
           // packages.add(new MyReactNativePackage());
           packages.add(new WatermelonDBPackage());
           packages.add(new ReactVideoPackage());
+          packages.add(new DevicePackage());
           return packages;
         }
 

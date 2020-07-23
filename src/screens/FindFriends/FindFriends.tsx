@@ -1,10 +1,12 @@
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, Fragment, useCallback, useEffect, useState } from 'react';
 import { ListRenderItemInfo, Platform, View } from 'react-native';
 
 import { FlatList } from 'react-native-gesture-handler';
 import { Banner, Divider, FAB as Fab, Snackbar, Title } from 'react-native-paper';
 
 import Loading from '!/components/Loading';
+import SlideIn from '!/components/SlideIn';
+import { ROOM_AMOUNT_ANIMATE } from '!/config';
 import { useListUsersQuery, User } from '!/generated/graphql';
 import { useBackHandlerOnFocus } from '!/hooks/use-back-handler';
 import useDebounceValue from '!/hooks/use-debounce-value';
@@ -34,7 +36,9 @@ const FindFriends: FC<Props> = ({ navigation }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
 
-  const query = useInput('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const query = useInput('', () => setIsTyping(true));
   const queryDebounced = useDebounceValue(query.value);
 
   const [selectedList, setSelectedList] = useState<User[]>([]);
@@ -105,19 +109,25 @@ const FindFriends: FC<Props> = ({ navigation }) => {
       log('getting user list for ' + queryDebounced);
       execListUsers({ requestPolicy: 'network-only' });
     }
+    setIsTyping(false);
 
     // ignore execListUsers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryDebounced]);
 
-  const renderItem = ({ item }: ListRenderItemInfo<User>) => (
-    <FriendItem
-      friend={item}
-      isSelected={selectedList.some((e) => e.id === item.id)}
-      isSelecting={selectedList.length > 0}
-      toggleSelected={toggleSelected}
-    />
-  );
+  const renderItem = ({ item, index }: ListRenderItemInfo<User>) => {
+    const Component = index < ROOM_AMOUNT_ANIMATE ? SlideIn : Fragment;
+    return (
+      <Component>
+        <FriendItem
+          friend={item}
+          isSelected={selectedList.some((e) => e.id === item.id)}
+          isSelecting={selectedList.length > 0}
+          toggleSelected={toggleSelected}
+        />
+      </Component>
+    );
+  };
 
   return (
     <>
@@ -137,7 +147,7 @@ const FindFriends: FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps='handled'
         keyExtractor={handleKeyExtractor}
         ListEmptyComponent={
-          fetching ? (
+          fetching || isTyping ? (
             <Loading />
           ) : (
             <View style={styles.centerCenter}>

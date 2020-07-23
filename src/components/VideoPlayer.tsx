@@ -46,7 +46,7 @@ const VideoPlayer: FC<Props> = ({ video, onShowHideOverlay, onShowHideControl, o
   const controlValue = useValue(1);
 
   const videoRef = useRef<Video | null>(null);
-  const showingControlTimer = useRef<NodeJS.Timeout | null>(null);
+  const showingControlTimer = useRef<number | null>(null);
   const initialOrientation = useRef<Orientations | null>(null);
 
   const [isReady, setIsReady] = useState(false);

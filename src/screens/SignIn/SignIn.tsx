@@ -118,7 +118,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
         setIsSigningIn(false);
         navigation.reset({
           index: 0,
-          routes: [{ name: 'EditProfile' }],
+          routes: [{ name: 'CreateProfile' }],
         });
       });
     } catch (err) {

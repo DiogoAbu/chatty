@@ -15,6 +15,7 @@ import RoomModel, { createRoom } from '!/models/RoomModel';
 import UserModel from '!/models/UserModel';
 import { useStores } from '!/stores';
 import { DeepPartial, ListItemSideProps, MainNavigationProp } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -68,7 +69,7 @@ const FriendItem: FC<Props> = ({ friend, isSelected, isSelecting, toggleSelected
       <Avatar.Image
         ImageComponent={FastImage}
         size={58}
-        source={{ uri: friend.pictureUri }}
+        source={{ uri: transformUri(friend.pictureUri, { width: 58 }) }}
         style={[style, { marginRight: grid }]}
       />
     </TouchableOpacity>

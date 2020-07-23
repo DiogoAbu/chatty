@@ -7,7 +7,7 @@ import AttachmentIcon from '!/components/AttachmentIcon';
 import useDimensions from '!/hooks/use-dimensions';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import { AttachmentTypes } from '!/models/AttachmentModel';
+import { AttachmentType } from '!/models/AttachmentModel';
 import { useStores } from '!/stores';
 import { MainNavigationProp, MainRouteProp } from '!/types';
 
@@ -25,7 +25,7 @@ const AttachmentPickerModal: FC<Props> = ({ navigation, route }) => {
 
   const { params } = route;
 
-  const handleOnPress = usePress((type: keyof typeof AttachmentTypes | 'camera') => {
+  const handleOnPress = usePress((type: AttachmentType | 'camera') => {
     if (params?.callbackScreen) {
       requestAnimationFrame(() => {
         navigation.navigate(params.callbackScreen, {

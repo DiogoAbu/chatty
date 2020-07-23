@@ -16,11 +16,7 @@ const limiter = new Bottleneck({
   maxConcurrent: 1,
 });
 
-export enum AttachmentTypes {
-  'image' = 'image',
-  'video' = 'video',
-  'document' = 'document',
-}
+export type AttachmentType = 'image' | 'video' | 'document';
 
 class AttachmentModel extends Model {
   static table = Tables.attachments;
@@ -46,7 +42,7 @@ class AttachmentModel extends Model {
   cipherUri: string;
 
   @field('type')
-  type: AttachmentTypes;
+  type: AttachmentType;
 
   @field('width')
   width: number;

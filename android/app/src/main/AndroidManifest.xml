@@ -10,7 +10,7 @@
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-  <!--  React native video planning to use the microphone for video recording -->
+  <!-- React native video planning to use the microphone for video recording -->
   <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
   <application android:name=".MainApplication"

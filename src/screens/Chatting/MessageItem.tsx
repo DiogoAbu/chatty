@@ -7,7 +7,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import { useStores } from '!/stores';
 import getSentAt from '!/utils/get-sent-at';
 import readReceiptChanged from '!/utils/read-receipt-changed';
@@ -40,12 +39,12 @@ const MessageItem: FC<WithMessageOutput> = ({
 
   let attachmentDescription = '';
   if (attachments.length === 1) {
-    if (attachments[0].type === AttachmentTypes.video) {
+    if (attachments[0].type === 'video') {
       attachmentDescription = t('label.video');
-    } else if (attachments[0].type === AttachmentTypes.image) {
+    } else if (attachments[0].type === 'image') {
       attachmentDescription = t('label.image');
     }
-  } else if (attachments.length > 1 && attachments.every((e) => e.type === AttachmentTypes.image)) {
+  } else if (attachments.length > 1 && attachments.every((e) => e.type === 'image')) {
     attachmentDescription = t('label.images');
   }
 
@@ -113,9 +112,6 @@ const MessageItem: FC<WithMessageOutput> = ({
 
         <Text style={[styles.messageTime, { color: mine || dark ? colors.textOnPrimary : colors.text }]}>
           {sentAt}
-          <Text style={{ color: mine || dark ? colors.textOnPrimary : colors.text, fontStyle: 'italic' }}>
-            ({message.type})
-          </Text>
         </Text>
 
         {mine ? (

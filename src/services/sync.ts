@@ -178,7 +178,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
           return room;
         });
       } catch (err) {
-        console.log(`Failed to get shared key from message ${msg.id as string}`);
+        log(`Failed to get shared key from message ${msg.id as string}`);
         console.log(err);
         return;
       }
@@ -193,8 +193,12 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       };
 
       if (msg.cipher && msg.type === 'default') {
+        let sharedKey: string | undefined;
+        let senderPublicKey: string | undefined;
+
+        const usersTable = database.collections.get<UserModel>(Tables.users);
+
         try {
-          let sharedKey: string;
           const room = changes.rooms!.updated!.find((e) => e.id === msg.roomId);
           // @ts-expect-error Get sharedKey added above
           if (room?.sharedKey) {
@@ -203,39 +207,43 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
           } else {
             const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
             const roomFound = await roomsTable.find(msg.roomId!);
-            if (!roomFound?.sharedKey) {
-              throw new Error('Room record not found');
+            if (roomFound?.sharedKey) {
+              sharedKey = roomFound.sharedKey;
             }
-            sharedKey = roomFound.sharedKey;
           }
 
-          if (sharedKey) {
-            data.message.content = await decryptContentUsingShared(msg.cipher, sharedKey);
-          } else if (msg.userId !== userId) {
-            // Cannot decrypt message sent by me to someone else
-            const usersTable = database.collections.get<UserModel>(Tables.users);
-
-            let senderPublicKey: string;
+          // Can only decrypt message sent to me, not by me
+          if (!sharedKey && msg.userId !== userId) {
             const sender = changes.users!.updated!.find((e) => e.id === msg.userId);
             if (sender?.publicKey) {
               senderPublicKey = sender.publicKey;
             } else {
               const senderFound = await usersTable.find(msg.userId!);
-              if (!senderFound?.publicKey) {
-                throw new Error('Sender user record not found');
+              if (senderFound?.publicKey) {
+                senderPublicKey = senderFound.publicKey;
               }
-              senderPublicKey = senderFound.publicKey;
             }
+          }
+        } catch (err) {
+          log('Failed to find encryption key');
+          console.log(err);
+        }
 
+        try {
+          if (sharedKey) {
+            data.message.content = await decryptContentUsingShared(msg.cipher, sharedKey);
+          } else if (senderPublicKey) {
             const signedUser = await usersTable.find(userId);
             data.message.content = await decryptContentUsingPair(
               msg.cipher,
               senderPublicKey,
               signedUser.secretKey!,
             );
+          } else {
+            log(`Failed to find key for message ${msg.id as string}`);
           }
         } catch (err) {
-          console.log(`Failed to handle pulled message ${msg.id as string}`);
+          log(`Failed to handle pulled message ${msg.id as string}`);
           console.log(err);
         }
       }
@@ -428,6 +436,8 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
   }, 'pushChanges update');
 };
 
+let isSyncing = false;
+
 /**
  * Handle pull/push from/to server
  * @param userId Signed user id
@@ -435,10 +445,18 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
  * @param client Api client
  */
 export default async function sync(userId: string, database: Database, client: Client): Promise<void> {
-  return synchronize({
+  if (isSyncing) {
+    log('in progress');
+    return;
+  }
+  isSyncing = true;
+
+  await synchronize({
     database,
     pullChanges: pullChanges(userId, database, client),
     pushChanges: pushChanges(userId, database, client),
     sendCreatedAsUpdated: true,
   });
+
+  isSyncing = false;
 }

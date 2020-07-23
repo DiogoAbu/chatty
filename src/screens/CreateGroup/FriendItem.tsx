@@ -8,6 +8,7 @@ import { User } from '!/generated/graphql';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import { ListItemSideProps } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -35,7 +36,7 @@ const FriendItem: FC<Props> = ({ friend, removeMember, isEditing }) => {
       <Avatar.Image
         ImageComponent={FastImage}
         size={58}
-        source={{ uri: friend.pictureUri }}
+        source={{ uri: transformUri(friend.pictureUri, { width: 58 }) }}
         style={[style, { marginRight: grid }]}
       />
     </TouchableOpacity>

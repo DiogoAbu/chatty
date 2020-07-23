@@ -23,6 +23,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
+  roomRightDetailsContainer: {
+    flexDirection: 'row',
+    paddingBottom: 4,
+  },
+  roomRightIcon: {
+    opacity: 0.8,
+  },
 
   marginRight: {
     marginRight: 4,

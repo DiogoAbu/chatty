@@ -10,7 +10,6 @@ import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import RoomModel from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { MainNavigationProp } from '!/types';
@@ -108,7 +107,7 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
           await room.addMessage({
             content: '',
             sender: authStore.user,
-            attachments: [{ uri: file.uri, type: AttachmentTypes.document }],
+            attachments: [{ uri: file.uri, type: 'document' }],
           });
         }
       });
@@ -182,7 +181,7 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
         // Prepare images
         const images: PicturesTaken[] = filesChosen.map((file) => ({
           uri: file.uri,
-          type: AttachmentTypes.image,
+          type: 'image',
           isSelected: true,
         }));
 

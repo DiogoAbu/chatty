@@ -10,9 +10,10 @@ import { useNavigation } from '@react-navigation/native';
 
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import AttachmentModel, { AttachmentTypes } from '!/models/AttachmentModel';
+import AttachmentModel from '!/models/AttachmentModel';
 import { MainNavigationProp } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
+import transformUri from '!/utils/transform-uri';
 
 import { AttachmentPickerType } from './AttachmentPicker';
 import styles from './styles';
@@ -52,7 +53,7 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
 
     const { id, uri, width, height, type } = attachments[0];
     const attachment = { id, uri, width, height, type };
-    const route = type === AttachmentTypes.video ? 'VideoPlayerModal' : 'PictureViewerModal';
+    const route = type === 'video' ? 'VideoPlayerModal' : 'PictureViewerModal';
 
     requestAnimationFrame(() => {
       navigation.navigate(route, { attachment, title });
@@ -73,7 +74,7 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
     (() => {
       try {
         const attachment = attachments[0];
-        if (attachment.type !== AttachmentTypes.document) {
+        if (attachment.type !== 'document') {
           return;
         }
 
@@ -90,21 +91,24 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
     return (
       <TouchableWithoutFeedback onPress={handleSeePictures}>
         <View style={styles.attachmentListContainer}>
-          {preview.map((item, index) => (
-            <SharedElement id={item.id} key={item.id}>
-              <FastImage
-                resizeMode={FastImage.resizeMode.cover}
-                source={{ uri: item.uri }}
-                style={{
-                  ...getLimitedSize(index, preview.length - 1, maxWidth),
-                  marginBottom: index === 0 ? PREVIEW_PADDING : undefined,
-                  marginRight: index === 0 ? PREVIEW_PADDING : undefined,
-                  marginLeft: index === PREVIEW_MAX_AMOUNT - 1 ? PREVIEW_PADDING : undefined,
-                  borderRadius: roundness * 2,
-                }}
-              />
-            </SharedElement>
-          ))}
+          {preview.map((item, index) => {
+            const size = getLimitedSize(index, preview.length - 1, maxWidth);
+            return (
+              <SharedElement id={item.id} key={item.id}>
+                <FastImage
+                  resizeMode={FastImage.resizeMode.cover}
+                  source={{ uri: transformUri(item.uri, { ...size }) }}
+                  style={{
+                    ...size,
+                    marginBottom: index === 0 ? PREVIEW_PADDING : undefined,
+                    marginRight: index === 0 ? PREVIEW_PADDING : undefined,
+                    marginLeft: index === PREVIEW_MAX_AMOUNT - 1 ? PREVIEW_PADDING : undefined,
+                    borderRadius: roundness * 2,
+                  }}
+                />
+              </SharedElement>
+            );
+          })}
         </View>
       </TouchableWithoutFeedback>
     );
@@ -112,7 +116,7 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
 
   const attachment = attachments[0];
 
-  if (attachment.type === AttachmentTypes.document) {
+  if (attachment.type === 'document') {
     return (
       <TouchableWithoutFeedback onPress={handleSeeAttachment}>
         <Text style={{ paddingHorizontal: gridSmaller }}>{attachment.uri}</Text>
@@ -126,22 +130,25 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
     isLandscape: false,
   });
 
+  const widthFinal = Math.min(width!, maxWidth) - PREVIEW_PADDING * 2;
+  const heightFinal = Math.min(height!, maxWidth) - PREVIEW_PADDING * 2;
+
   return (
     <TouchableWithoutFeedback onPress={handleSeeAttachment}>
       <View>
         <SharedElement id={attachment.id}>
           <FastImage
             resizeMode={FastImage.resizeMode.cover}
-            source={{ uri: attachment.uri }}
+            source={{ uri: transformUri(attachment.uri, { width: widthFinal, height: heightFinal }) }}
             style={{
               aspectRatio,
-              width: Math.min(width!, maxWidth) - PREVIEW_PADDING * 2,
-              height: Math.min(height!, maxWidth) - PREVIEW_PADDING * 2,
+              width: widthFinal,
+              height: heightFinal,
               borderRadius: roundness * 2,
             }}
           />
         </SharedElement>
-        {attachment.type === AttachmentTypes.video ? (
+        {attachment.type === 'video' ? (
           <View style={styles.attachmentOverlay}>
             <Icon name='play-circle' style={styles.attachmentPlayIcon} />
           </View>
