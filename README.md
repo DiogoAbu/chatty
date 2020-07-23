@@ -42,8 +42,10 @@
 * **Cross platform.** App runs on iOS and Android.
 * **Synchronized experience.** Always resume where you left off no matter what device.
 
+Here's a [5-Minute Breakdown](BREAKDOWN.md) of the app features and techs used.
+
 ## Development
-Want to contribute? Great, read [CONTRIBUTING.md](#) for details on our code of conduct.
+Want to contribute? Great, read [CONTRIBUTING.md](#) for details on our code of conduct. Take a look [here](ARCHITECTURE.md) for extra details.
 
 To start developing, follow these steps:
 
@@ -62,7 +64,7 @@ To start developing, follow these steps:
 - Push the current branch (`git push`).
 - Create a [Pull Request](https://github.com/DiogoAbu/chatty/compare) across forks.
 
-*On VS Code you can use the extension Conventional Commits (vscode-conventional-commits)*
+*To write commits on VS Code you can use the extension Conventional Commits (vscode-conventional-commits)*
 
 ### Running the app
 You can run the app with three different environments defined by the dotenv files. The keystore
