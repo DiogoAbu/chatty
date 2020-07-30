@@ -32,6 +32,7 @@ class RoomModel extends Model {
 
   static associations: Associations = {
     [Tables.messages]: { type: 'has_many', foreignKey: 'roomId' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'roomId' },
     [Tables.readReceipts]: { type: 'has_many', foreignKey: 'roomId' },
     [Tables.roomMembers]: { type: 'has_many', foreignKey: 'roomId' },
   };
@@ -79,6 +80,9 @@ class RoomModel extends Model {
   @children(Tables.messages)
   messages: Query<MessageModel>;
 
+  @children(Tables.attachments)
+  attachments: Query<AttachmentModel>;
+
   @children(Tables.readReceipts)
   readReceipts: Query<ReadReceiptModel>;
 
@@ -120,57 +124,64 @@ class RoomModel extends Model {
       }),
     );
 
-    // Get friend`s public key, and if it`s a group get the shared key.
-    let encryptKey: string;
-    if (!this.name) {
-      const friend = (await this.members.fetch()).find((e) => e.id !== sender.id);
-      if (!friend) {
-        throw new Error('Failed to add message, friend not found');
+    // When sending attachments a message content is not required
+    if (content) {
+      // Get friend`s public key, and if it`s a group get the shared key.
+      let encryptKey: string;
+      if (!this.name) {
+        const friend = (await this.members.fetch()).find((e) => e.id !== sender.id);
+        if (!friend) {
+          throw new Error('Failed to add message, friend not found');
+        }
+        if (!friend.publicKey) {
+          throw new Error("Failed to add message, friend's public key not found");
+        }
+        encryptKey = friend.publicKey;
+      } else {
+        if (!this.sharedKey) {
+          throw new Error('Failed to add message, shared key not found');
+        }
+        encryptKey = this.sharedKey;
       }
-      if (!friend.publicKey) {
-        throw new Error('Failed to add message, friend`s public key not found');
+
+      let cipher: string;
+      if (this.name) {
+        cipher = await encryptContentUsingShared(content, encryptKey);
+      } else {
+        cipher = await encryptContentUsingPair(content, encryptKey, sender.secretKey!);
       }
-      encryptKey = friend.publicKey;
-    } else {
-      if (!this.sharedKey) {
-        throw new Error('Failed to add message, shared key not found');
-      }
-      encryptKey = this.sharedKey;
+
+      batches.push(messageCreated.prepareUpdate(messageUpdater({ cipher })));
     }
 
-    let cipher: string;
-    if (this.name) {
-      cipher = await encryptContentUsingShared(content, encryptKey);
-    } else {
-      cipher = await encryptContentUsingPair(content, encryptKey, sender.secretKey!);
-    }
-    batches.push(messageCreated.prepareUpdate(messageUpdater({ cipher })));
-
-    // TODO: encrypt attachment remote uri
     const attachmentsWithId = await prepareAttachments(attachments);
     batches.push(
       ...attachmentsWithId.map((each) => {
-        const att: DeepPartial<AttachmentModel> = {
-          ...each,
-          sender: { id: sender.id },
-          room: { id: this.id },
-          message: { id },
-        };
-        return attachmentDb.prepareCreate(attachmentUpdater(att));
-      }),
-    );
-
-    const roomMembers = await roomMemberDb.query(Q.where('roomId', this.id)).fetch();
-    batches.push(
-      ...roomMembers.map((each) => {
-        return each.prepareUpdate(
-          roomMemberUpdater({
+        return attachmentDb.prepareCreate(
+          attachmentUpdater({
             ...each,
-            isLocalOnly: false,
+            sender: { id: sender.id },
+            room: { id: this.id },
+            message: { id },
           }),
         );
       }),
     );
+
+    const roomMembers = await roomMemberDb
+      .query(Q.where('roomId', this.id), Q.where('isLocalOnly', true))
+      .fetch();
+    if (roomMembers.length) {
+      batches.push(
+        ...roomMembers.map((each) => {
+          return each.prepareUpdate(
+            roomMemberUpdater({
+              isLocalOnly: false,
+            }),
+          );
+        }),
+      );
+    }
 
     batches.push(
       this.prepareUpdate(

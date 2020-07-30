@@ -71,12 +71,11 @@ const CreateGroup: FC<Props> = ({ navigation, route }) => {
 
       let remoteUri: string | undefined;
 
-      const pictureUriToUpload = params?.picturesTaken?.[0].uri ?? pictureUri;
+      const pictureUriToUpload = params?.picturesTaken?.[0].localUri ?? pictureUri;
       if (pictureUriToUpload) {
         const res = await uploadMedia(pictureUriToUpload);
         remoteUri = res.secure_url;
       }
-      console.log({ remoteUri });
 
       const room = {
         id: params.id,

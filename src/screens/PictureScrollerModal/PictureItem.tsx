@@ -10,7 +10,6 @@ import usePress from '!/hooks/use-press';
 import AttachmentModel from '!/models/AttachmentModel';
 import { DeepPartial, RootNavigationProp } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
-import transformUri from '!/utils/transform-uri';
 
 interface Props {
   item: DeepPartial<AttachmentModel>;
@@ -42,7 +41,7 @@ const PictureItem: FC<Props> = ({ item: picture, title }) => {
       <SharedElement id={picture.id!}>
         <FastImage
           resizeMode={FastImage.resizeMode.contain}
-          source={{ uri: transformUri(picture.uri, { width, height }) }}
+          source={{ uri: picture.localUri! }}
           style={{ width, height, aspectRatio }}
         />
       </SharedElement>

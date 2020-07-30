@@ -235,7 +235,7 @@ const VideoPlayer: FC<Props> = ({ video, onShowHideOverlay, onShowHideControl, o
         rate={1.0}
         ref={videoRef}
         resizeMode='contain'
-        source={{ uri: video.uri }}
+        source={{ uri: video.localUri! }}
         style={{ width, height, aspectRatio, backgroundColor: Colors.black }}
         volume={1.0}
       />

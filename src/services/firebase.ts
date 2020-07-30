@@ -10,6 +10,7 @@ import debug from '!/services/debug';
 import sync from '!/services/sync';
 import { Stores } from '!/stores/Stores';
 import { Tables } from '!/types';
+import getAttachmentTextKey from '!/utils/get-attachment-text-key';
 
 import { navigationRef, rootNavigate } from '../utils/root-navigation';
 import timeout from '../utils/timeout';
@@ -73,10 +74,12 @@ export function setupBackgroundHandler(): void {
       const stores = new Stores();
       stores.onHydrationComplete = async () => {
         log('hydration complete');
-        const userId = stores.authStore.user?.id;
-        const database = stores.generalStore.database;
-        const client = stores.generalStore.client;
-        await displayNotification(remoteMessage, userId, database, client);
+        if (stores.deviceTokenStore.deviceTokens.length) {
+          const userId = stores.authStore.user?.id;
+          const database = stores.generalStore.database;
+          const client = stores.generalStore.client;
+          await displayNotification(remoteMessage, userId, database, client);
+        }
         resolve();
       };
     });
@@ -132,8 +135,8 @@ async function displayNotification(
     log('No signed user found');
     return;
   } else if (senderId === userId) {
-    // log('Signed user sent the message, skip displaying notification');
-    // return;
+    log('Signed user sent the message, skip displaying notification');
+    return;
   }
 
   const messagesTable = database.collections.get<MessageModel>(Tables.messages);
@@ -200,20 +203,17 @@ async function displayNotification(
     return;
   }
 
-  let bigPictureUrl;
-  if (attachments.length) {
-    const attachmentFound = attachments.find((e) => e.uri && e.type === 'image');
-    if (attachmentFound) {
-      bigPictureUrl = attachmentFound.uri;
-    } else {
-      log('No valid uri for attachment found');
-    }
+  let content = message.content;
+  if (!content) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const localize = require('!/services/localize');
+    content = localize.t(getAttachmentTextKey(attachments));
   }
 
   PushNotification.localNotification({
     /* iOS and Android properties */
     title,
-    message: message.content,
+    message: content,
     playSound: !isMuted,
     soundName: 'default',
 
@@ -229,8 +229,6 @@ async function displayNotification(
     ongoing: false,
     ignoreInForeground: false,
     onlyAlertOnce: false,
-
-    bigPictureUrl,
   });
 }
 

@@ -8,8 +8,8 @@ function getValue(data: any): any {
 }
 
 function deepCompareEquals<T extends Record<string, any>>(
-  prev: T[] | undefined,
-  next: T[] | undefined,
+  prev: T[] | null,
+  next: T[] | null,
   props: string[],
 ): boolean {
   if (!prev && !next) {
@@ -34,9 +34,9 @@ function deepCompareEquals<T extends Record<string, any>>(
   });
 }
 
-export default function deepCompare<T>(array: T[] | undefined, props: string[]): T[] | undefined {
+export default function deepCompare<T>(array: T[] | null, props: string[]): T[] | null {
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const prev = useRef<T[]>();
+  const prev = useRef<T[] | null>(null);
 
   if (!deepCompareEquals<T>(prev.current, array, props)) {
     prev.current = array;

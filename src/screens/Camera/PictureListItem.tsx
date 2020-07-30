@@ -6,7 +6,6 @@ import { Colors } from 'react-native-paper';
 
 import FadeIcon from '!/components/FadeIcon';
 import usePress from '!/hooks/use-press';
-import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 import { PicturesTaken } from './types';
@@ -30,7 +29,7 @@ const PictureListItem: FC<Props> = ({ item, index, size, padding, onPress }) => 
     <TouchableOpacity activeOpacity={0.6} onPress={handlePress} style={{ marginHorizontal: padding }}>
       <FastImage
         resizeMode={FastImage.resizeMode.contain}
-        source={{ uri: transformUri(item.uri, { width, height }) }}
+        source={{ uri: item.localUri }}
         style={{
           width,
           height,

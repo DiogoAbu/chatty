@@ -1,5 +1,5 @@
 diff --git a/node_modules/@types/react-native/index.d.ts b/node_modules/@types/react-native/index.d.ts
-index d272ac7..0af699a 100644
+index 5a65d89..37aa707 100644
 --- a/node_modules/@types/react-native/index.d.ts
 +++ b/node_modules/@types/react-native/index.d.ts
 @@ -2179,6 +2179,7 @@ export interface AccessibilityProps extends AccessibilityPropsAndroid, Accessibi

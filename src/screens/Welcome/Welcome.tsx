@@ -1,10 +1,11 @@
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import { StatusBar, View } from 'react-native';
 
 import Config from 'react-native-config';
 import { Button, Colors, FAB as Fab, Text } from 'react-native-paper';
 import LottieView from 'lottie-react-native';
 
+import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
@@ -29,7 +30,7 @@ const Welcome: FC<Props> = ({ navigation }) => {
     });
   });
 
-  useEffect(() => {
+  useFocusEffect(() => {
     StatusBar.setHidden(false);
     StatusBar.setBackgroundColor(colors.statusBar, true);
     StatusBar.setBarStyle(colors.statusBarText);
@@ -37,19 +38,20 @@ const Welcome: FC<Props> = ({ navigation }) => {
 
     generalStore.setFab();
 
-    // Sign out here so the other screens that depend on the user will be already disposed
-    void authStore
-      .signOut()
-      .then(async () => deviceTokenStore.unregister())
-      .catch(() => null);
-
     // Hit the server to wake it up
     const fetchControl = new AbortController();
     const fetchTimeout = setTimeout(() => {
       fetchControl.abort();
     }, 5000);
-
     void fetch(Config.API_URL, { method: 'GET', signal: fetchControl.signal }).catch(() => null);
+
+    // Unregister device tokens stored
+    void deviceTokenStore.unregister(true).catch(() => null);
+
+    // Sign out here so the other screens that depend on the user will be already disposed
+    void authStore.signOut().catch(() => null);
+
+    console.log('Welcome done');
 
     return () => {
       clearTimeout(fetchTimeout);

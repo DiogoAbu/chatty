@@ -9,6 +9,7 @@ import Bottleneck from 'bottleneck';
 import { User } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
+import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import MessageModel from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
@@ -17,6 +18,7 @@ import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, Tables } from '!/types';
 import capitalize from '!/utils/capitalize';
 import getRoomMember from '!/utils/get-room-member';
+import getStatusBarColor from '!/utils/get-status-bar-color';
 
 import AttachmentPicker, { AttachmentPickerType } from './AttachmentPicker';
 import MessageInput from './MessageInput';
@@ -31,6 +33,7 @@ const limiter = new Bottleneck({
 const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, members }) => {
   const navigation = useNavigation<MainNavigationProp<'Chatting'>>();
   const { authStore, generalStore, syncStore } = useStores();
+  const { colors, dark, mode } = useTheme();
   const { t } = useTranslation();
 
   const [page, setPage] = useState(1);
@@ -109,6 +112,7 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
 
     StatusBar.setHidden(false);
     StatusBar.setTranslucent(false);
+    StatusBar.setBackgroundColor(getStatusBarColor(4, colors, dark, mode));
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       handlePressBack();
@@ -169,9 +173,12 @@ const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, memb
     };
   }, [
     authStore.user.id,
+    colors,
+    dark,
     database,
     handlePressBack,
     handlePressCenter,
+    mode,
     navigation,
     room,
     subtitle,

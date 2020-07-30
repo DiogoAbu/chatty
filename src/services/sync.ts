@@ -5,6 +5,7 @@ import Bottleneck from 'bottleneck';
 import { Client } from 'urql';
 
 import {
+  AttachmentChanges,
   MessageChanges,
   PullChangesDocument,
   PullChangesQuery,
@@ -17,10 +18,11 @@ import {
 import { prepareUpsertMessage } from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
 import { getAllMembersOfRoom } from '!/models/relations/RoomMemberModel';
-import RoomModel, { prepareUpsertRoom } from '!/models/RoomModel';
+import { prepareUpsertRoom } from '!/models/RoomModel';
 import UserModel, { prepareUpsertUser } from '!/models/UserModel';
 import debug from '!/services/debug';
 import { DeepRequired, Tables } from '!/types';
+import getKeyFromRoomOrSender from '!/utils/get-key-from-room-or-sender';
 import { removeEmptys } from '!/utils/json-replacer';
 import notEmpty from '!/utils/not-empty';
 import omitKeys from '!/utils/omit-keys';
@@ -37,7 +39,7 @@ const limiter = new Bottleneck({
 const keysToOmit: { [key in Tables]: { pull: any[]; push: any[] } } = {
   attachments: {
     pull: [],
-    push: [],
+    push: ['localUri', 'remoteUri', 'postId'],
   },
   comments: {
     pull: [],
@@ -152,6 +154,8 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
         if (!msg.cipher || !msg.cipher.startsWith(userId)) {
           return;
         }
+
+        // Is shared key and starts with this user id
         const cipher = msg.cipher.replace(userId, '');
 
         const usersTable = database.collections.get<UserModel>(Tables.users);
@@ -193,46 +197,20 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       };
 
       if (msg.cipher && msg.type === 'default') {
-        let sharedKey: string | undefined;
-        let senderPublicKey: string | undefined;
-
-        const usersTable = database.collections.get<UserModel>(Tables.users);
-
-        try {
-          const room = changes.rooms!.updated!.find((e) => e.id === msg.roomId);
-          // @ts-expect-error Get sharedKey added above
-          if (room?.sharedKey) {
-            // @ts-expect-error
-            sharedKey = room.sharedKey;
-          } else {
-            const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
-            const roomFound = await roomsTable.find(msg.roomId!);
-            if (roomFound?.sharedKey) {
-              sharedKey = roomFound.sharedKey;
-            }
-          }
-
-          // Can only decrypt message sent to me, not by me
-          if (!sharedKey && msg.userId !== userId) {
-            const sender = changes.users!.updated!.find((e) => e.id === msg.userId);
-            if (sender?.publicKey) {
-              senderPublicKey = sender.publicKey;
-            } else {
-              const senderFound = await usersTable.find(msg.userId!);
-              if (senderFound?.publicKey) {
-                senderPublicKey = senderFound.publicKey;
-              }
-            }
-          }
-        } catch (err) {
-          log('Failed to find encryption key');
-          console.log(err);
-        }
+        const { sharedKey, senderPublicKey } = await getKeyFromRoomOrSender(
+          database,
+          userId,
+          msg.roomId!,
+          msg.userId!,
+          changes.rooms?.updated,
+          changes.users?.updated,
+        );
 
         try {
           if (sharedKey) {
             data.message.content = await decryptContentUsingShared(msg.cipher, sharedKey);
           } else if (senderPublicKey) {
+            const usersTable = database.collections.get<UserModel>(Tables.users);
             const signedUser = await usersTable.find(userId);
             data.message.content = await decryptContentUsingPair(
               msg.cipher,
@@ -294,6 +272,51 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
     });
   }
 
+  /////////////////
+  // Attachments //
+  /////////////////
+  if (changes?.attachments?.updated?.length) {
+    const decryptAttachment = limiter.wrap(async (attach: AttachmentChanges) => {
+      if (!attach.cipherUri) {
+        return attach;
+      }
+
+      const { sharedKey, senderPublicKey } = await getKeyFromRoomOrSender(
+        database,
+        userId,
+        attach.roomId!,
+        attach.userId!,
+        changes.rooms?.updated,
+        changes.users?.updated,
+      );
+
+      try {
+        if (sharedKey) {
+          // @ts-expect-error adding remoteUri
+          attach.remoteUri = await decryptContentUsingShared(attach.cipherUri, sharedKey);
+        } else if (senderPublicKey) {
+          const usersTable = database.collections.get<UserModel>(Tables.users);
+          const signedUser = await usersTable.find(userId);
+          // @ts-expect-error adding remoteUri
+          attach.remoteUri = await decryptContentUsingPair(
+            attach.cipherUri,
+            senderPublicKey,
+            signedUser.secretKey!,
+          );
+        } else {
+          log(`Failed to find key for attachment ${attach.id as string}`);
+        }
+      } catch (err) {
+        log(`Failed to handle pulled attachment ${attach.id as string}`);
+        console.log(err);
+      }
+
+      return attach;
+    });
+
+    changes.attachments.updated = await Promise.all(changes.attachments.updated.map(decryptAttachment));
+  }
+
   // Return changes to the database
   log('Pull', JSON.stringify({ changes, timestamp }, removeEmptys, 2));
   return {
@@ -331,11 +354,11 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
       return (
         e.id === userId &&
         e._changed &&
-        !e._changed.split(',').every((c: string) => keysToOmit.users!.push.includes(c))
+        !e._changed.split(',').every((c: string) => keysToOmit.users.push.includes(c))
       );
     });
-    changes.users.created = changes.users.created.map((e) => omitKeys(e, keysToOmit.users!.push));
-    changes.users.updated = changes.users.updated.map((e) => omitKeys(e, keysToOmit.users!.push));
+    changes.users.created = changes.users.created.map((e) => omitKeys(e, keysToOmit.users.push));
+    changes.users.updated = changes.users.updated.map((e) => omitKeys(e, keysToOmit.users.push));
     changes.users.created.map(updateToSynced);
     changes.users.updated.map(updateToSynced);
   }
@@ -352,10 +375,20 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
         }),
       );
     };
-    changes.rooms.created = changes.rooms.created.filter((e) => !e.isLocalOnly);
-    changes.rooms.updated = changes.rooms.updated.filter((e) => !e.isLocalOnly);
-    changes.rooms.created = changes.rooms.created.map((e) => omitKeys(e, keysToOmit.rooms!.push));
-    changes.rooms.updated = changes.rooms.updated.map((e) => omitKeys(e, keysToOmit.rooms!.push));
+    changes.rooms.created = changes.rooms.created.filter(
+      (e) =>
+        !e.isLocalOnly &&
+        e._changed &&
+        !e._changed.split(',').every((c: string) => keysToOmit.rooms.push.includes(c)),
+    );
+    changes.rooms.updated = changes.rooms.updated.filter(
+      (e) =>
+        !e.isLocalOnly &&
+        e._changed &&
+        !e._changed.split(',').every((c: string) => keysToOmit.rooms.push.includes(c)),
+    );
+    changes.rooms.created = changes.rooms.created.map((e) => omitKeys(e, keysToOmit.rooms.push));
+    changes.rooms.updated = changes.rooms.updated.map((e) => omitKeys(e, keysToOmit.rooms.push));
     changes.rooms.created.map(updateToSynced);
     changes.rooms.updated.map(updateToSynced);
   }
@@ -367,10 +400,44 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
     changes.roomMembers.created = changes.roomMembers.created.filter((e) => !e.isLocalOnly);
     changes.roomMembers.updated = changes.roomMembers.updated.filter((e) => !e.isLocalOnly);
     changes.roomMembers.created = changes.roomMembers.created.map((e) =>
-      omitKeys(e, keysToOmit.roomMembers!.push),
+      omitKeys(e, keysToOmit.roomMembers.push),
     );
     changes.roomMembers.updated = changes.roomMembers.updated.map((e) =>
-      omitKeys(e, keysToOmit.roomMembers!.push),
+      omitKeys(e, keysToOmit.roomMembers.push),
+    );
+  }
+
+  /////////////////
+  // Attachments //
+  /////////////////
+  if (changes?.attachments) {
+    const notReadyMessageIds: string[] = [];
+
+    const isAttachmentReady = (each: DirtyRaw) => {
+      // Needs encrypted remote uri
+      if (!each.cipherUri) {
+        if (!notReadyMessageIds.includes(each.messageId)) {
+          notReadyMessageIds.push(each.messageId);
+        }
+        return false;
+      }
+
+      // Skip this attachment if it's message is not ready
+      return !notReadyMessageIds.includes(each.messageId);
+    };
+
+    changes.attachments.created = changes.attachments.created.filter(isAttachmentReady);
+    changes.attachments.updated = changes.attachments.updated.filter(isAttachmentReady);
+    if (changes?.messages) {
+      // Do not send messages that have attachments not yet ready
+      changes.messages.created = changes.messages.created.filter((e) => !notReadyMessageIds.includes(e.id));
+      changes.messages.updated = changes.messages.updated.filter((e) => !notReadyMessageIds.includes(e.id));
+    }
+    changes.attachments.created = changes.attachments.created.map((e) =>
+      omitKeys(e, keysToOmit.attachments.push),
+    );
+    changes.attachments.updated = changes.attachments.updated.map((e) =>
+      omitKeys(e, keysToOmit.attachments.push),
     );
   }
 
@@ -395,11 +462,27 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
         msg.sentAt = sentAt;
       }
 
-      return omitKeys<DirtyRaw>(msg, keysToOmit.messages!.push);
+      return omitKeys<DirtyRaw>(msg, keysToOmit.messages.push);
     };
 
-    changes.messages.created = changes.messages.created.filter((e) => e.userId === userId && e.cipher);
-    changes.messages.updated = changes.messages.updated.filter((e) => e.userId === userId && e.cipher);
+    changes.messages.created = changes.messages.created.filter((e) => {
+      if (e.userId !== userId) {
+        return false;
+      }
+      if (e.content && !e.cipher) {
+        return false;
+      }
+      return true;
+    });
+    changes.messages.updated = changes.messages.updated.filter((e) => {
+      if (e.userId !== userId) {
+        return false;
+      }
+      if (e.content && !e.cipher) {
+        return false;
+      }
+      return true;
+    });
     changes.messages.created = changes.messages.created.map(prepareMessage);
     changes.messages.updated = changes.messages.updated.map(prepareMessage);
   }

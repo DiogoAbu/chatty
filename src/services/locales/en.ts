@@ -18,6 +18,7 @@ export default {
     'title.removePicture': 'Remove picture?',
     'title.closeTheApp': 'Close the app?',
     'title.muteOptions': 'Mute Options',
+    'title.permissionNeeded': 'Permission needed',
 
     'label.welcome': 'Welcome',
     'label.email': 'Email',
@@ -66,6 +67,7 @@ export default {
     'label.y_plural': '{{count}} years',
     'label.displaySilentNotifications': 'Display silent notifications?',
 
+    'helper.charactersBetween': 'Must have between {{min}} and {{max}} characters',
     'helper.charactersLeft': 'You have {{count}} character left',
     'helper.charactersLeft_plural': 'You have {{count}} characters left',
     'helper.youAreSelectingPeopleToCreateGroup': 'You are selecting people to create a group',
@@ -101,6 +103,8 @@ export default {
     'alert.groupCreationFailed': 'Group creation failed',
     'alert.doYouWantTheRemoveTheCurrentPicture': 'Do you want the remove the current picture?',
     'alert.youCanAlwaysChangeYourProfileLater': 'You can always change your profile later.',
+    'alert.weNeedStoragePermission':
+      'This app needs access to the external storage to download images and videos. It will not run properly otherwise.',
 
     'messageInput.placeholder': 'Type a message...',
     'headerSearch.placeholder': 'Find by name or email',

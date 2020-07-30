@@ -67,8 +67,10 @@ To start developing, follow these steps:
 *To write commits on VS Code you can use the extension Conventional Commits (vscode-conventional-commits)*
 
 ### Running the app
-You can run the app with three different environments defined by the dotenv files. The keystore
-password and alias are required to build a release variant.
+You can run the app with three different environments defined by the dotenv files.
+
+The keystore password and alias are required to build a release variant:
+`yarn cross-env RELEASE_KEY_ALIAS=alias RELEASE_KEY_PASSWORD=password yarn android-*`
 
 **Dev**
   - Will read the `.env` and run as a debug variant.

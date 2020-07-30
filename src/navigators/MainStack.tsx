@@ -17,6 +17,7 @@ import FindFriends from '!/screens/FindFriends/FindFriends';
 import ForgotPass from '!/screens/ForgotPass/ForgotPass';
 import PreparePicture from '!/screens/PreparePicture/PreparePicture';
 import PrepareVideo from '!/screens/PrepareVideo/PrepareVideo';
+import RoomMedias from '!/screens/RoomMedias/RoomMedias';
 import Settings from '!/screens/Settings/Settings';
 import SignIn from '!/screens/SignIn/SignIn';
 import Welcome from '!/screens/Welcome/Welcome';
@@ -88,7 +89,7 @@ const MainStack: FC<unknown> = () => {
 
         <Stack.Screen component={PrepareVideo} name='PrepareVideo' options={{ headerTransparent: true }} />
 
-        <Stack.Screen component={Welcome} name='Welcome' options={{ headerShown: false }} />
+        <Stack.Screen component={RoomMedias} name='RoomMedias' />
 
         <Stack.Screen
           component={CreateProfile}
@@ -98,6 +99,8 @@ const MainStack: FC<unknown> = () => {
         <Stack.Screen component={SignIn} name='SignIn' />
         <Stack.Screen component={ForgotPass} name='ForgotPass' options={{ title: t('forgotPassword') }} />
         <Stack.Screen component={ChangePass} name='ChangePass' options={{ title: t('changePassword') }} />
+
+        <Stack.Screen component={Welcome} name='Welcome' options={{ headerShown: false }} />
       </Stack.Navigator>
     );
   });

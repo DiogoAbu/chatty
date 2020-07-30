@@ -63,18 +63,21 @@
     "scope": "typescript,typescriptreact",
     "prefix": "withObservablesImports",
     "body": [
-      "import withObservables from '@nozbe/with-observables';",
-      "import { Observable } from 'rxjs/Observable';",
+      "import withObservables, { ExtractedObservables } from '@nozbe/with-observables';",
       "",
       "export interface With${1/(.*)/${1:/capitalize}/}Input {",
-      "  ${1}: ${2:any};",
+      "  ${2}: ${3:any};",
       "}",
-      "export interface With${1/(.*)/${1:/capitalize}/}Output {",
-      "  ${1}: Observable<${2:any}>;",
-      "}",
-      "export const with${1/(.*)/${1:/capitalize}/} = withObservables<With${1/(.*)/${1:/capitalize}/}Input, With${1/(.*)/${1:/capitalize}/}Output>(['${1}'], ({ ${1} }) => ({",
-      "  ${1}: ${1}.observe(),${0}",
-      "}));"
+      "",
+      "const get${1/(.*)/${1:/capitalize}/} = ({ ${2} }: With${1/(.*)/${1:/capitalize}/}Input) => {",
+      "  return {",
+      "    ${1}: ${0}",
+      "  };",
+      "};",
+      "",
+      "export const with${1/(.*)/${1:/capitalize}/} = withObservables(['${2}'], get${1/(.*)/${1:/capitalize}/});",
+      "",
+      "export type With${1/(.*)/${1:/capitalize}/}Output = With${1/(.*)/${1:/capitalize}/}Input & ExtractedObservables<ReturnType<typeof get${1/(.*)/${1:/capitalize}/}>>;"
     ],
     "description": "withObservables"
   },
@@ -83,14 +86,18 @@
     "prefix": "withObservables",
     "body": [
       "export interface With${1/(.*)/${1:/capitalize}/}Input {",
-      "  ${1}: ${2:any};",
+      "  ${2}: ${3:any};",
       "}",
-      "export interface With${1/(.*)/${1:/capitalize}/}Output {",
-      "  ${1}: Observable<${2:any}>;",
-      "}",
-      "export const with${1/(.*)/${1:/capitalize}/} = withObservables<With${1/(.*)/${1:/capitalize}/}Input, With${1/(.*)/${1:/capitalize}/}Output>(['${1}'], ({ ${1} }) => ({",
-      "  ${1}: ${1}.observe(),${0}",
-      "}));"
+      "",
+      "const get${1/(.*)/${1:/capitalize}/} = ({ ${2} }: With${1/(.*)/${1:/capitalize}/}Input) => {",
+      "  return {",
+      "    ${1}: ${0}",
+      "  };",
+      "};",
+      "",
+      "export const with${1/(.*)/${1:/capitalize}/} = withObservables(['${2}'], get${1/(.*)/${1:/capitalize}/});",
+      "",
+      "export type With${1/(.*)/${1:/capitalize}/}Output = With${1/(.*)/${1:/capitalize}/}Input & ExtractedObservables<ReturnType<typeof get${1/(.*)/${1:/capitalize}/}>>;"
     ],
     "description": "withObservables"
   }

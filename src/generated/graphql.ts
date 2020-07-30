@@ -58,6 +58,7 @@ export type Message = {
   sender?: Maybe<User>;
   room?: Maybe<Room>;
   readReceipts?: Maybe<Array<Maybe<ReadReceipt>>>;
+  attachments?: Maybe<Array<Maybe<Attachment>>>;
   sentAt?: Maybe<Scalars['Timestamp']>;
   updatedAt?: Maybe<Scalars['Timestamp']>;
   createdAt?: Maybe<Scalars['Timestamp']>;
@@ -81,7 +82,10 @@ export type User = {
   lastAccessAt?: Maybe<Scalars['Timestamp']>;
   rooms?: Maybe<Array<Maybe<Room>>>;
   messages?: Maybe<Array<Maybe<Message>>>;
+  readReceipts?: Maybe<Array<Maybe<ReadReceipt>>>;
+  attachments?: Maybe<Array<Maybe<Attachment>>>;
   devices?: Maybe<Array<Maybe<Device>>>;
+  roomPreferences?: Maybe<Array<Maybe<RoomPreferences>>>;
   updatedAt?: Maybe<Scalars['Timestamp']>;
   createdAt?: Maybe<Scalars['Timestamp']>;
   isFollowingMe?: Maybe<Scalars['Boolean']>;
@@ -97,6 +101,8 @@ export type Room = {
   members?: Maybe<Array<Maybe<User>>>;
   messages?: Maybe<Array<Maybe<Message>>>;
   readReceipts?: Maybe<Array<Maybe<ReadReceipt>>>;
+  attachments?: Maybe<Array<Maybe<Attachment>>>;
+  roomPreferences?: Maybe<Array<Maybe<RoomPreferences>>>;
   updatedAt?: Maybe<Scalars['Timestamp']>;
   createdAt?: Maybe<Scalars['Timestamp']>;
   lastMessage?: Maybe<Message>;
@@ -111,6 +117,34 @@ export type ReadReceipt = {
   receivedAt?: Maybe<Scalars['Float']>;
   seenAt?: Maybe<Scalars['Float']>;
   updatedAt?: Maybe<Scalars['Timestamp']>;
+};
+
+export type Attachment = {
+  __typename?: 'Attachment';
+  id?: Maybe<Scalars['ID']>;
+  cipherUri?: Maybe<Scalars['String']>;
+  type?: Maybe<AttachmentType>;
+  width?: Maybe<Scalars['Float']>;
+  height?: Maybe<Scalars['Float']>;
+  user?: Maybe<User>;
+  message?: Maybe<Message>;
+  room?: Maybe<Room>;
+};
+
+/** The attachment types */
+export type AttachmentType = 
+  | 'image'
+  | 'video'
+  | 'document';
+
+export type RoomPreferences = {
+  __typename?: 'RoomPreferences';
+  id?: Maybe<Scalars['ID']>;
+  isMuted?: Maybe<Scalars['Boolean']>;
+  shouldStillNotify?: Maybe<Scalars['Boolean']>;
+  mutedUntil?: Maybe<Scalars['Float']>;
+  user?: Maybe<User>;
+  room?: Maybe<Room>;
 };
 
 export type Device = {
@@ -141,6 +175,7 @@ export type PullChangesResult = {
 export type SyncChanges = {
   __typename?: 'SyncChanges';
   messages?: Maybe<MessageTableChangeSet>;
+  attachments?: Maybe<AttachmentTableChangeSet>;
   readReceipts?: Maybe<ReadReceiptTableChangeSet>;
   rooms?: Maybe<RoomTableChangeSet>;
   users?: Maybe<UserTableChangeSet>;
@@ -165,6 +200,27 @@ export type MessageChanges = {
   roomId?: Maybe<Scalars['ID']>;
   sentAt?: Maybe<Scalars['Float']>;
   createdAt?: Maybe<Scalars['Float']>;
+};
+
+export type AttachmentTableChangeSet = {
+  __typename?: 'AttachmentTableChangeSet';
+  created?: Maybe<Array<Maybe<AttachmentChanges>>>;
+  updated?: Maybe<Array<Maybe<AttachmentChanges>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type AttachmentChanges = {
+  __typename?: 'AttachmentChanges';
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  cipherUri?: Maybe<Scalars['String']>;
+  type?: Maybe<Scalars['String']>;
+  width?: Maybe<Scalars['Float']>;
+  height?: Maybe<Scalars['Float']>;
+  userId?: Maybe<Scalars['ID']>;
+  roomId?: Maybe<Scalars['ID']>;
+  messageId?: Maybe<Scalars['ID']>;
 };
 
 export type ReadReceiptTableChangeSet = {
@@ -359,6 +415,7 @@ export type CreateRoomInput = {
 
 export type SyncChangesInput = {
   messages?: Maybe<MessageTableChangeSetInput>;
+  attachments?: Maybe<AttachmentTableChangeSetInput>;
   readReceipts?: Maybe<ReadReceiptTableChangeSetInput>;
   rooms?: Maybe<RoomTableChangeSetInput>;
   users?: Maybe<UserTableChangeSetInput>;
@@ -381,6 +438,25 @@ export type MessageChangesInput = {
   roomId?: Maybe<Scalars['ID']>;
   sentAt?: Maybe<Scalars['Float']>;
   createdAt?: Maybe<Scalars['Float']>;
+};
+
+export type AttachmentTableChangeSetInput = {
+  created?: Maybe<Array<Maybe<AttachmentChangesInput>>>;
+  updated?: Maybe<Array<Maybe<AttachmentChangesInput>>>;
+  deleted?: Maybe<Array<Maybe<Scalars['ID']>>>;
+};
+
+export type AttachmentChangesInput = {
+  _status?: Maybe<Scalars['String']>;
+  _changed?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['ID']>;
+  cipherUri?: Maybe<Scalars['String']>;
+  type?: Maybe<Scalars['String']>;
+  width?: Maybe<Scalars['Float']>;
+  height?: Maybe<Scalars['Float']>;
+  userId?: Maybe<Scalars['ID']>;
+  roomId?: Maybe<Scalars['ID']>;
+  messageId?: Maybe<Scalars['ID']>;
 };
 
 export type ReadReceiptTableChangeSetInput = {
@@ -644,6 +720,12 @@ export type PullChangesQuery = { __typename?: 'Query', pullChanges?: Maybe<{ __t
         )>>>, updated?: Maybe<Array<Maybe<(
           { __typename?: 'ReadReceiptChanges' }
           & ReadReceiptChangesFragmentFragment
+        )>>> }>, attachments?: Maybe<{ __typename?: 'AttachmentTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
+          { __typename?: 'AttachmentChanges' }
+          & AttachmentChangesFragmentFragment
+        )>>>, updated?: Maybe<Array<Maybe<(
+          { __typename?: 'AttachmentChanges' }
+          & AttachmentChangesFragmentFragment
         )>>> }>, rooms?: Maybe<{ __typename?: 'RoomTableChangeSet', deleted?: Maybe<Array<Maybe<string>>>, created?: Maybe<Array<Maybe<(
           { __typename?: 'RoomChanges' }
           & RoomChangesFragmentFragment
@@ -667,6 +749,8 @@ export type PullChangesQuery = { __typename?: 'Query', pullChanges?: Maybe<{ __t
 export type MessageChangesFragmentFragment = { __typename?: 'MessageChanges', id?: Maybe<string>, cipher?: Maybe<string>, type?: Maybe<MessageType>, userId?: Maybe<string>, roomId?: Maybe<string>, sentAt?: Maybe<number>, createdAt?: Maybe<number> };
 
 export type ReadReceiptChangesFragmentFragment = { __typename?: 'ReadReceiptChanges', id?: Maybe<string>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number> };
+
+export type AttachmentChangesFragmentFragment = { __typename?: 'AttachmentChanges', id?: Maybe<string>, cipherUri?: Maybe<string>, type?: Maybe<string>, width?: Maybe<number>, height?: Maybe<number>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string> };
 
 export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, isMuted?: Maybe<boolean>, shouldStillNotify?: Maybe<boolean>, mutedUntil?: Maybe<number>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
 
@@ -712,6 +796,18 @@ export const ReadReceiptChangesFragmentFragmentDoc = gql`
   messageId
   receivedAt
   seenAt
+}
+    `;
+export const AttachmentChangesFragmentFragmentDoc = gql`
+    fragment AttachmentChangesFragment on AttachmentChanges {
+  id
+  cipherUri
+  type
+  width
+  height
+  userId
+  roomId
+  messageId
 }
     `;
 export const RoomChangesFragmentFragmentDoc = gql`
@@ -961,6 +1057,15 @@ export const PullChangesDocument = gql`
         }
         deleted
       }
+      attachments {
+        created {
+          ...AttachmentChangesFragment
+        }
+        updated {
+          ...AttachmentChangesFragment
+        }
+        deleted
+      }
       rooms {
         created {
           ...RoomChangesFragment
@@ -993,6 +1098,7 @@ export const PullChangesDocument = gql`
 }
     ${MessageChangesFragmentFragmentDoc}
 ${ReadReceiptChangesFragmentFragmentDoc}
+${AttachmentChangesFragmentFragmentDoc}
 ${RoomChangesFragmentFragmentDoc}
 ${UserChangesFragmentFragmentDoc}
 ${RoomMemberChangesFragmentFragmentDoc}`;

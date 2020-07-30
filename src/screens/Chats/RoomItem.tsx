@@ -13,6 +13,7 @@ import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import { useStores } from '!/stores';
 import { HomeTabNavigationProp, ListItemSideProps } from '!/types';
+import getAttachmentTextKey from '!/utils/get-attachment-text-key';
 import getRoomMember from '!/utils/get-room-member';
 import getSentAt from '!/utils/get-sent-at';
 import transformUri from '!/utils/transform-uri';
@@ -115,7 +116,6 @@ const RoomItem: FC<WithOneRoomOutput> = ({
               style={styles.marginRight}
             />
           ) : null}
-          {renderAttachmentIcon()}
           {!lastMessage.content && lastMessage.cipher ? (
             <>
               <Icon name='key' style={{ color, fontSize }} />
@@ -127,17 +127,21 @@ const RoomItem: FC<WithOneRoomOutput> = ({
                 {' ' + t('label.encrypted')}
               </Text>
             </>
-          ) : lastMessage.content ? (
-            <Text ellipsizeMode='tail' numberOfLines={1} style={{ color, fontSize }}>
-              {room.name && lastMessageSender?.name ? `${lastMessageSender.name.split(' ')[0]}: ` : null}
-              {lastMessage.content}
-            </Text>
-          ) : null}
+          ) : (
+            <>
+              {!lastMessage.content ? renderAttachmentIcon() : null}
+              <Text ellipsizeMode='tail' numberOfLines={1} style={{ color, fontSize }}>
+                {room.name && lastMessageSender?.name ? `${lastMessageSender.name.split(' ')[0]}: ` : null}
+                {lastMessage.content || t(getAttachmentTextKey(lastMessageAttachments))}
+              </Text>
+            </>
+          )}
         </View>
       ) : null,
     [
       lastByMe,
       lastMessage,
+      lastMessageAttachments,
       lastMessageReadReceipts,
       lastMessageSender?.name,
       renderAttachmentIcon,

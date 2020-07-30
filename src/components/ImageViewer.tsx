@@ -32,7 +32,6 @@ import useTheme from '!/hooks/use-theme';
 import AttachmentModel from '!/models/AttachmentModel';
 import { DeepPartial } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
-import transformUri from '!/utils/transform-uri';
 
 const FastImageAnim = Animated.createAnimatedComponent(FastImage) as typeof FastImage;
 
@@ -144,7 +143,7 @@ const ImageViewer: FC<Props> = ({ image, shouldFillScreen }) => {
       <Animated.View style={[styles.imageContainer, shouldFillScreen && StyleSheet.absoluteFill]}>
         <SharedElement id={image.id!}>
           <FastImageAnim
-            source={{ uri: transformUri(image.uri, { width, height }) }}
+            source={{ uri: image.localUri! }}
             style={{
               width,
               height,

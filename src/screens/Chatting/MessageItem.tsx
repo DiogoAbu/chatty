@@ -8,6 +8,7 @@ import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import { useStores } from '!/stores';
+import getAttachmentTextKey from '!/utils/get-attachment-text-key';
 import getSentAt from '!/utils/get-sent-at';
 import readReceiptChanged from '!/utils/read-receipt-changed';
 
@@ -37,16 +38,7 @@ const MessageItem: FC<WithMessageOutput> = ({
   const borderTopStartRadius = mine || isPreviousSameSender ? undefined : 0;
   const borderBottomEndRadius = mine ? 0 : undefined;
 
-  let attachmentDescription = '';
-  if (attachments.length === 1) {
-    if (attachments[0].type === 'video') {
-      attachmentDescription = t('label.video');
-    } else if (attachments[0].type === 'image') {
-      attachmentDescription = t('label.image');
-    }
-  } else if (attachments.length > 1 && attachments.every((e) => e.type === 'image')) {
-    attachmentDescription = t('label.images');
-  }
+  const attachmentDescription = t(getAttachmentTextKey(attachments));
 
   const maxWidth = winWidth * 0.75;
 

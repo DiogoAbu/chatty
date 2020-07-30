@@ -81,9 +81,9 @@ const DetailsForm: FC<Props> = ({
       setPictureUri('');
     });
 
-    if (params?.picturesTaken?.[0].uri) {
+    if (params?.picturesTaken?.[0].localUri) {
       try {
-        const file = params.picturesTaken[0].uri;
+        const file = params.picturesTaken[0].localUri;
         const fileInfo = await FileSystem.stat(file);
 
         await CameraRoll.deletePhotos([fileInfo.originalFilepath]);
@@ -154,14 +154,14 @@ const DetailsForm: FC<Props> = ({
             <Avatar.Image
               ImageComponent={FastImage}
               size={avatarSize}
-              source={{ uri: transformUri(pictureUri, { width: avatarSize }) }}
+              source={{ uri: pictureUri }}
               style={styles.detailsAvatar}
             />
           ) : params?.picturesTaken?.[0] ? (
             <Avatar.Image
               ImageComponent={FastImage}
               size={avatarSize}
-              source={{ uri: transformUri(params.picturesTaken[0].uri, { width: avatarSize }) }}
+              source={{ uri: params.picturesTaken[0].localUri }}
               style={styles.detailsAvatar}
             />
           ) : params.pictureUri ? (

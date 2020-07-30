@@ -13,9 +13,9 @@ import useTheme from '!/hooks/use-theme';
 import AttachmentModel from '!/models/AttachmentModel';
 import { MainNavigationProp } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
-import transformUri from '!/utils/transform-uri';
 
 import { AttachmentPickerType } from './AttachmentPicker';
+import MessageAttachmentProgressOverlay from './MessageAttachmentProgressOverlay';
 import styles from './styles';
 
 const PREVIEW_MAX_AMOUNT = 4;
@@ -51,8 +51,8 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
   const handleSeeAttachment = usePress(() => {
     attachmentPickerRef.current?.hide();
 
-    const { id, uri, width, height, type } = attachments[0];
-    const attachment = { id, uri, width, height, type };
+    const { id, localUri, width, height, type } = attachments[0];
+    const attachment = { id, localUri, width, height, type };
     const route = type === 'video' ? 'VideoPlayerModal' : 'PictureViewerModal';
 
     requestAnimationFrame(() => {
@@ -63,7 +63,7 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
   const handleSeePictures = usePress(() => {
     attachmentPickerRef.current?.hide();
 
-    const pictures = attachments.map(({ id, uri, width, height }) => ({ id, uri, width, height }));
+    const pictures = attachments.map(({ id, localUri, width, height }) => ({ id, localUri, width, height }));
 
     requestAnimationFrame(() => {
       navigation.navigate('PictureScrollerModal', { attachments: pictures, title });
@@ -78,7 +78,7 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
           return;
         }
 
-        // TODO preview file with uri: content://
+        // TODO get document name, type and size
       } catch (err) {
         setFileInfo(null);
       }
@@ -89,28 +89,30 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
     const preview = attachments.slice(0, PREVIEW_MAX_AMOUNT);
 
     return (
-      <TouchableWithoutFeedback onPress={handleSeePictures}>
-        <View style={styles.attachmentListContainer}>
-          {preview.map((item, index) => {
-            const size = getLimitedSize(index, preview.length - 1, maxWidth);
-            return (
-              <SharedElement id={item.id} key={item.id}>
-                <FastImage
-                  resizeMode={FastImage.resizeMode.cover}
-                  source={{ uri: transformUri(item.uri, { ...size }) }}
-                  style={{
-                    ...size,
-                    marginBottom: index === 0 ? PREVIEW_PADDING : undefined,
-                    marginRight: index === 0 ? PREVIEW_PADDING : undefined,
-                    marginLeft: index === PREVIEW_MAX_AMOUNT - 1 ? PREVIEW_PADDING : undefined,
-                    borderRadius: roundness * 2,
-                  }}
-                />
-              </SharedElement>
-            );
-          })}
-        </View>
-      </TouchableWithoutFeedback>
+      <MessageAttachmentProgressOverlay visible={attachments.some((e) => !e.cipherUri)}>
+        <TouchableWithoutFeedback onPress={handleSeePictures}>
+          <View style={styles.attachmentListContainer}>
+            {preview.map((item, index) => {
+              const size = getLimitedSize(index, preview.length - 1, maxWidth);
+              return (
+                <SharedElement id={item.id} key={item.id}>
+                  <FastImage
+                    resizeMode={FastImage.resizeMode.cover}
+                    source={{ uri: item.localUri! }}
+                    style={{
+                      ...size,
+                      marginBottom: index === 0 ? PREVIEW_PADDING : undefined,
+                      marginRight: index === 0 ? PREVIEW_PADDING : undefined,
+                      marginLeft: index === PREVIEW_MAX_AMOUNT - 1 ? PREVIEW_PADDING : undefined,
+                      borderRadius: roundness * 2,
+                    }}
+                  />
+                </SharedElement>
+              );
+            })}
+          </View>
+        </TouchableWithoutFeedback>
+      </MessageAttachmentProgressOverlay>
     );
   }
 
@@ -119,7 +121,7 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
   if (attachment.type === 'document') {
     return (
       <TouchableWithoutFeedback onPress={handleSeeAttachment}>
-        <Text style={{ paddingHorizontal: gridSmaller }}>{attachment.uri}</Text>
+        <Text style={{ paddingHorizontal: gridSmaller }}>{attachment.localUri}</Text>
       </TouchableWithoutFeedback>
     );
   }
@@ -134,27 +136,29 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
   const heightFinal = Math.min(height!, maxWidth) - PREVIEW_PADDING * 2;
 
   return (
-    <TouchableWithoutFeedback onPress={handleSeeAttachment}>
-      <View>
-        <SharedElement id={attachment.id}>
-          <FastImage
-            resizeMode={FastImage.resizeMode.cover}
-            source={{ uri: transformUri(attachment.uri, { width: widthFinal, height: heightFinal }) }}
-            style={{
-              aspectRatio,
-              width: widthFinal,
-              height: heightFinal,
-              borderRadius: roundness * 2,
-            }}
-          />
-        </SharedElement>
-        {attachment.type === 'video' ? (
-          <View style={styles.attachmentOverlay}>
-            <Icon name='play-circle' style={styles.attachmentPlayIcon} />
-          </View>
-        ) : null}
-      </View>
-    </TouchableWithoutFeedback>
+    <MessageAttachmentProgressOverlay visible={!attachment.cipherUri}>
+      <TouchableWithoutFeedback onPress={handleSeeAttachment}>
+        <View>
+          <SharedElement id={attachment.id}>
+            <FastImage
+              resizeMode={FastImage.resizeMode.cover}
+              source={{ uri: attachment.localUri! }}
+              style={{
+                aspectRatio,
+                width: widthFinal,
+                height: heightFinal,
+                borderRadius: roundness * 2,
+              }}
+            />
+          </SharedElement>
+          {attachment.type === 'video' ? (
+            <View style={styles.attachmentVideoOverlay}>
+              <Icon name='play-circle' style={styles.attachmentVideoPlayIcon} />
+            </View>
+          ) : null}
+        </View>
+      </TouchableWithoutFeedback>
+    </MessageAttachmentProgressOverlay>
   );
 };
 

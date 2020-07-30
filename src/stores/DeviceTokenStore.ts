@@ -22,17 +22,20 @@ export class DeviceTokenStore extends BaseStore {
   }
 
   @action
-  async unregister(): Promise<void> {
-    const client = this.stores.generalStore.client;
+  async unregister(includeCurrentUser = false): Promise<void> {
+    const { authStore, generalStore } = this.stores;
 
     // Get devices tokens excluding current signed user one
-    const tokens = [...this.deviceTokens].filter((token) => token !== this.stores.authStore.deviceToken);
+    const tokens = includeCurrentUser
+      ? this.deviceTokens
+      : this.deviceTokens.filter((token) => token !== authStore.deviceToken);
 
     if (!tokens?.length) {
+      console.log('No device token stored');
       return;
     }
 
-    const res = await client
+    const res = await generalStore.client
       .mutation<UnregisterDevicesMutation, UnregisterDevicesMutationVariables>(
         UnregisterDevicesDocument,
         { data: { tokens } },
@@ -40,10 +43,13 @@ export class DeviceTokenStore extends BaseStore {
       )
       .toPromise();
 
-    if (!res.error) {
-      // Remove tokens that where unregistered
-      this.deviceTokens = this.deviceTokens.filter((token) => !tokens.includes(token));
+    if (res.error) {
+      console.log('Failed to unregister device tokens', res.error);
+      return;
     }
+
+    // Remove tokens that where unregistered
+    this.deviceTokens = this.deviceTokens.filter((token) => !tokens.includes(token));
   }
 
   @action
@@ -57,8 +63,6 @@ export class DeviceTokenStore extends BaseStore {
 
     runInAction(() => {
       this.deviceTokens = deviceTokens;
-
-      // void this.unregister();
     });
   }
 

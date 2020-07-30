@@ -17,7 +17,8 @@ export default {
 
     'title.removePicture': 'Apagar foto?',
     'title.closeTheApp': 'Fechar o app?',
-    'title.muteOptions': 'Mute Options',
+    'title.muteOptions': 'Opções de mudo',
+    'title.permissionNeeded': 'Permissão necessária',
 
     'label.welcome': 'Bem-vindo',
     'label.email': 'Email',
@@ -58,14 +59,15 @@ export default {
     'label.no': 'Não',
     'label.yes': 'Sim',
 
-    'label.h': '{{count}} hour',
-    'label.h_plural': '{{count}} hours',
-    'label.w': '{{count}} week',
-    'label.w_plural': '{{count}} weeks',
-    'label.y': '{{count}} year',
-    'label.y_plural': '{{count}} years',
-    'label.displaySilentNotifications': 'Display silent notifications?',
+    'label.h': '{{count}} hora',
+    'label.h_plural': '{{count}} horas',
+    'label.w': '{{count}} semana',
+    'label.w_plural': '{{count}} semanas',
+    'label.y': '{{count}} ano',
+    'label.y_plural': '{{count}} anos',
+    'label.displaySilentNotifications': 'Mostrar notificações silenciadas?',
 
+    'helper.charactersBetween': 'Entre {{min}} e {{max}} caracteres',
     'helper.charactersLeft': 'Resta {{count}} caractere',
     'helper.charactersLeft_plural': 'Restam {{count}} caracteres',
     'helper.youAreSelectingPeopleToCreateGroup': 'Você está selecionando pessoas para criar um grupo',
@@ -101,6 +103,8 @@ export default {
     'alert.groupCreationFailed': 'Criação do grupo falhou',
     'alert.doYouWantTheRemoveTheCurrentPicture': 'Deseja excluir a foto atual?',
     'alert.youCanAlwaysChangeYourProfileLater': 'Você pode mudar seu perfil depois.',
+    'alert.weNeedStoragePermission':
+      'Este app precisa de acesso ao armazenamento externo para baixar imagens e vídeos. O app não funcionará sem esta permissão.',
 
     'messageInput.placeholder': 'Digite algo...',
     'headerSearch.placeholder': 'Procure por nome ou email',

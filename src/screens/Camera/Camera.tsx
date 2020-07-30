@@ -19,7 +19,7 @@ import useTranslation from '!/hooks/use-translation';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp } from '!/types';
 import getStatusBarColor from '!/utils/get-status-bar-color';
-import { requestCameraPermission, requestStoragePermission } from '!/utils/permissions';
+import { requestCameraPermission } from '!/utils/permissions';
 
 import CameraButtons from './CameraButtons';
 import CameraContainer from './CameraContainer';
@@ -138,7 +138,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       // deviceOrientation = 1 | 2 | 3 | 4;
       // 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown'
       const newPic: PicturesTaken = {
-        uri: rollUri,
+        localUri: rollUri,
         width: [3, 4].includes(deviceOrientation) ? width : height,
         height: [3, 4].includes(deviceOrientation) ? height : width,
         isSelected: notAboveMax,
@@ -238,7 +238,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       // deviceOrientation = 1 | 2 | 3 | 4;
       // 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown'
       const videoRecorded: VideoRecorded = {
-        uri: rollUri,
+        localUri: rollUri,
         width: [3, 4].includes(deviceOrientation) ? width : height,
         height: [3, 4].includes(deviceOrientation) ? height : width,
       };
@@ -482,11 +482,11 @@ const Camera: FC<Props> = ({ navigation, route }) => {
     });
 
     void InteractionManager.runAfterInteractions(async () => {
-      const storageStatus = await requestStoragePermission();
-      setStorageGranted(storageStatus);
-      if (!storageStatus) {
-        return;
-      }
+      // const storageStatus = await requestStoragePermission();
+      // setStorageGranted(storageStatus);
+      // if (!storageStatus) {
+      //   return;
+      // }
 
       const cameraStatus = await requestCameraPermission();
       setCameraGranted(cameraStatus);
@@ -494,7 +494,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
         return;
       }
 
-      if (storageStatus && cameraStatus) {
+      if (cameraStatus) {
         setIsCameraAvailable(true);
       }
     });

@@ -4,7 +4,7 @@ import '!/services/why-did-you-render';
 import '!/services/localize';
 
 import React, { FC, useEffect } from 'react';
-import { Appearance } from 'react-native';
+import { Alert, Appearance, BackHandler } from 'react-native';
 
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,19 +13,38 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useObserver } from 'mobx-react-lite';
 import { Provider as UrqlProvider } from 'urql';
 
+import AttachmentUploadManager from './components/AttachmentUploadManager';
 import Fab from './components/Fab';
 import NotificationsManager from './components/NotificationsManager';
 import SubscriptionManager from './components/SubscriptionManager';
 import SyncManager from './components/SyncManager';
 import useMethod from './hooks/use-method';
+import useTranslation from './hooks/use-translation';
 import RootStack from './navigators/RootStack';
 import { darkTheme, lightTheme } from './services/theme';
 import { Stores } from './stores/Stores';
+import { checkStoragePermission, requestStoragePermission } from './utils/permissions';
 import { isReadyRef, navigationRef } from './utils/root-navigation';
 import { StoresProvider, useStores } from './stores';
 
+const requestPermission = async (t: (key: string) => string) => {
+  const storageGranted = await requestStoragePermission();
+  if (!storageGranted) {
+    Alert.alert(
+      t('title.oops'),
+      t('alert.weNeedStoragePermission'),
+      [{ onPress: () => BackHandler.exitApp(), text: t('label.return') }],
+      {
+        cancelable: true,
+        onDismiss: () => BackHandler.exitApp(),
+      },
+    );
+  }
+};
+
 const AppWithStores: FC = () => {
   const stores = useStores();
+  const { t } = useTranslation();
 
   const handleSchemeChange = useMethod(({ colorScheme }: Appearance.AppearancePreferences) => {
     stores.themeStore.setColorSchemeCurrent(colorScheme!);
@@ -39,11 +58,26 @@ const AppWithStores: FC = () => {
   }, [handleSchemeChange]);
 
   useEffect(() => {
+    void (async () => {
+      const storageGranted = await checkStoragePermission();
+      if (!storageGranted) {
+        Alert.alert(
+          t('title.permissionNeeded'),
+          t('alert.weNeedStoragePermission'),
+          [{ onPress: async () => requestPermission(t), text: t('label.continue') }],
+          {
+            cancelable: true,
+            onDismiss: async () => requestPermission(t),
+          },
+        );
+      }
+    })();
+
     return () => {
       // @ts-expect-error read-only
       isReadyRef.current = false;
     };
-  }, []);
+  }, [t]);
 
   return useObserver(() => {
     const {
@@ -81,6 +115,8 @@ const AppWithStores: FC = () => {
                 user={authStore.user}
                 userId={authStore.user?.id}
               />
+
+              <AttachmentUploadManager userId={authStore.user?.id} />
             </NavigationContainer>
           </PaperProvider>
         </DatabaseProvider>

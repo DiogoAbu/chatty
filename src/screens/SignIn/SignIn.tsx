@@ -2,8 +2,9 @@ import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, InteractionManager, ScrollView } from 'react-native';
 
 import { Button, HelperText, Surface, TextInput } from 'react-native-paper';
+import { CombinedError } from 'urql';
 
-import { useSignInMutation } from '!/generated/graphql';
+import { SignInResponse, useCreateAccountMutation, useSignInMutation } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
@@ -31,6 +32,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
 
   const [, signInExec] = useSignInMutation();
+  const [, createAccountExec] = useCreateAccountMutation();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -65,7 +67,11 @@ const SignIn: FC<Props> = ({ navigation }) => {
 
       setIsSigningIn(true);
 
-      const res = await signInExec({
+      let res: SignInResponse | undefined;
+      let error: CombinedError | undefined;
+
+      // Sign in
+      const resSignIn = await signInExec({
         data: {
           email,
           password,
@@ -78,29 +84,58 @@ const SignIn: FC<Props> = ({ navigation }) => {
         return;
       }
 
-      if (res.error?.message.includes('Network')) {
+      if (resSignIn.error?.message.includes('Network')) {
         Alert.alert(t('title.oops'), t('error.checkInternetConnection'));
         setIsSigningIn(false);
         return;
       }
 
-      if (res.error?.graphQLErrors?.[0].extensions?.exception?.validationErrors) {
-        log(res.error?.graphQLErrors?.[0].extensions?.exception?.validationErrors);
-        const errors = getValidationErrors(res.error, ['email', 'password']);
+      // Create account
+      if (resSignIn.error?.graphQLErrors.some((e) => e.extensions?.code === 'NOT_FOUND')) {
+        const resCreate = await createAccountExec({
+          data: {
+            email,
+            password,
+          },
+        });
+
+        if (!isMounted.current) {
+          log('not mounted');
+          setIsSigningIn(false);
+          return;
+        }
+
+        if (resCreate.error?.message.includes('Network')) {
+          Alert.alert(t('title.oops'), t('error.checkInternetConnection'));
+          setIsSigningIn(false);
+          return;
+        }
+
+        res = resCreate.data?.createAccount;
+        error = resCreate.error;
+      } else {
+        res = resSignIn.data?.signIn;
+        error = resSignIn.error;
+      }
+
+      // Check response
+      if (error?.graphQLErrors?.[0].extensions?.exception?.validationErrors) {
+        log(error?.graphQLErrors?.[0].extensions?.exception?.validationErrors);
+        const errors = getValidationErrors(error, ['email', 'password']);
         setEmailError(humanizeEmailError(errors?.email, t));
         setPassError(humanizePasswordError(errors?.password, t));
         setIsSigningIn(false);
         return;
       }
 
-      if (!res.data?.signIn?.user || !res.data?.signIn?.token) {
-        log(res.error);
+      if (!res?.user || !res?.token) {
+        log(error);
         setEmailError(t('error.signIn.user'));
         setIsSigningIn(false);
         return;
       }
 
-      const { user, token } = res.data.signIn;
+      const { user, token } = res;
 
       const userData: DeepPartial<UserModel> = {
         id: user.id,
@@ -122,7 +157,7 @@ const SignIn: FC<Props> = ({ navigation }) => {
         });
       });
     } catch (err) {
-      console.log(err);
+      log(err);
       Alert.alert(t('title.oops'), t('error.signInUserNotCreated'));
       setIsSigningIn(false);
     }

@@ -129,7 +129,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
     const roomDb = database.collections.get<RoomModel>(Tables.rooms);
     const room = await roomDb.find(roomId);
 
-    void room.addMessage({
+    await room.addMessage({
       content: message.value.trim(),
       sender: authStore.user,
       attachments: pictures.map((e) => ({ ...e, type: 'image' })),
@@ -180,7 +180,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
             return pic;
           }
 
-          const dimensions = await getLocalImageDimensions(pic.uri!);
+          const dimensions = await getLocalImageDimensions(pic.localUri!);
           return { ...pic, ...dimensions };
         },
       );
@@ -189,7 +189,9 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
         picturesTaken
           .filter((each, index, arr) => {
             // Is selected and uri is not already present
-            return each.isSelected && arr.findIndex((e, i) => e.uri === each.uri && i !== index) === -1;
+            return (
+              each.isSelected && arr.findIndex((e, i) => e.localUri === each.localUri && i !== index) === -1
+            );
           })
           .map(wrapped),
       );
@@ -219,7 +221,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
         })}
         horizontal
         initialNumToRender={1}
-        keyExtractor={(item: PicturesTaken) => item.uri!}
+        keyExtractor={(item: PicturesTaken) => item.localUri!}
         ListEmptyComponent={Loading}
         onScroll={event([{ nativeEvent: { contentOffset: { x: scrollAnim } } }])}
         pagingEnabled
@@ -238,10 +240,9 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
           offset: DOTS_SIZE + DOTS_PADDING * 2 * index,
           index,
         })}
-        keyExtractor={(item) => item.uri! + 'dot'}
-        renderItem={({ item, index }) => (
+        keyExtractor={(item) => item.localUri! + 'dot'}
+        renderItem={({ index }) => (
           <Animated.View
-            key={item.uri}
             style={{
               opacity: interpolate(dotPosition, {
                 inputRange: [index - 1, index, index + 1],

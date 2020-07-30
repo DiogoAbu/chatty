@@ -32,23 +32,23 @@ class AttachmentModel extends Model {
     [Tables.posts]: { type: 'belongs_to', key: 'postId' },
   };
 
-  @field('uri')
-  uri: string;
+  @field('localUri')
+  localUri: string | null;
 
   @field('remoteUri')
-  remoteUri: string;
+  remoteUri: string | null;
 
   @field('cipherUri')
-  cipherUri: string;
+  cipherUri: string | null;
 
   @field('type')
   type: AttachmentType;
 
   @field('width')
-  width: number;
+  width: number | null;
 
   @field('height')
-  height: number;
+  height: number | null;
 
   @immutableRelation(Tables.users, 'userId')
   sender: Relation<UserModel>;
@@ -66,12 +66,12 @@ class AttachmentModel extends Model {
 export const attachmentSchema = tableSchema({
   name: Tables.attachments,
   columns: [
-    { name: 'uri', type: 'string' },
-    { name: 'remoteUri', type: 'string' },
-    { name: 'cipherUri', type: 'string' },
+    { name: 'localUri', type: 'string', isOptional: true },
+    { name: 'remoteUri', type: 'string', isOptional: true },
+    { name: 'cipherUri', type: 'string', isOptional: true },
     { name: 'type', type: 'string' },
-    { name: 'width', type: 'number' },
-    { name: 'height', type: 'number' },
+    { name: 'width', type: 'number', isOptional: true },
+    { name: 'height', type: 'number', isOptional: true },
     { name: 'userId', type: 'string' },
     { name: 'roomId', type: 'string' },
     { name: 'messageId', type: 'string' },
@@ -84,8 +84,8 @@ export function attachmentUpdater(changes: DeepPartial<AttachmentModel>): (recor
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
     }
-    if (typeof changes.uri !== 'undefined') {
-      record.uri = changes.uri;
+    if (typeof changes.localUri !== 'undefined') {
+      record.localUri = changes.localUri;
     }
     if (typeof changes.remoteUri !== 'undefined') {
       record.remoteUri = changes.remoteUri;

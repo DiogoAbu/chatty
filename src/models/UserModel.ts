@@ -1,12 +1,13 @@
 import UUIDGenerator from 'react-native-uuid-generator';
-import { Database, Model, Q, tableSchema } from '@nozbe/watermelondb';
-import { field, lazy } from '@nozbe/watermelondb/decorators';
+import { Database, Model, Q, Query, tableSchema } from '@nozbe/watermelondb';
+import { children, field, lazy } from '@nozbe/watermelondb/decorators';
 import { Associations } from '@nozbe/watermelondb/Model';
 import Bottleneck from 'bottleneck';
 
 import { DeepPartial, Tables } from '!/types';
 import { prepareUpsert, upsert } from '!/utils/upsert';
 
+import AttachmentModel from './AttachmentModel';
 import RoomModel from './RoomModel';
 
 const limiter = new Bottleneck({
@@ -18,6 +19,7 @@ class UserModel extends Model {
 
   static associations: Associations = {
     [Tables.roomMembers]: { type: 'has_many', foreignKey: 'userId' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'userId' },
   };
 
   @field('name')
@@ -56,6 +58,9 @@ class UserModel extends Model {
   roomsArchived = this.collections
     .get<RoomModel>(Tables.rooms)
     .query(Q.on(Tables.roomMembers, 'userId', this.id), Q.where('isArchived', true));
+
+  @children(Tables.attachments)
+  attachments: Query<AttachmentModel>;
 }
 
 export const userSchema = tableSchema({

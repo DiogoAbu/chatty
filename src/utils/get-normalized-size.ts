@@ -1,5 +1,5 @@
 export default function getNormalizedSize(
-  dimensions: { width?: number; height?: number },
+  dimensions: { width?: number | null; height?: number | null },
   window: { winWidth: number; winHeight: number; isLandscape: boolean },
 ): {
   aspectRatio?: number;
@@ -7,7 +7,7 @@ export default function getNormalizedSize(
   height?: number;
 } {
   if (!dimensions.width || !dimensions.height) {
-    return { ...dimensions, aspectRatio: undefined };
+    return { width: dimensions.width!, height: dimensions.height!, aspectRatio: undefined };
   }
 
   // Window is landscape but media is portrait

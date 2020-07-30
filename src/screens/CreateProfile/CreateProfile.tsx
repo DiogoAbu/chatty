@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 import CameraRoll from '@react-native-community/cameraroll';
 
-import { USER_NAME_MAX_LENGTH } from '!/config';
+import { USER_NAME_MAX_LENGTH, USER_NAME_MIN_LENGTH } from '!/config';
 import useDimensions from '!/hooks/use-dimensions';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import useInput from '!/hooks/use-input';
@@ -94,9 +94,9 @@ const CreateProfile: FC<Props> = ({ navigation, route }) => {
       setPictureUri('');
     });
 
-    if (params?.picturesTaken?.[0].uri) {
+    if (params?.picturesTaken?.[0].localUri) {
       try {
-        const file = params.picturesTaken[0].uri;
+        const file = params.picturesTaken[0].localUri;
         const fileInfo = await FileSystem.stat(file);
 
         await CameraRoll.deletePhotos([fileInfo.originalFilepath]);
@@ -138,7 +138,7 @@ const CreateProfile: FC<Props> = ({ navigation, route }) => {
     try {
       const name = nameInput.value.trim();
 
-      if (!name) {
+      if (!name || name.length < USER_NAME_MIN_LENGTH || name.length > USER_NAME_MAX_LENGTH) {
         setErrorMessage(t('helper.fieldRequired'));
         return;
       }
@@ -147,7 +147,7 @@ const CreateProfile: FC<Props> = ({ navigation, route }) => {
 
       let remoteUri: string | undefined;
 
-      const pictureUriToUpload = params?.picturesTaken?.[0].uri ?? pictureUri;
+      const pictureUriToUpload = params?.picturesTaken?.[0].localUri ?? pictureUri;
       if (pictureUriToUpload) {
         const res = await uploadMedia(pictureUriToUpload);
         remoteUri = res.secure_url;
@@ -290,14 +290,14 @@ const CreateProfile: FC<Props> = ({ navigation, route }) => {
                 <Avatar.Image
                   ImageComponent={FastImage}
                   size={avatarSize}
-                  source={{ uri: transformUri(pictureUri, { width: avatarSize }) }}
+                  source={{ uri: pictureUri }}
                   style={styles.avatar}
                 />
-              ) : params?.picturesTaken?.[0] ? (
+              ) : params?.picturesTaken?.[0]?.localUri ? (
                 <Avatar.Image
                   ImageComponent={FastImage}
                   size={avatarSize}
-                  source={{ uri: transformUri(params.picturesTaken[0].uri, { width: avatarSize }) }}
+                  source={{ uri: params.picturesTaken[0].localUri }}
                   style={styles.avatar}
                 />
               ) : authStore.user.pictureUri ? (
@@ -353,7 +353,9 @@ const CreateProfile: FC<Props> = ({ navigation, route }) => {
           />
           <HelperText type={errorMessage ? 'error' : 'info'} visible>
             {errorMessage ||
-              t('helper.charactersLeft', { count: USER_NAME_MAX_LENGTH - nameInput.value.trim().length })}
+              (nameInput.value.trim().length
+                ? t('helper.charactersLeft', { count: USER_NAME_MAX_LENGTH - nameInput.value.trim().length })
+                : t('helper.charactersBetween', { min: USER_NAME_MIN_LENGTH, max: USER_NAME_MAX_LENGTH }))}
           </HelperText>
         </View>
 

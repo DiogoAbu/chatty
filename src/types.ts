@@ -108,6 +108,11 @@ export type MainStackParams = {
     videoRecorded: VideoRecorded;
   };
 
+  RoomMedias: {
+    roomId: string;
+    title: string;
+  };
+
   Welcome: undefined;
   SignIn: undefined;
   ForgotPass: undefined;

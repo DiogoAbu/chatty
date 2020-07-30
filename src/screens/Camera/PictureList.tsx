@@ -41,7 +41,7 @@ const PictureList: FC<Props> = ({
         contentContainerStyle={styles.pictureListContent}
         data={picsTaken}
         horizontal
-        keyExtractor={(item) => item.uri!}
+        keyExtractor={(item) => item.localUri!}
         renderItem={(props) => (
           <PictureListItem
             {...props}

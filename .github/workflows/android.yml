@@ -103,6 +103,9 @@ jobs:
       - name: Generate APK
         run: ./gradlew assembleRelease --no-daemon
         working-directory: ./android
+        env:
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - name: Upload APK to Release tagged with current version
         uses: AButler/upload-release-assets@v2.0
