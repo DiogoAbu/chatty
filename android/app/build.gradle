@@ -145,7 +145,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         multiDexEnabled true
         versionCode 1
-        versionName "0.0.0"
+        versionName "0.1.0"
         archivesBaseName = "Chatty-v$versionName"
 
         /**
