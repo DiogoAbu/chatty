@@ -1,15 +1,30 @@
 #
+# Fragments
+#
+fragment UserFragment on User {
+  id
+  name
+  email
+  role
+  pictureUri
+  publicKey
+  isFollowingMe
+  isFollowedByMe
+}
+
+fragment RoomFragment on Room {
+  id
+  name
+  pictureUri
+}
+
+#
 # User
 #
 mutation CreateAccount($data: CreateAccountInput!) {
   createAccount(data: $data) {
     user {
-      id
-      name
-      email
-      role
-      lastAccessAt
-      createdAt
+      ...UserFragment
     }
     token
   }
@@ -18,12 +33,8 @@ mutation CreateAccount($data: CreateAccountInput!) {
 mutation SignIn($data: SignInInput!) {
   signIn(data: $data) {
     user {
-      id
-      name
-      email
-      role
-      lastAccessAt
-      createdAt
+      ...UserFragment
+      derivedSalt
     }
     token
   }
@@ -39,20 +50,20 @@ mutation ChangePassword($data: ChangePasswordInput!) {
 
 query Me {
   me {
-    id
-    name
-    email
-    role
+    ...UserFragment
     lastAccessAt
     createdAt
+    devices {
+      name
+      platform
+      createdAt
+    }
   }
 }
 
 query ListUsers($where: ListUsersWhere, $order: ListUsersOrder, $skip: Int, $take: Int) {
   listUsers(where: $where, order: $order, skip: $skip, take: $take) {
-    id
-    name
-    email
+    ...UserFragment
   }
 }
 
@@ -61,51 +72,36 @@ query ListUsers($where: ListUsersWhere, $order: ListUsersOrder, $skip: Int, $tak
 #
 mutation CreateRoom($data: CreateRoomInput!) {
   createRoom(data: $data) {
-    id
-    name
+    ...RoomFragment
     members {
-      id
-      name
+      ...UserFragment
     }
   }
 }
 
 query GetRooms {
   getRooms {
-    id
-    name
+    ...RoomFragment
     lastMessage {
       id
-      content
+      cipher
+      type
       createdAt
-      user {
+      sentAt
+      sender {
+        ...UserFragment
+      }
+      readReceipts {
         id
-        name
+        user {
+          id
+        }
+        receivedAt
+        seenAt
       }
     }
     members {
-      id
-      name
-    }
-  }
-}
-
-subscription RoomCreated {
-  roomCreated {
-    id
-    name
-    lastMessage {
-      id
-      content
-      createdAt
-      user {
-        id
-        name
-      }
-    }
-    members {
-      id
-      name
+      ...UserFragment
     }
   }
 }
@@ -125,41 +121,14 @@ query GetMessages($roomId: ID, $limit: Int, $afterDate: Timestamp) {
     cursor
     items {
       id
-      content
-      user {
-        id
-        name
+      cipher
+      type
+      sender {
+        ...UserFragment
       }
       createdAt
     }
   }
-}
-
-subscription MessageCreated($roomIds: [ID]) {
-  messageCreated(roomIds: $roomIds) {
-    id
-    content
-    user {
-      id
-      name
-    }
-    room {
-      id
-      name
-    }
-    createdAt
-  }
-}
-
-#
-# Sync
-#
-query PullChanges($lastPulledAt: Float) {
-  pullChanges(lastPulledAt: $lastPulledAt)
-}
-
-mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
-  pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
 }
 
 #
@@ -167,4 +136,140 @@ mutation PushChanges($changes: JSON, $lastPulledAt: Float) {
 #
 mutation RegisterDevice($data: RegisterDeviceInput!) {
   registerDevice(data: $data)
+}
+mutation UnregisterDevices($data: UnregisterDevicesInput!) {
+  unregisterDevices(data: $data)
+}
+
+#
+# Sync
+#
+subscription ShouldSync($roomIds: [ID!]) {
+  shouldSync(roomIds: $roomIds)
+}
+
+mutation PushChanges($changes: SyncChangesInput, $lastPulledAt: Float) {
+  pushChanges(changes: $changes, lastPulledAt: $lastPulledAt)
+}
+
+query PullChanges($lastPulledAt: Float) {
+  pullChanges(lastPulledAt: $lastPulledAt) {
+    timestamp
+    changes {
+      messages {
+        created {
+          ...MessageChangesFragment
+        }
+        updated {
+          ...MessageChangesFragment
+        }
+        deleted
+      }
+      readReceipts {
+        created {
+          ...ReadReceiptChangesFragment
+        }
+        updated {
+          ...ReadReceiptChangesFragment
+        }
+        deleted
+      }
+      attachments {
+        created {
+          ...AttachmentChangesFragment
+        }
+        updated {
+          ...AttachmentChangesFragment
+        }
+        deleted
+      }
+      rooms {
+        created {
+          ...RoomChangesFragment
+        }
+        updated {
+          ...RoomChangesFragment
+        }
+        deleted
+      }
+      users {
+        created {
+          ...UserChangesFragment
+        }
+        updated {
+          ...UserChangesFragment
+        }
+        deleted
+      }
+      roomMembers {
+        created {
+          ...RoomMemberChangesFragment
+        }
+        updated {
+          ...RoomMemberChangesFragment
+        }
+        deleted
+      }
+    }
+  }
+}
+
+fragment MessageChangesFragment on MessageChanges {
+  id
+  cipher
+  type
+  userId
+  roomId
+  sentAt
+  createdAt
+}
+
+fragment ReadReceiptChangesFragment on ReadReceiptChanges {
+  id
+  userId
+  roomId
+  messageId
+  receivedAt
+  seenAt
+}
+
+fragment AttachmentChangesFragment on AttachmentChanges {
+  id
+  cipherUri
+  filename
+  type
+  width
+  height
+  userId
+  roomId
+  messageId
+}
+
+fragment RoomChangesFragment on RoomChanges {
+  id
+  name
+  pictureUri
+  isMuted
+  shouldStillNotify
+  mutedUntil
+  lastChangeAt
+  lastMessageId
+  createdAt
+}
+
+fragment UserChangesFragment on UserChanges {
+  id
+  name
+  email
+  pictureUri
+  publicKey
+  role
+  isFollowingMe
+  isFollowedByMe
+}
+
+fragment RoomMemberChangesFragment on RoomMemberChanges {
+  id
+  roomId
+  userId
 }

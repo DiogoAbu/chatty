@@ -1,82 +1,92 @@
 import { MutableRefObject } from 'react';
 
-import { Database } from '@nozbe/watermelondb';
-import withObservables from '@nozbe/with-observables';
+import { Database, Q } from '@nozbe/watermelondb';
+import withObservables, { ExtractedObservables } from '@nozbe/with-observables';
 
-import AttachmentModel from '!/models/AttachmentModel';
 import MessageModel from '!/models/MessageModel';
 import RoomModel from '!/models/RoomModel';
-import UserModel from '!/models/UserModel';
-import { MainRouteProp, Observable, Tables } from '!/types';
+import { MainRouteProp, Tables } from '!/types';
 
 import { AttachmentPickerType } from './AttachmentPicker';
 
+///////////////
+// With Room //
+///////////////
 export interface WithRoomInput {
   database: Database;
   route: MainRouteProp<'Chatting'>;
 }
-export interface WithRoomOutput {
-  room: Observable<RoomModel>;
-}
-export const withRoom = withObservables<WithRoomInput, WithRoomOutput>(
-  ['database', 'route'],
-  ({ database, route }) => {
-    // Get from route params
-    const { roomId } = route.params;
-    const roomTable = database.collections.get<RoomModel>(Tables.rooms);
-    return { room: roomTable.findAndObserve(roomId) };
-  },
-);
 
+const getRoom = ({ database, route }: WithRoomInput) => {
+  // Get from route params
+  const { roomId } = route.params;
+  const roomTable = database.collections.get<RoomModel>(Tables.rooms);
+  return { room: roomTable.findAndObserve(roomId) };
+};
+
+export const withRoom = withObservables(['database', 'route'], getRoom);
+
+export type WithRoomOutput = WithRoomInput & ExtractedObservables<ReturnType<typeof getRoom>>;
+
+//////////////////
+// With Members //
+//////////////////
 export interface WithMembersInput {
   room: RoomModel;
 }
-export interface WithMembersOutput {
-  room: Observable<RoomModel>;
-  members: Observable<UserModel[]>;
-}
-export const withMembers = withObservables<WithMembersInput, WithMembersOutput>(
-  ['room'],
-  ({ room }) => ({
-    room: room?.observe(),
-    members: room?.members.observe(),
-  }),
-);
 
+const getMembers = ({ room }: WithMembersInput) => ({
+  room: room?.observe(),
+  members: room?.members.observe(),
+});
+
+export const withMembers = withObservables(['room'], getMembers);
+
+export type WithMembersOutput = WithMembersInput & ExtractedObservables<ReturnType<typeof getMembers>>;
+
+///////////////////
+// With Messages //
+///////////////////
 export interface WithMessagesInput {
   room: RoomModel;
   title: string;
-  updateReadTime: () => void;
   attachmentPickerRef: MutableRefObject<AttachmentPickerType | null>;
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
 }
-export interface WithMessagesOutput {
-  messages: Observable<MessageModel[]>;
-}
-export const withMessages = withObservables<WithMessagesInput, WithMessagesOutput>(
-  ['room'],
-  ({ room }) => ({
-    messages: room.messages.observeWithColumns(['local_created_at']),
-  }),
-);
 
+const getMessages = ({ room, page }: WithMessagesInput) => ({
+  messages: room.messages
+    .extend(
+      Q.where('type', Q.notEq('sharedKey')),
+      Q.experimentalSortBy('createdAt', 'desc'),
+      Q.experimentalTake(100 * (page || 1)),
+    )
+    .observeWithColumns(['createdAt', 'sentAt']),
+});
+
+export const withMessages = withObservables(['room', 'page'], getMessages);
+
+export type WithMessagesOutput = WithMessagesInput & ExtractedObservables<ReturnType<typeof getMessages>>;
+
+//////////////////
+// With Message //
+//////////////////
 export interface WithMessageInput {
   message: MessageModel;
   title: string;
   isPreviousSameSender?: boolean;
   attachmentPickerRef: MutableRefObject<AttachmentPickerType | null>;
 }
-export interface WithMessageOutput {
-  message: Observable<MessageModel>;
-  attachments: Observable<AttachmentModel[]>;
-  sender: Observable<UserModel>;
-  room: Observable<RoomModel>;
-}
-export const withMessage = withObservables<WithMessageInput, WithMessageOutput>(
-  ['message'],
-  ({ message }) => ({
-    message: message.observe(),
-    attachments: message.attachments.observe(),
-    sender: message.sender.observe(),
-    room: message.room.observe(),
-  }),
-);
+
+const getMessage = ({ message }: WithMessageInput) => ({
+  message: message.observe(),
+  attachments: message.attachments.observe(),
+  readReceipts: message.readReceipts.observe(),
+  sender: message.sender.observe(),
+  room: message.room.observe(),
+});
+
+export const withMessage = withObservables(['message'], getMessage);
+
+export type WithMessageOutput = WithMessageInput & ExtractedObservables<ReturnType<typeof getMessage>>;

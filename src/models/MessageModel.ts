@@ -1,13 +1,15 @@
 import UUIDGenerator from 'react-native-uuid-generator';
-import { Database, Model, Query, Relation, tableSchema } from '@nozbe/watermelondb';
-import { children, date, field, immutableRelation } from '@nozbe/watermelondb/decorators';
+import { Database, Model, Q, Query, Relation, tableSchema } from '@nozbe/watermelondb';
+import { action, children, date, field, immutableRelation } from '@nozbe/watermelondb/decorators';
 import { Associations } from '@nozbe/watermelondb/Model';
 import Bottleneck from 'bottleneck';
 
+import { decryptContentUsingPair, decryptContentUsingShared } from '!/services/encryption';
 import { DeepPartial, Tables } from '!/types';
 import { prepareUpsert, upsert } from '!/utils/upsert';
 
 import AttachmentModel from './AttachmentModel';
+import ReadReceiptModel from './ReadReceiptModel';
 import RoomModel from './RoomModel';
 import UserModel from './UserModel';
 
@@ -15,73 +17,102 @@ const limiter = new Bottleneck({
   maxConcurrent: 1,
 });
 
-export enum MessageTypes {
-  'default' = 'default',
-  'announcement' = 'announcement',
-  'sharedKey' = 'sharedKey',
-}
+export type MessageType = 'default' | 'announcement' | 'sharedKey';
 
 class MessageModel extends Model {
   static table = Tables.messages;
 
   static associations: Associations = {
-    [Tables.attachments]: { type: 'has_many', foreignKey: 'message_id' },
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'messageId' },
+    [Tables.readReceipts]: { type: 'has_many', foreignKey: 'messageId' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
   };
 
-  // @ts-ignore
   @field('content')
   content: string;
 
-  // @ts-ignore
-  @field('type')
-  type: MessageTypes;
+  @field('cipher')
+  cipher: string;
 
-  // @ts-ignore
+  @field('type')
+  type: MessageType;
+
+  @date('sentAt')
+  sentAt: number | null;
+
+  @date('createdAt')
+  createdAt: number;
+
+  @immutableRelation(Tables.users, 'userId')
+  sender: Relation<UserModel>;
+
+  @immutableRelation(Tables.rooms, 'roomId')
+  room: Relation<RoomModel>;
+
   @children(Tables.attachments)
   attachments: Query<AttachmentModel>;
 
-  // @ts-ignore
-  @immutableRelation(Tables.users, 'user_id')
-  sender: Relation<UserModel>;
+  @children(Tables.readReceipts)
+  readReceipts: Query<ReadReceiptModel>;
 
-  // @ts-ignore
-  @immutableRelation(Tables.rooms, 'room_id')
-  room: Relation<RoomModel>;
+  @action
+  async prepareMarkAsSeen(userId: string, timestamp: number): Promise<ReadReceiptModel> {
+    const readReceiptsTable = this.collections.get<ReadReceiptModel>(Tables.readReceipts);
 
-  // @ts-ignore
-  @date('local_created_at')
-  localCreatedAt: number;
+    const readReceipts = await readReceiptsTable
+      .query(Q.where('userId', userId), Q.where('messageId', this.id))
+      .fetch();
 
-  // @ts-ignore
-  @date('local_sent_at')
-  localSentAt: number | null;
+    if (!readReceipts?.length) {
+      const id = await UUIDGenerator.getRandomUUID();
+      return readReceiptsTable.prepareCreate((record) => {
+        record._raw.id = id;
+        record.user.id = userId;
+        record.message.id = this.id;
+        record.receivedAt = timestamp;
+        record.seenAt = timestamp;
+      });
+    }
 
-  // @ts-ignore
-  @date('remote_received_at')
-  remoteReceivedAt: number | null;
+    const readReceipt = readReceipts[0];
 
-  // @ts-ignore
-  @date('remote_opened_at')
-  remoteOpenedAt: number | null;
+    if (readReceipts.length > 1) {
+      await Promise.all(
+        readReceipts.map(async (e) => {
+          if (readReceipt.id === e.id) {
+            return null;
+          }
+          return e.destroyPermanently();
+        }),
+      );
+    }
+
+    if (!readReceipt.seenAt) {
+      return readReceipt.prepareUpdate((record) => {
+        record.receivedAt = record.receivedAt ?? timestamp;
+        record.seenAt = timestamp;
+      });
+    }
+
+    return (null as unknown) as ReadReceiptModel;
+  }
 }
 
 export const messageSchema = tableSchema({
   name: Tables.messages,
   columns: [
     { name: 'content', type: 'string' },
+    { name: 'cipher', type: 'string' },
     { name: 'type', type: 'string' },
-    { name: 'local_created_at', type: 'number' },
-    { name: 'local_sent_at', type: 'number', isOptional: true },
-    { name: 'remote_received_at', type: 'number', isOptional: true },
-    { name: 'remote_opened_at', type: 'number', isOptional: true },
-    { name: 'user_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
+    { name: 'sentAt', type: 'number', isOptional: true },
+    { name: 'createdAt', type: 'number' },
+    { name: 'userId', type: 'string' },
+    { name: 'roomId', type: 'string' },
   ],
 });
 
-export function messageUpdater(changes: DeepPartial<MessageModel>) {
+export function messageUpdater(changes: DeepPartial<MessageModel>): (record: MessageModel) => void {
   return (record: MessageModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -89,20 +120,17 @@ export function messageUpdater(changes: DeepPartial<MessageModel>) {
     if (typeof changes.content !== 'undefined') {
       record.content = changes.content;
     }
+    if (typeof changes.cipher !== 'undefined') {
+      record.cipher = changes.cipher;
+    }
     if (typeof changes.type !== 'undefined') {
       record.type = changes.type;
     }
-    if (typeof changes.localCreatedAt !== 'undefined') {
-      record.localCreatedAt = changes.localCreatedAt;
+    if (typeof changes.sentAt !== 'undefined') {
+      record.sentAt = changes.sentAt;
     }
-    if (typeof changes.localSentAt !== 'undefined') {
-      record.localSentAt = changes.localSentAt;
-    }
-    if (typeof changes.remoteReceivedAt !== 'undefined') {
-      record.remoteReceivedAt = changes.remoteReceivedAt;
-    }
-    if (typeof changes.remoteOpenedAt !== 'undefined') {
-      record.remoteOpenedAt = changes.remoteOpenedAt;
+    if (typeof changes.createdAt !== 'undefined') {
+      record.createdAt = changes.createdAt;
     }
     if (typeof changes.sender?.id !== 'undefined') {
       record.sender.id = changes.sender?.id;
@@ -110,53 +138,58 @@ export function messageUpdater(changes: DeepPartial<MessageModel>) {
     if (typeof changes.room?.id !== 'undefined') {
       record.room.id = changes.room?.id;
     }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
   };
 }
 
 export async function upsertMessage(
   database: Database,
   message: DeepPartial<MessageModel>,
-  actionParent?: any,
-) {
-  return upsert<MessageModel>(
-    database,
-    Tables.messages,
-    message.id,
-    actionParent,
-    messageUpdater(message),
-  );
+  actionParent?: unknown,
+): Promise<MessageModel> {
+  return upsert<MessageModel>(database, Tables.messages, message.id, actionParent, messageUpdater(message));
 }
 
-export async function prepareUpsertMessage(database: Database, message: DeepPartial<MessageModel>) {
-  return prepareUpsert<MessageModel>(
-    database,
-    Tables.messages,
-    message.id,
-    messageUpdater(message),
-  );
+export async function prepareUpsertMessage(
+  database: Database,
+  message: DeepPartial<MessageModel>,
+): Promise<MessageModel> {
+  return prepareUpsert<MessageModel>(database, Tables.messages, message.id, messageUpdater(message));
 }
 
-export async function prepareMessagesId(messages: DeepPartial<MessageModel>[], filter = true) {
-  if (!messages) {
-    return [];
-  }
-  let withoutId = messages;
-
-  if (filter) {
-    // Get only messages that do not have ID, will return only messages with new ID.
-    withoutId = withoutId.filter((e) => !e.id);
-  }
-
-  if (!withoutId.length) {
+export async function prepareMessages(
+  messages?: DeepPartial<MessageModel>[],
+  room?: DeepPartial<RoomModel>,
+  members?: DeepPartial<UserModel>[],
+  signedUser?: UserModel,
+): Promise<DeepPartial<MessageModel>[]> {
+  if (!messages?.length) {
     return [];
   }
 
   const wrapped = limiter.wrap(async (message: DeepPartial<MessageModel>) => {
-    const id = await UUIDGenerator.getRandomUUID();
-    return { ...message, id } as DeepPartial<MessageModel>;
+    const id = message.id || (await UUIDGenerator.getRandomUUID());
+
+    let content = message.content;
+    if (message.cipher) {
+      if (room?.name && room.sharedKey) {
+        content = await decryptContentUsingShared(message.cipher, room.sharedKey);
+      } else {
+        const sender = members?.find((e) => e.id === message.sender?.id);
+        if (sender?.publicKey) {
+          content = await decryptContentUsingPair(message.cipher, sender.publicKey, signedUser!.secretKey!);
+        } else {
+          console.log('prepareMessages sender publicKey not found');
+        }
+      }
+    }
+
+    return { ...message, content, id } as DeepPartial<MessageModel>;
   });
 
-  return Promise.all(withoutId.map(wrapped));
+  return Promise.all(messages.map(wrapped));
 }
 
 export default MessageModel;

@@ -7,7 +7,7 @@ export default function scrollIntoView(
   ref: React.RefObject<any>,
   scrollRef: React.RefObject<ScrollView>,
   animated?: boolean,
-) {
+): void {
   if (scrollRef && scrollRef.current) {
     requestAnimationFrame(() => {
       ref.current?.measureLayout?.(
@@ -35,7 +35,7 @@ export function focusNext(
   ref: React.RefObject<any>,
   scrollRef: React.RefObject<ScrollView>,
   animated?: boolean,
-) {
+): () => void {
   return () => {
     if (ref?.current) {
       scrollIntoView(ref, scrollRef, animated);

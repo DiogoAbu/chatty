@@ -8,6 +8,7 @@ import useTranslation from '!/hooks/use-translation';
 import { StackHeaderRightProps } from '!/types';
 
 interface Props extends StackHeaderRightProps {
+  // eslint-disable-next-line @typescript-eslint/ban-types
   navigation: NavigationProp<Record<string, object | undefined>, string, NavigationState, {}, {}>;
 }
 
@@ -38,7 +39,7 @@ const HomeTabHeaderRight: FC<Props> = ({ tintColor: textColor, navigation }) => 
     requestAnimationFrame(() => {
       navigation.reset({
         index: 0,
-        routes: [{ name: 'SignIn' }],
+        routes: [{ name: 'Welcome' }],
       });
     });
   });

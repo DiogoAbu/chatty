@@ -11,6 +11,7 @@ generates:
       maybeValue: T
       avoidOptionals: false
       preResolveTypes: true
+      enumsAsTypes: true
       withComponent: false
       withHooks: true
     hooks:

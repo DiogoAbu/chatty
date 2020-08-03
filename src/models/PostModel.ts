@@ -13,31 +13,25 @@ class PostModel extends Model {
   static table = Tables.posts;
 
   static associations: Associations = {
-    [Tables.attachments]: { type: 'has_many', foreignKey: 'message_id' },
-    [Tables.comments]: { type: 'has_many', foreignKey: 'post_id' },
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'messageId' },
+    [Tables.comments]: { type: 'has_many', foreignKey: 'postId' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
   };
 
-  // @ts-ignore
   @field('content')
   content: string;
 
-  // @ts-ignore
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   user: Relation<UserModel>;
 
-  // @ts-ignore
   @children(Tables.attachments)
   attachments: Query<AttachmentModel>;
 
-  // @ts-ignore
   @children(Tables.comments)
   comments: Query<CommentModel>;
 
-  // @ts-ignore
   @readonly
-  // @ts-ignore
-  @date('created_at')
+  @date('createdAt')
   createdAt: number;
 }
 
@@ -45,12 +39,12 @@ export const postSchema = tableSchema({
   name: Tables.posts,
   columns: [
     { name: 'content', type: 'string' },
-    { name: 'user_id', type: 'string' },
-    { name: 'created_at', type: 'number' },
+    { name: 'userId', type: 'string' },
+    { name: 'createdAt', type: 'number' },
   ],
 });
 
-export function postUpdater(changes: DeepPartial<PostModel>) {
+export function postUpdater(changes: DeepPartial<PostModel>): (record: PostModel) => void {
   return (record: PostModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -61,18 +55,24 @@ export function postUpdater(changes: DeepPartial<PostModel>) {
     if (typeof changes.user?.id !== 'undefined') {
       record.user.id = changes.user.id;
     }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
   };
 }
 
 export async function upsertPost(
   database: Database,
   post: DeepPartial<PostModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<PostModel> {
   return upsert<PostModel>(database, Tables.posts, post.id, actionParent, postUpdater(post));
 }
 
-export async function prepareUpsertPost(database: Database, post: DeepPartial<PostModel>) {
+export async function prepareUpsertPost(
+  database: Database,
+  post: DeepPartial<PostModel>,
+): Promise<PostModel> {
   return prepareUpsert<PostModel>(database, Tables.posts, post.id, postUpdater(post));
 }
 

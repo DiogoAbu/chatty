@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
-import { StatusBar, StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { Appbar } from 'react-native-paper';
-import { useSafeArea } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackHeaderProps } from '@react-navigation/stack';
 
 import usePress from '!/hooks/use-press';
@@ -10,7 +10,7 @@ import useTheme from '!/hooks/use-theme';
 import { HeaderOptions } from '!/types';
 
 const Header: FC<StackHeaderProps> = ({ navigation, scene, previous }) => {
-  const insets = useSafeArea();
+  const insets = useSafeAreaInsets();
   const { colors, dark } = useTheme();
 
   const { descriptor, route } = scene;
@@ -42,29 +42,31 @@ const Header: FC<StackHeaderProps> = ({ navigation, scene, previous }) => {
 
   return (
     <Appbar.Header style={headerStyle}>
-      {options?.handlePressBack || previous ? (
-        <Appbar.BackAction
-          color={textColor}
-          onPress={options?.handlePressBack ?? handlePressBack}
-        />
+      {options.handlePressBack || previous ? (
+        <Appbar.BackAction color={textColor} onPress={options.handlePressBack ?? handlePressBack} />
       ) : null}
 
-      {options?.headerLeft ? options?.headerLeft({ tintColor: textColor }) : null}
+      {options.headerLeft ? options?.headerLeft({ tintColor: textColor }) : null}
 
-      {options?.headerCenter ? (
-        <View style={styles.centerContainer}>
-          {options?.headerCenter({ tintColor: textColor })}
-        </View>
+      {options.headerCenter ? (
+        <TouchableOpacity
+          disabled={!options.handlePressCenter}
+          onPress={options.handlePressCenter}
+          style={styles.centerContainer}
+        >
+          {options.headerCenter({ tintColor: textColor })}
+        </TouchableOpacity>
       ) : (
         <Appbar.Content
           color={textColor}
+          onPress={options.handlePressCenter}
           style={styles.content}
-          subtitle={options?.subtitle}
+          subtitle={options.subtitle}
           title={title}
         />
       )}
 
-      {options?.headerRight ? options?.headerRight({ tintColor: textColor }) : null}
+      {options.headerRight ? options?.headerRight({ tintColor: textColor }) : null}
     </Appbar.Header>
   );
 };

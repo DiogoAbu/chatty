@@ -8,14 +8,19 @@ import { useObserver } from 'mobx-react-lite';
 import Header from '!/components/Header';
 import useTranslation from '!/hooks/use-translation';
 import Camera from '!/screens/Camera/Camera';
+import ChangePass from '!/screens/ChangePass/ChangePass';
 import ChatsArchived from '!/screens/Chats/ChatsArchived';
 import Chatting from '!/screens/Chatting/Chatting';
 import CreateGroup from '!/screens/CreateGroup/CreateGroup';
+import CreateProfile from '!/screens/CreateProfile/CreateProfile';
 import FindFriends from '!/screens/FindFriends/FindFriends';
+import ForgotPass from '!/screens/ForgotPass/ForgotPass';
 import PreparePicture from '!/screens/PreparePicture/PreparePicture';
 import PrepareVideo from '!/screens/PrepareVideo/PrepareVideo';
+import RoomMedias from '!/screens/RoomMedias/RoomMedias';
 import Settings from '!/screens/Settings/Settings';
 import SignIn from '!/screens/SignIn/SignIn';
+import Welcome from '!/screens/Welcome/Welcome';
 import { useStores } from '!/stores';
 import { MainStackParams } from '!/types';
 
@@ -23,7 +28,7 @@ import HomeTab from './HomeTab';
 
 const Stack = createStackNavigator<MainStackParams>();
 
-const MainStack: FC<{}> = () => {
+const MainStack: FC<unknown> = () => {
   const stores = useStores();
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -33,7 +38,7 @@ const MainStack: FC<{}> = () => {
 
     return (
       <Stack.Navigator
-        initialRouteName={authStore.token ? 'Home' : 'SignIn'}
+        initialRouteName={authStore.token ? (authStore.user.name ? 'Home' : 'CreateProfile') : 'Welcome'}
         screenOptions={{
           header: Header,
           cardStyle: { backgroundColor: colors.background },
@@ -62,11 +67,7 @@ const MainStack: FC<{}> = () => {
           options={{ title: t('title.createGroup') }}
         />
 
-        <Stack.Screen
-          component={Settings}
-          name='Settings'
-          options={{ title: t('title.settings') }}
-        />
+        <Stack.Screen component={Settings} name='Settings' options={{ title: t('title.settings') }} />
 
         <Stack.Screen
           component={Camera}
@@ -86,15 +87,20 @@ const MainStack: FC<{}> = () => {
           options={{ headerTransparent: true }}
         />
 
-        <Stack.Screen
-          component={PrepareVideo}
-          name='PrepareVideo'
-          options={{ headerTransparent: true }}
-        />
+        <Stack.Screen component={PrepareVideo} name='PrepareVideo' options={{ headerTransparent: true }} />
 
-        <Stack.Screen component={SignIn} name='SignIn' options={{ headerShown: false }} />
-        {/*<Stack.Screen component={ForgotPass} name='ForgotPass' options={{ headerShown: false }} />
-        <Stack.Screen component={ChangePass} name='ChangePass' options={{ headerShown: false }} /> */}
+        <Stack.Screen component={RoomMedias} name='RoomMedias' />
+
+        <Stack.Screen
+          component={CreateProfile}
+          name='CreateProfile'
+          options={{ title: t('title.createProfile') }}
+        />
+        <Stack.Screen component={SignIn} name='SignIn' />
+        <Stack.Screen component={ForgotPass} name='ForgotPass' options={{ title: t('forgotPassword') }} />
+        <Stack.Screen component={ChangePass} name='ChangePass' options={{ title: t('changePassword') }} />
+
+        <Stack.Screen component={Welcome} name='Welcome' options={{ headerShown: false }} />
       </Stack.Navigator>
     );
   });

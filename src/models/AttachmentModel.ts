@@ -16,88 +16,89 @@ const limiter = new Bottleneck({
   maxConcurrent: 1,
 });
 
-export enum AttachmentTypes {
-  'image' = 'image',
-  'video' = 'video',
-  'document' = 'document',
-}
+export type AttachmentType = 'image' | 'video' | 'document';
 
 class AttachmentModel extends Model {
   static table = Tables.attachments;
 
   static associations: Associations = {
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
 
     // For rooms
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
-    [Tables.messages]: { type: 'belongs_to', key: 'message_id' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
+    [Tables.messages]: { type: 'belongs_to', key: 'messageId' },
 
     // For posts
-    [Tables.posts]: { type: 'belongs_to', key: 'post_id' },
+    [Tables.posts]: { type: 'belongs_to', key: 'postId' },
   };
 
-  // @ts-ignore
-  @field('uri')
-  uri: string;
+  @field('localUri')
+  localUri: string | null;
 
-  // @ts-ignore
   @field('remoteUri')
-  remoteUri: string;
+  remoteUri: string | null;
 
-  // @ts-ignore
+  @field('cipherUri')
+  cipherUri: string | null;
+
+  @field('filename')
+  filename: string;
+
   @field('type')
-  type: AttachmentTypes;
+  type: AttachmentType;
 
-  // @ts-ignore
   @field('width')
-  width: number;
+  width: number | null;
 
-  // @ts-ignore
   @field('height')
-  height: number;
+  height: number | null;
 
-  // @ts-ignore
-  @immutableRelation(Tables.users, 'user_id')
+  @immutableRelation(Tables.users, 'userId')
   sender: Relation<UserModel>;
 
-  // @ts-ignore
-  @immutableRelation(Tables.rooms, 'room_id')
+  @immutableRelation(Tables.rooms, 'roomId')
   room: Relation<RoomModel>;
 
-  // @ts-ignore
-  @immutableRelation(Tables.messages, 'message_id')
+  @immutableRelation(Tables.messages, 'messageId')
   message: Relation<MessageModel>;
 
-  // @ts-ignore
-  @immutableRelation(Tables.posts, 'post_id')
+  @immutableRelation(Tables.posts, 'postId')
   post: Relation<PostModel>;
 }
 
 export const attachmentSchema = tableSchema({
   name: Tables.attachments,
   columns: [
-    { name: 'uri', type: 'string' },
-    { name: 'remoteUri', type: 'string' },
+    { name: 'localUri', type: 'string', isOptional: true },
+    { name: 'remoteUri', type: 'string', isOptional: true },
+    { name: 'cipherUri', type: 'string', isOptional: true },
+    { name: 'filename', type: 'string' },
     { name: 'type', type: 'string' },
-    { name: 'width', type: 'number' },
-    { name: 'height', type: 'number' },
-    { name: 'user_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
-    { name: 'message_id', type: 'string' },
-    { name: 'post_id', type: 'string' },
+    { name: 'width', type: 'number', isOptional: true },
+    { name: 'height', type: 'number', isOptional: true },
+    { name: 'userId', type: 'string' },
+    { name: 'roomId', type: 'string' },
+    { name: 'messageId', type: 'string' },
+    { name: 'postId', type: 'string' },
   ],
 });
 
-export function attachmentUpdater(changes: DeepPartial<AttachmentModel>) {
+export function attachmentUpdater(changes: DeepPartial<AttachmentModel>): (record: AttachmentModel) => void {
   return (record: AttachmentModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
     }
-    if (typeof changes.uri !== 'undefined') {
-      record.uri = changes.uri;
+    if (typeof changes.localUri !== 'undefined') {
+      record.localUri = changes.localUri;
     }
     if (typeof changes.remoteUri !== 'undefined') {
       record.remoteUri = changes.remoteUri;
+    }
+    if (typeof changes.cipherUri !== 'undefined') {
+      record.cipherUri = changes.cipherUri;
+    }
+    if (typeof changes.filename !== 'undefined') {
+      record.filename = changes.filename;
     }
     if (typeof changes.type !== 'undefined') {
       record.type = changes.type;
@@ -120,14 +121,17 @@ export function attachmentUpdater(changes: DeepPartial<AttachmentModel>) {
     if (typeof changes.post?.id !== 'undefined') {
       record.post.id = changes.post?.id;
     }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
   };
 }
 
 export async function upsertAttachment(
   database: Database,
   attachment: DeepPartial<AttachmentModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<AttachmentModel> {
   return upsert<AttachmentModel>(
     database,
     Tables.attachments,
@@ -140,7 +144,7 @@ export async function upsertAttachment(
 export async function prepareUpsertAttachment(
   database: Database,
   attachment: DeepPartial<AttachmentModel>,
-) {
+): Promise<AttachmentModel> {
   return prepareUpsert<AttachmentModel>(
     database,
     Tables.attachments,
@@ -152,30 +156,19 @@ export async function prepareUpsertAttachment(
 /**
  * If filter is true, get only attachments that do not have ID, will return only attachments with new ID.
  * */
-export async function prepareAttachmentsId(
+export async function prepareAttachments(
   attachments?: DeepPartial<AttachmentModel>[],
-  filter = true,
-) {
+): Promise<DeepPartial<AttachmentModel>[]> {
   if (!attachments?.length) {
-    return [];
-  }
-  let withoutId = attachments;
-
-  if (filter) {
-    // Get only attachments that do not have ID, will return only attachments with new ID.
-    withoutId = withoutId.filter((e) => !e.id);
-  }
-
-  if (!withoutId.length) {
     return [];
   }
 
   const wrapped = limiter.wrap(async (attachment: DeepPartial<AttachmentModel>) => {
-    const id = await UUIDGenerator.getRandomUUID();
+    const id = attachment.id || (await UUIDGenerator.getRandomUUID());
     return { ...attachment, id } as DeepPartial<AttachmentModel>;
   });
 
-  return Promise.all(withoutId.map(wrapped));
+  return Promise.all(attachments.map(wrapped));
 }
 
 export default AttachmentModel;

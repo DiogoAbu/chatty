@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { FC, memo, useEffect, useRef, useState } from 'react';
 
 import { Appbar, Menu } from 'react-native-paper';
 import Animated, { Easing, timing, Value } from 'react-native-reanimated';
@@ -8,21 +8,27 @@ import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import { StackHeaderRightProps } from '!/types';
 
+import styles from './styles';
+
 interface Props extends StackHeaderRightProps {
   archivedOnly?: boolean;
+  isAllSelectedMuted?: boolean;
   handleSelectAll: () => any;
   handleDeselectAll: () => any;
-  handleDeleteSelected: () => any;
   handleArchiveSelected: () => any;
+  handleShowMuteOptions: () => any;
+  handleUnmuteSelected: () => any;
 }
 
 const ChatsHeaderRight: FC<Props> = ({
   tintColor: textColor,
   archivedOnly,
+  isAllSelectedMuted,
   handleSelectAll,
   handleDeselectAll,
-  handleDeleteSelected,
   handleArchiveSelected,
+  handleShowMuteOptions,
+  handleUnmuteSelected,
 }) => {
   const { t } = useTranslation();
   const {
@@ -61,12 +67,11 @@ const ChatsHeaderRight: FC<Props> = ({
 
   return (
     <>
-      {/* eslint-disable-next-line react-native/no-inline-styles */}
-      <Animated.View style={{ opacity: opacity.current, flexDirection: 'row' }}>
+      <Animated.View style={[styles.headerActionsContainer, { opacity: opacity.current }]}>
         <Appbar.Action
           color={textColor}
-          icon='delete'
-          onPress={hijackOnPress(handleDeleteSelected)}
+          icon={isAllSelectedMuted ? 'volume-high' : 'volume-off'}
+          onPress={hijackOnPress(isAllSelectedMuted ? handleUnmuteSelected : handleShowMuteOptions)}
         />
         <Appbar.Action
           color={textColor}
@@ -94,4 +99,4 @@ const ChatsHeaderRight: FC<Props> = ({
   );
 };
 
-export default React.memo(ChatsHeaderRight);
+export default memo(ChatsHeaderRight);

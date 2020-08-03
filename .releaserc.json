@@ -23,14 +23,13 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "yarn version --new-version ${nextRelease.version} --no-git-tag-version --allow-same-version && yarn run rn-version --never-amend --skip-tag && cd ./android && ./gradlew assembleRelease --no-daemon"
+        "prepareCmd": "yarn version --new-version ${nextRelease.version} --no-git-tag-version --allow-same-version && yarn run rn-version --never-amend --skip-tag --never-increment-build"
       }
     ],
     [
       "@semantic-release/github",
       {
-        "githubUrl": "https://api.github.com",
-        "assets": "android/app/build/outputs/apk/release/*.apk"
+        "githubUrl": "https://api.github.com"
       }
     ],
     [

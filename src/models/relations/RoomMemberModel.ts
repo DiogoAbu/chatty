@@ -1,4 +1,3 @@
-import UUIDGenerator from 'react-native-uuid-generator';
 import { Database, Model, Q, tableSchema } from '@nozbe/watermelondb';
 import { field } from '@nozbe/watermelondb/decorators';
 import { Associations } from '@nozbe/watermelondb/Model';
@@ -6,52 +5,66 @@ import { Associations } from '@nozbe/watermelondb/Model';
 import { DeepPartial, Tables } from '!/types';
 import { prepareUpsert, upsert } from '!/utils/upsert';
 
+const SEPARATOR = ',';
+
 class RoomMemberModel extends Model {
   static table = Tables.roomMembers;
 
   static associations: Associations = {
-    [Tables.rooms]: { type: 'belongs_to', key: 'room_id' },
-    [Tables.users]: { type: 'belongs_to', key: 'user_id' },
+    [Tables.rooms]: { type: 'belongs_to', key: 'roomId' },
+    [Tables.users]: { type: 'belongs_to', key: 'userId' },
   };
 
-  // @ts-ignore
-  @field('room_id')
+  @field('roomId')
   roomId: string;
 
-  // @ts-ignore
-  @field('user_id')
+  @field('userId')
   userId: string;
+
+  @field('isLocalOnly')
+  isLocalOnly: boolean;
 }
 
 export const roomMemberSchema = tableSchema({
   name: Tables.roomMembers,
   columns: [
-    { name: 'user_id', type: 'string' },
-    { name: 'room_id', type: 'string' },
+    { name: 'userId', type: 'string' },
+    { name: 'roomId', type: 'string' },
+    { name: 'isLocalOnly', type: 'boolean' },
   ],
 });
 
-export function roomMemberUpdater(changes: DeepPartial<RoomMemberModel>) {
+export function roomMemberUpdater(changes: DeepPartial<RoomMemberModel>): (record: RoomMemberModel) => void {
   return (record: RoomMemberModel) => {
-    if (typeof changes.id !== 'undefined') {
-      record._raw.id = changes.id;
+    const roomId = typeof changes.roomId !== 'undefined' ? changes.roomId : record.roomId;
+    const userId = typeof changes.userId !== 'undefined' ? changes.userId : record.userId;
+
+    const id = getId({ roomId, userId });
+    if (record._raw.id !== id) {
+      record._raw.id = id;
     }
-    if (typeof changes.roomId !== 'undefined') {
-      record.roomId = changes.roomId;
+    record.roomId = roomId;
+    record.userId = userId;
+
+    if (typeof changes.isLocalOnly !== 'undefined') {
+      record.isLocalOnly = changes.isLocalOnly;
     }
-    if (typeof changes.userId !== 'undefined') {
-      record.userId = changes.userId;
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
+    if (typeof changes._raw?._changed !== 'undefined') {
+      record._raw._changed = changes._raw._changed;
     }
   };
 }
 
 export async function upsertRoomMember(
   database: Database,
-  member: DeepPartial<RoomMemberModel>,
-  actionParent?: any,
-) {
-  const id = member.id || (await UUIDGenerator.getRandomUUID());
-  const memberUpdate = { ...member, id };
+  roomMember: DeepPartial<RoomMemberModel>,
+  actionParent?: unknown,
+): Promise<RoomMemberModel> {
+  const id = getId(roomMember);
+  const memberUpdate: DeepPartial<RoomMemberModel> = { ...roomMember, id };
   return upsert<RoomMemberModel>(
     database,
     Tables.roomMembers,
@@ -63,10 +76,10 @@ export async function upsertRoomMember(
 
 export async function prepareUpsertRoomMember(
   database: Database,
-  member: DeepPartial<RoomMemberModel>,
-) {
-  const id = member.id || (await UUIDGenerator.getRandomUUID());
-  const memberUpdate = { ...member, id };
+  roomMember: DeepPartial<RoomMemberModel>,
+): Promise<RoomMemberModel> {
+  const id = getId(roomMember);
+  const memberUpdate: DeepPartial<RoomMemberModel> = { ...roomMember, id };
   return prepareUpsert<RoomMemberModel>(
     database,
     Tables.roomMembers,
@@ -75,9 +88,13 @@ export async function prepareUpsertRoomMember(
   );
 }
 
-export async function getAllMembersOfRoom(database: Database, roomId: string) {
+export function getId(roomMember: DeepPartial<RoomMemberModel>): string {
+  return roomMember.roomId! + SEPARATOR + roomMember.userId!;
+}
+
+export async function getAllMembersOfRoom(database: Database, roomId: string): Promise<RoomMemberModel[]> {
   const roomMemberTable = database.collections.get<RoomMemberModel>(Tables.roomMembers);
-  return roomMemberTable.query(Q.where('room_id', roomId)).fetch();
+  return roomMemberTable.query(Q.where('roomId', roomId)).fetch();
 }
 
 export default RoomMemberModel;

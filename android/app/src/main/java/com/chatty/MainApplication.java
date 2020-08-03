@@ -8,12 +8,12 @@ import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
-import com.facebook.react.ReactInstanceManager;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import com.nozbe.watermelondb.WatermelonDBPackage;
 import com.brentvatne.react.ReactVideoPackage;
+import com.chatty.device.DevicePackage;
 
 public class MainApplication extends MultiDexApplication implements ReactApplication {
 
@@ -32,6 +32,7 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
           // packages.add(new MyReactNativePackage());
           packages.add(new WatermelonDBPackage());
           packages.add(new ReactVideoPackage());
+          packages.add(new DevicePackage());
           return packages;
         }
 
@@ -50,6 +51,7 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
   public void onCreate() {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);
+    // Disable to fix fetch FormData error
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
   }
 

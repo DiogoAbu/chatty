@@ -57,7 +57,7 @@ const CameraButtons: FC<Props> = ({
         />
       </Animated.View>
 
-      <Animated.View style={{ transform: [{ scale: isRecordingAnim }] } as any}>
+      <Animated.View style={{ transform: [{ scale: isRecordingAnim }] }}>
         <IconButton
           color={Colors.white}
           disabled={!isCameraReady}

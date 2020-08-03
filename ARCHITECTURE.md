@@ -45,12 +45,13 @@ We will be using [react-native-sodium](https://github.com/lyubo/react-native-sod
 
 ### Two-way chat (asymmetric - public for encrypting and secret for decrypting)
 
-Generate pair for local user
-```javascript
-const { sk: secretKey, pk: publicKey } = await Sodium.crypto_box_keypair();
-```
+Generate key pair for local user (secret and public keys)
+- When a user creates an account a random string `salt` is generated and stored on the server.
+- The `salt` is used with the user's `password` to derive a pair of keys.
+- Given the same input, the pair of keys will be the same.
+- This means the user can sign in on multiple devices and have the same `secret key`, without the `secret` or the `password` ever leaving the device.
 
-Public key is meant to be shared, everyone will know everyone else's public key
+Store pair of keys and share the public key, everyone will know everyone else's public key
 ```javascript
 userModel.save((record) => {
   record.secretKey = secretKey;

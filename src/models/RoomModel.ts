@@ -1,19 +1,29 @@
+import { InteractionManager } from 'react-native';
+
 import UUIDGenerator from 'react-native-uuid-generator';
 import { Database, Model, Q, Query, Relation, tableSchema } from '@nozbe/watermelondb';
-import { action, children, date, field, lazy, relation } from '@nozbe/watermelondb/decorators';
+import { action, children, date, field, lazy, readonly, relation } from '@nozbe/watermelondb/decorators';
 import { Associations } from '@nozbe/watermelondb/Model';
 import Bottleneck from 'bottleneck';
 
+import { encryptContentUsingPair, encryptContentUsingShared } from '!/services/encryption';
 import { DeepPartial, Tables } from '!/types';
 import { prepareUpsert, upsert } from '!/utils/upsert';
 
 import RoomMemberModel, {
   getAllMembersOfRoom,
   prepareUpsertRoomMember,
+  roomMemberUpdater,
 } from './relations/RoomMemberModel';
-import AttachmentModel, { attachmentUpdater, prepareAttachmentsId } from './AttachmentModel';
-import MessageModel, { prepareMessagesId, prepareUpsertMessage } from './MessageModel';
-import UserModel, { prepareUpsertUser, prepareUsersId } from './UserModel';
+import AttachmentModel, { attachmentUpdater, prepareAttachments } from './AttachmentModel';
+import MessageModel, {
+  MessageType,
+  messageUpdater,
+  prepareMessages,
+  prepareUpsertMessage,
+} from './MessageModel';
+import ReadReceiptModel, { prepareReadReceipts, prepareUpsertReadReceipt } from './ReadReceiptModel';
+import UserModel, { prepareUpsertUser, prepareUsers } from './UserModel';
 
 const limiter = new Bottleneck({
   maxConcurrent: 1,
@@ -23,107 +33,176 @@ class RoomModel extends Model {
   static table = Tables.rooms;
 
   static associations: Associations = {
-    [Tables.messages]: { type: 'has_many', foreignKey: 'room_id' },
-    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'room_id' },
+    [Tables.messages]: { type: 'has_many', foreignKey: 'roomId' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'roomId' },
+    [Tables.readReceipts]: { type: 'has_many', foreignKey: 'roomId' },
+    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'roomId' },
   };
 
-  // @ts-ignore
   @field('name')
   name: string | null;
 
-  // @ts-ignore
-  @field('picture')
-  picture: string | null;
+  @field('pictureUri')
+  pictureUri: string | null;
 
-  // @ts-ignore
-  @field('is_local_only')
+  @field('isLocalOnly')
   isLocalOnly: boolean;
 
-  // @ts-ignore
-  @field('is_archived')
+  @field('isArchived')
   isArchived: boolean;
 
-  // @ts-ignore
-  @field('shared_key')
+  @field('sharedKey')
   sharedKey: string;
 
-  // @ts-ignore
+  @field('isMuted')
+  isMuted: boolean;
+
+  @field('shouldStillNotify')
+  shouldStillNotify: boolean;
+
+  @date('mutedUntil')
+  mutedUntil: number | null;
+
   // Last time read by me so we can show the badge,
   // messages after this will make up the number
-  @date('last_read_at')
+  @date('lastReadAt')
   lastReadAt: number | null;
 
-  // @ts-ignore
-  @date('last_change_at')
+  // Last time something changed inside the room
+  @date('lastChangeAt')
   lastChangeAt: number;
 
-  // @ts-ignore
-  @relation(Tables.messages, 'last_message_id')
+  @readonly
+  @date('createdAt')
+  createdAt: number;
+
+  @relation(Tables.messages, 'lastMessageId')
   lastMessage: Relation<MessageModel>;
 
-  // @ts-ignore
   @children(Tables.messages)
   messages: Query<MessageModel>;
 
+  @children(Tables.attachments)
+  attachments: Query<AttachmentModel>;
+
+  @children(Tables.readReceipts)
+  readReceipts: Query<ReadReceiptModel>;
+
   @lazy
-  members = this.collections
-    .get<UserModel>(Tables.users)
-    .query(Q.on(Tables.roomMembers, 'room_id', this.id));
+  members = this.collections.get<UserModel>(Tables.users).query(Q.on(Tables.roomMembers, 'roomId', this.id));
 
   @action
   async addMessage({
+    id: msgId,
     content,
-    senderId,
-    messageId,
+    type,
+    sender,
     attachments,
   }: {
+    id?: string;
+    type?: MessageType;
     content: string;
-    senderId: string;
-    messageId?: string;
+    sender: UserModel;
     attachments?: DeepPartial<AttachmentModel>[];
-  }) {
+  }): Promise<void> {
     const messageDb = this.collections.get<MessageModel>(Tables.messages);
     const attachmentDb = this.collections.get<AttachmentModel>(Tables.attachments);
+    const roomMemberDb = this.collections.get<RoomMemberModel>(Tables.roomMembers);
 
-    const uuid = messageId ?? (await UUIDGenerator.getRandomUUID());
+    const batches: Model[] = [];
 
-    const attachmentsWithId = await prepareAttachmentsId(attachments);
+    const id = msgId ?? (await UUIDGenerator.getRandomUUID());
+    const createdAt = Date.now();
 
-    const batches = attachmentsWithId.map((each) => {
-      const att: DeepPartial<AttachmentModel> = {
-        ...each,
-        sender: { id: senderId },
+    // Create message record and update ui before encrypting content
+    const messageCreated = await messageDb.create(
+      messageUpdater({
+        id,
+        content,
+        type: type || 'default',
+        createdAt,
+        sender: { id: sender.id },
         room: { id: this.id },
-        message: { id: uuid },
-      };
-      return attachmentDb.prepareCreate(attachmentUpdater(att));
-    });
-
-    const localCreatedAt = Date.now();
-
-    await this.batch(
-      messageDb.prepareCreate((record) => {
-        record._raw.id = uuid;
-        record.content = content;
-        record.localCreatedAt = localCreatedAt;
-        record.sender.id = senderId;
-        record.room.set(this);
-
-        // Already has ID from server
-        if (messageId) {
-          record._raw._status = 'synced';
-        }
-      }),
-      // @ts-ignore Expected 1 arguments, but got 3 or more
-      ...batches,
-      this.prepareUpdate((record) => {
-        record.isLocalOnly = false;
-        record.isArchived = false;
-        record.lastChangeAt = localCreatedAt;
-        record.lastMessage.id = uuid;
-        record._raw._status = 'synced';
       }),
     );
+
+    // When sending attachments a message content is not required
+    if (content) {
+      // Get friend`s public key, and if it`s a group get the shared key.
+      let encryptKey: string;
+      if (!this.name) {
+        const friend = (await this.members.fetch()).find((e) => e.id !== sender.id);
+        if (!friend) {
+          throw new Error('Failed to add message, friend not found');
+        }
+        if (!friend.publicKey) {
+          throw new Error("Failed to add message, friend's public key not found");
+        }
+        encryptKey = friend.publicKey;
+      } else {
+        if (!this.sharedKey) {
+          throw new Error('Failed to add message, shared key not found');
+        }
+        encryptKey = this.sharedKey;
+      }
+
+      let cipher: string;
+      if (this.name) {
+        cipher = await encryptContentUsingShared(content, encryptKey);
+      } else {
+        cipher = await encryptContentUsingPair(content, encryptKey, sender.secretKey!);
+      }
+
+      batches.push(messageCreated.prepareUpdate(messageUpdater({ cipher })));
+    }
+
+    const attachmentsWithId = await prepareAttachments(attachments);
+    batches.push(
+      ...attachmentsWithId.map((each) => {
+        return attachmentDb.prepareCreate(
+          attachmentUpdater({
+            ...each,
+            sender: { id: sender.id },
+            room: { id: this.id },
+            message: { id },
+          }),
+        );
+      }),
+    );
+
+    const roomMembers = await roomMemberDb
+      .query(Q.where('roomId', this.id), Q.where('isLocalOnly', true))
+      .fetch();
+    if (roomMembers.length) {
+      batches.push(
+        ...roomMembers.map((each) => {
+          return each.prepareUpdate(
+            roomMemberUpdater({
+              isLocalOnly: false,
+            }),
+          );
+        }),
+      );
+    }
+
+    batches.push(
+      this.prepareUpdate(
+        roomUpdater({
+          isLocalOnly: false,
+          isArchived: false,
+          lastChangeAt: createdAt,
+          lastMessage: { id },
+          _raw: {
+            _changed: this.isLocalOnly ? 'isLocalOnly' : '',
+            _status: this.isLocalOnly ? 'updated' : undefined,
+          },
+        }),
+      ),
+    );
+
+    await InteractionManager.runAfterInteractions(async () => {
+      await this.batch(...batches);
+    });
   }
 }
 
@@ -131,17 +210,21 @@ export const roomSchema = tableSchema({
   name: Tables.rooms,
   columns: [
     { name: 'name', type: 'string', isOptional: true },
-    { name: 'picture', type: 'string', isOptional: true },
-    { name: 'is_local_only', type: 'boolean' },
-    { name: 'is_archived', type: 'boolean' },
-    { name: 'shared_key', type: 'string' },
-    { name: 'last_read_at', type: 'number', isOptional: true },
-    { name: 'last_change_at', type: 'number' },
-    { name: 'last_message_id', type: 'string' },
+    { name: 'pictureUri', type: 'string', isOptional: true },
+    { name: 'isLocalOnly', type: 'boolean' },
+    { name: 'isArchived', type: 'boolean' },
+    { name: 'sharedKey', type: 'string' },
+    { name: 'isMuted', type: 'boolean' },
+    { name: 'shouldStillNotify', type: 'boolean' },
+    { name: 'mutedUntil', type: 'number', isOptional: true },
+    { name: 'lastReadAt', type: 'number', isOptional: true },
+    { name: 'lastChangeAt', type: 'number' },
+    { name: 'lastMessageId', type: 'string' },
+    { name: 'createdAt', type: 'number' },
   ],
 });
 
-export function roomUpdater(changes: DeepPartial<RoomModel>) {
+export function roomUpdater(changes: DeepPartial<RoomModel>): (record: RoomModel) => void {
   return (record: RoomModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -149,8 +232,8 @@ export function roomUpdater(changes: DeepPartial<RoomModel>) {
     if (typeof changes.name !== 'undefined') {
       record.name = changes.name;
     }
-    if (typeof changes.picture !== 'undefined') {
-      record.picture = changes.picture;
+    if (typeof changes.pictureUri !== 'undefined') {
+      record.pictureUri = changes.pictureUri;
     }
     if (typeof changes.isLocalOnly !== 'undefined') {
       record.isLocalOnly = changes.isLocalOnly;
@@ -161,6 +244,15 @@ export function roomUpdater(changes: DeepPartial<RoomModel>) {
     if (typeof changes.sharedKey !== 'undefined') {
       record.sharedKey = changes.sharedKey;
     }
+    if (typeof changes.isMuted !== 'undefined') {
+      record.isMuted = changes.isMuted;
+    }
+    if (typeof changes.shouldStillNotify !== 'undefined') {
+      record.shouldStillNotify = changes.shouldStillNotify;
+    }
+    if (typeof changes.mutedUntil !== 'undefined') {
+      record.mutedUntil = changes.mutedUntil;
+    }
     if (typeof changes.lastReadAt !== 'undefined') {
       record.lastReadAt = changes.lastReadAt;
     }
@@ -170,22 +262,31 @@ export function roomUpdater(changes: DeepPartial<RoomModel>) {
     if (typeof changes.lastMessage?.id !== 'undefined') {
       record.lastMessage.id = changes.lastMessage?.id;
     }
+    if (typeof changes._raw?._changed !== 'undefined') {
+      record._raw._changed = changes._raw._changed;
+    }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
   };
 }
 
 export async function upsertRoom(
   database: Database,
   room: DeepPartial<RoomModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<RoomModel> {
   return upsert<RoomModel>(database, Tables.rooms, room.id, actionParent, roomUpdater(room));
 }
 
-export async function prepareUpsertRoom(database: Database, room: DeepPartial<RoomModel>) {
+export async function prepareUpsertRoom(
+  database: Database,
+  room: DeepPartial<RoomModel>,
+): Promise<RoomModel> {
   return prepareUpsert<RoomModel>(database, Tables.rooms, room.id, roomUpdater(room));
 }
 
-export function findRoomIdInCommon(memberMix: RoomMemberModel[]) {
+export function findRoomIdInCommon(memberMix: RoomMemberModel[]): string | null {
   const roomIds = memberMix.map((e) => e.roomId);
 
   // Count the repeated rooms using Map.
@@ -211,7 +312,15 @@ export async function findRoom(
   const roomTable = database.collections.get<RoomModel>(Tables.rooms);
 
   // Find room by ID
-  const roomFound = room.id ? await roomTable.find(room.id) : null;
+  let roomFound = null;
+
+  if (room.id) {
+    try {
+      roomFound = await roomTable.find(room.id);
+    } catch (err) {
+      //
+    }
+  }
 
   // Return if found
   if (roomFound) {
@@ -229,7 +338,7 @@ export async function findRoom(
 
     // Find all the rooms for both members
     const memberMix = await memberTable
-      .query(Q.or(Q.where('user_id', members[0].id!), Q.where('user_id', members[1].id!)))
+      .query(Q.or(Q.where('userId', members[0].id!), Q.where('userId', members[1].id!)))
       .fetch();
 
     if (memberMix.length) {
@@ -250,24 +359,23 @@ export async function findRoom(
   return null;
 }
 
-export async function createRoomAndMembers(
+export async function createRoom(
   database: Database,
+  signedUser: UserModel,
   roomFromServer: DeepPartial<RoomModel>,
   members?: DeepPartial<UserModel>[],
   messages?: DeepPartial<MessageModel>[],
-): Promise<string> {
+  readReceipts?: DeepPartial<ReadReceiptModel>[],
+): Promise<RoomModel> {
   let room = { ...roomFromServer };
 
   let formerMembersPrepared: RoomMemberModel[] = [];
 
   // Will be executed at the end
-  const funcsAsync: Promise<UserModel | RoomModel | RoomMemberModel | MessageModel>[] = [];
+  const funcsAsync: Promise<Model>[] = [];
 
   const roomFound = await findRoom(database, room, members);
   if (roomFound) {
-    // Update room to be used outside of this scope
-    room = roomFound;
-
     // Room came with ID, and local one is different
     if (room.id && room.id !== roomFound.id) {
       // Remove users from join table
@@ -276,59 +384,75 @@ export async function createRoomAndMembers(
         return roomMember.prepareDestroyPermanently();
       });
     }
+
+    room = {
+      ...roomFound._raw,
+      ...room,
+      id: roomFound.id,
+    };
   } else {
     // Make sure room has ID
     room.id = room.id ?? (await UUIDGenerator.getRandomUUID());
     room.lastChangeAt = Date.now();
   }
 
-  if (members) {
+  if (members?.length) {
     // Make sure every user has ID
-    const usersWithId = await prepareUsersId(members, false);
+    const usersWithId = await prepareUsers(members);
 
     // Prepare users and user-room join table
     usersWithId.map((user) => {
-      funcsAsync.push(prepareUpsertRoomMember(database, { roomId: room.id, userId: user.id }));
+      funcsAsync.push(
+        prepareUpsertRoomMember(database, {
+          roomId: room.id,
+          userId: user.id,
+          isLocalOnly: room.isLocalOnly,
+        }),
+      );
       funcsAsync.push(prepareUpsertUser(database, user));
     });
   }
 
-  if (messages) {
+  if (messages?.length) {
     room.lastChangeAt = room.lastChangeAt ?? -1;
 
     // Make sure every message has ID
-    const messagesWithId = await prepareMessagesId(messages, false);
+    const messagesWithId = await prepareMessages(messages, room, members, signedUser);
 
     // Prepare messages
     messagesWithId.map((message) => {
       // Is more recent than last message
-      if (message.localCreatedAt! > room.lastChangeAt!) {
-        room.lastChangeAt = message.localCreatedAt;
-
-        // Set ID of message on room
-        if (room.lastMessage) {
-          room.lastMessage.id = message.id!;
-        } else {
-          room.lastMessage = { id: message.id! };
-        }
+      if (message.createdAt! > room.lastChangeAt! && message.type !== 'sharedKey') {
+        room.lastChangeAt = message.createdAt;
+        room.lastMessage = { id: message.id! };
       }
 
-      message.room = { ...message.room, id: room.id };
+      message.room = { id: room.id };
 
       funcsAsync.push(prepareUpsertMessage(database, message));
     });
   }
 
+  if (readReceipts?.length) {
+    // Make sure every read receipt has ID
+    const readReceiptsWithId = await prepareReadReceipts(readReceipts);
+
+    // Prepare read receipts
+    readReceiptsWithId.map((readReceipt) => {
+      funcsAsync.push(prepareUpsertReadReceipt(database, readReceipt));
+    });
+  }
+
   funcsAsync.push(prepareUpsertRoom(database, room));
 
-  return database.action<string>(async () => {
-    // Execute all promises
-    const batch = await Promise.all(funcsAsync);
+  // Execute all promises
+  const batch = await Promise.all(funcsAsync);
 
+  return database.action<RoomModel>(async () => {
     await database.batch(...batch, ...formerMembersPrepared);
 
-    return room.id!;
-  }, 'createRoomAndMembers');
+    return room;
+  }, 'RoomModel -> createRoom');
 }
 
 async function removeUserIfNoRooms(user: UserModel, isLocalOnly: boolean) {
@@ -349,7 +473,7 @@ export async function removeRoomsCascade(
   database: Database,
   roomIds: string[],
   signedUserId: string,
-) {
+): Promise<void> {
   const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
   const roomMembersTable = database.collections.get<RoomMemberModel>(Tables.roomMembers);
 
@@ -378,7 +502,7 @@ export async function removeRoomsCascade(
     });
 
     // Get members of the room from join table
-    const roomMembers = await roomMembersTable.query(Q.where('room_id', Q.eq(room.id))).fetch();
+    const roomMembers = await roomMembersTable.query(Q.where('roomId', Q.eq(room.id))).fetch();
     const membersPrepared = roomMembers.map((roomMember) => {
       return roomMember.prepareDestroyPermanently();
     });
@@ -393,15 +517,15 @@ export async function removeRoomsCascade(
     // Execute all promises
     const batch = await Promise.all(rooms.map(wrapped));
 
-    await database.batch(...batch.flat(2));
-  }, 'removeRoomsCascade');
+    await database.batch(...(batch.flat(2) as Model[]));
+  }, 'RoomModel -> removeRoomsCascade');
 }
 
 export async function updateRooms(
   database: Database,
   roomIds: string[],
   roomPartial: DeepPartial<RoomModel>,
-) {
+): Promise<void> {
   const roomsTable = database.collections.get<RoomModel>(Tables.rooms);
 
   const rooms = await roomsTable.query(Q.where('id', Q.oneOf(roomIds))).fetch();
@@ -411,7 +535,7 @@ export async function updateRooms(
       return room.prepareUpdate(roomUpdater(roomPartial));
     });
     return database.batch(...batch);
-  });
+  }, 'RoomModel -> updateRooms');
 }
 
 export default RoomModel;

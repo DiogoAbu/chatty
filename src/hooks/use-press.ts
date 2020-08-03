@@ -14,6 +14,6 @@ export default function usePress<Args extends any[], Result>(
   callback: Callback<Args, Result>,
   wait = 300,
   settings: DebounceSettings = {},
-) {
+): (...args: Args) => Result {
   return useMethod(debounce(callback, wait, { leading: true, trailing: false, ...settings }));
 }

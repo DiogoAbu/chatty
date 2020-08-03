@@ -1,12 +1,5 @@
 import React, { FC, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  AppState,
-  AppStateStatus,
-  BackHandler,
-  InteractionManager,
-  StatusBar,
-  View,
-} from 'react-native';
+import { AppState, AppStateStatus, BackHandler, InteractionManager, StatusBar, View } from 'react-native';
 
 import { FlashMode, RNCamera, WhiteBalance } from 'react-native-camera';
 import FileSystem from 'react-native-fs';
@@ -26,7 +19,7 @@ import useTranslation from '!/hooks/use-translation';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp } from '!/types';
 import getStatusBarColor from '!/utils/get-status-bar-color';
-import { requestCameraPermission, requestStoragePermission } from '!/utils/permissions';
+import { requestCameraPermission } from '!/utils/permissions';
 
 import CameraButtons from './CameraButtons';
 import CameraContainer from './CameraContainer';
@@ -56,7 +49,6 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
   // Camera state and options
   const [isCameraAvailable, setIsCameraAvailable] = useState(false);
-  const [storageGranted, setStorageGranted] = useState<boolean | null>(null);
   const [cameraGranted, setCameraGranted] = useState<boolean | null>(null);
   const [audioEnabled, setAudioEnabled] = useState<boolean | null>(null);
   const [cameraAspectRatio] = useState('4:3');
@@ -64,7 +56,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   const cameraRef = useRef<RNCamera | null>(null);
   const isTakingPicture = useRef(false);
   const isRecording = useRef(false);
-  const elapsedInterval = useRef<NodeJS.Timeout | null>(null);
+  const elapsedInterval = useRef<number | null>(null);
 
   // Pictures
   const [picsTaken, setPicsTaken] = useState<PicturesTaken[]>([]);
@@ -80,15 +72,12 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   // Handlers for the state setters
   const handleSetActiveCameraId = useCallback((value: string) => setActiveCameraId(value), []);
   const handleSetCameraIds = useCallback((value: CameraIds[]) => setCameraIds(value), []);
-  const handleSetIsCameraReady = useCallback(
-    (status: boolean, cameraRefObj?: RefObject<RNCamera>) => {
-      setIsCameraReady(status);
-      if (cameraRefObj?.current) {
-        cameraRef.current = cameraRefObj.current;
-      }
-    },
-    [],
-  );
+  const handleSetIsCameraReady = useCallback((status: boolean, cameraRefObj?: RefObject<RNCamera>) => {
+    setIsCameraReady(status);
+    if (cameraRefObj?.current) {
+      cameraRef.current = cameraRefObj.current;
+    }
+  }, []);
   const handleSetAudioEnabled = useCallback((value: boolean) => setAudioEnabled(value), []);
   const handleSaveMessage = useCallback((message?: string) => {
     messageSaved.current = message?.trim() ?? '';
@@ -100,10 +89,8 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
   const handleGoToPreparePicture = usePress((pictures?: PicturesTaken[]) => {
     requestAnimationFrame(() => {
-      navigation.navigate('PreparePicture', {
-        roomId: params.roomId,
-        roomTitle: params.roomTitle,
-        roomPicture: params.roomPicture,
+      navigation.navigate(params.screenNameAfterPicture || 'PreparePicture', {
+        ...params,
         skipStatusBar: true,
         initialMessage: messageSaved.current,
         picturesTaken: pictures || picsTaken,
@@ -116,6 +103,9 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
   // Handlers
   const handleTakePicture = usePress(async () => {
+    if (params.disableTakePicture) {
+      return;
+    }
     if (!cameraRef.current || isTakingPicture.current) {
       return;
     }
@@ -133,19 +123,26 @@ const Camera: FC<Props> = ({ navigation, route }) => {
         quality: 0.66,
         orientation: 'auto',
         writeExif: true,
+        base64: false,
+        width: 1920,
       });
 
       const { uri, width, height, deviceOrientation } = pictureTaken;
 
       // Save to camera roll
-      const rollUri = await CameraRoll.saveToCameraRoll(uri, 'photo');
+      const rollUri = await CameraRoll.save(uri, { type: 'photo' });
+
+      // Get image name
+      const fileFetch = await fetch(rollUri);
+      const fileBlob = (await fileFetch.blob()) as any;
 
       const notAboveMax = pictureSelectedAmount < ATTACHMENT_MAX_AMOUNT;
 
       // deviceOrientation = 1 | 2 | 3 | 4;
       // 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown'
       const newPic: PicturesTaken = {
-        uri: rollUri,
+        filename: fileBlob._data.name,
+        localUri: rollUri,
         width: [3, 4].includes(deviceOrientation) ? width : height,
         height: [3, 4].includes(deviceOrientation) ? height : width,
         isSelected: notAboveMax,
@@ -212,6 +209,9 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   }, [animation.scale, isRecordingAnim]);
 
   const handleShootVideo = usePress(async () => {
+    if (params.disableRecordVideo) {
+      return;
+    }
     if (!cameraRef.current || isRecording.current) {
       handleStopShootingVideo();
     }
@@ -235,23 +235,27 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       });
 
       // Save to camera roll
-      const rollUri = await CameraRoll.saveToCameraRoll(uri, 'video');
+      const rollUri = await CameraRoll.save(uri, { type: 'video' });
+
+      const fileFetch = await fetch(rollUri);
+      const fileBlob = (await fileFetch.blob()) as any;
 
       const { width, height } = dimensions[quality];
 
       // deviceOrientation = 1 | 2 | 3 | 4;
       // 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown'
       const videoRecorded: VideoRecorded = {
-        uri: rollUri,
+        filename: fileBlob._data.name,
+        localUri: rollUri,
         width: [3, 4].includes(deviceOrientation) ? width : height,
         height: [3, 4].includes(deviceOrientation) ? height : width,
       };
 
       requestAnimationFrame(() => {
-        navigation.navigate('PrepareVideo', {
-          roomId: params.roomId,
-          roomTitle: params.roomTitle,
-          roomPicture: params.roomPicture,
+        navigation.navigate(params.screenNameAfterVideo || 'PrepareVideo', {
+          roomId: params.roomId!,
+          roomTitle: params.roomTitle!,
+          roomPictureUri: params.roomPictureUri!,
           videoRecorded,
         });
       });
@@ -281,7 +285,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       setFlashMode('off');
       setWhiteBalance('auto');
 
-      InteractionManager.runAfterInteractions(() => {
+      void InteractionManager.runAfterInteractions(() => {
         if (!cameraIds?.length) {
           setActiveCameraId(null);
           return;
@@ -410,7 +414,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
   // Stop recording if app is no longer active
   const handleAppStateChange = useCallback(
     (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'background') {
+      if (nextAppState !== 'active') {
         handleStopShootingVideo();
         if (elapsedInterval.current) {
           clearInterval(elapsedInterval.current);
@@ -434,9 +438,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
         isCameraAvailable ? (
           <View style={styles.elapsedTimeContainer}>
             {elapsed >= 0 ? (
-              <Title style={styles.elapsedTime}>
-                {new Date(elapsed * 1000).toISOString().substr(14, 5)}
-              </Title>
+              <Title style={styles.elapsedTime}>{new Date(elapsed * 1000).toISOString().substr(14, 5)}</Title>
             ) : null}
             {elapsed >= 0 && !audioEnabled ? (
               <Icon name='microphone-off' style={styles.microphoneIcon} />
@@ -487,20 +489,14 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       return false;
     });
 
-    InteractionManager.runAfterInteractions(async () => {
-      const storageStatus = await requestStoragePermission();
-      setStorageGranted(storageStatus);
-      if (!storageStatus) {
-        return;
-      }
-
+    void InteractionManager.runAfterInteractions(async () => {
       const cameraStatus = await requestCameraPermission();
       setCameraGranted(cameraStatus);
       if (!cameraStatus) {
         return;
       }
 
-      if (storageStatus && cameraStatus) {
+      if (cameraStatus) {
         setIsCameraAvailable(true);
       }
     });
@@ -511,24 +507,14 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       if (elapsedInterval.current) {
         clearInterval(elapsedInterval.current);
       }
+      StatusBar.setBackgroundColor(getStatusBarColor(4, colors, dark, mode));
+      StatusBar.setTranslucent(false);
     };
   }, [colors, dark, handleClearPicturesTaken, handleStopShootingVideo, mode, picsTaken.length]);
 
   return (
     <View style={styles.container}>
-      {storageGranted === false ? (
-        <View style={styles.fullCenter}>
-          <Title>{t('error.storagePermission')}</Title>
-          <Button
-            labelStyle={{ color: colors.textOnPrimary }}
-            mode='contained'
-            onPress={handlePressBack}
-            style={styles.buttonPermission}
-          >
-            {t('label.goBack')}
-          </Button>
-        </View>
-      ) : cameraGranted === false ? (
+      {cameraGranted === false ? (
         <View style={styles.fullCenter}>
           <Title>{t('error.cameraPermission')}</Title>
           <Button
@@ -552,7 +538,9 @@ const Camera: FC<Props> = ({ navigation, route }) => {
           handleSetCameraIds={handleSetCameraIds}
           handleSetIsCameraReady={handleSetIsCameraReady}
           handleStopRecording={handleStopShootingVideo}
+          initialCameraType={params.initialCameraType}
           isLandscape={isLandscape}
+          showCameraMask={params.showCameraMask}
           whiteBalance={whiteBalance}
           winHeight={winHeight}
           winWidth={winWidth}

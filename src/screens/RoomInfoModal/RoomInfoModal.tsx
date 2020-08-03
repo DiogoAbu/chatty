@@ -10,6 +10,7 @@ import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import { useStores } from '!/stores';
 import { MainNavigationProp, MainRouteProp } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -25,7 +26,7 @@ const RoomInfoModal: FC<Props> = ({ navigation, route }) => {
 
   const size = Math.min(256, winWidth);
 
-  const { roomTitle, roomPicture, friendId, roomId } = route.params;
+  const { roomTitle, roomPictureUri, friendId, roomId } = route.params;
 
   const handleDismiss = usePress(() => {
     requestAnimationFrame(() => {
@@ -65,19 +66,19 @@ const RoomInfoModal: FC<Props> = ({ navigation, route }) => {
             style={{
               width: size,
               height: size,
-              backgroundColor: !roomPicture ? colors.primary : undefined,
+              backgroundColor: !roomPictureUri ? colors.primary : undefined,
             }}
           >
             <SharedElement id={friendId || roomId}>
               <ImageBackground
-                source={{ uri: roomPicture }}
+                source={{ uri: transformUri(roomPictureUri, { width: size, height: size }) }}
                 style={[
                   { width: size, height: size, backgroundColor: colors.primary },
                   styles.pictureContainer,
                 ]}
               >
                 <Text style={styles.title}>{roomTitle}</Text>
-                {!roomPicture ? (
+                {!roomPictureUri ? (
                   <Icon
                     color={colors.textOnPrimary}
                     name={friendId ? 'account' : 'account-group'}

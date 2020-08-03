@@ -1,20 +1,24 @@
-import React, { FC, PropsWithChildren } from 'react';
+import React, { FC, memo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Avatar, Colors, IconButton, List } from 'react-native-paper';
 
+import { User } from '!/generated/graphql';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import { ListItemSideProps } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
 interface Props {
-  friend: any;
+  friend: User;
   removeMember: (userId: string) => void;
+  isEditing?: boolean;
 }
 
-const FriendItem: FC<Props> = ({ friend, removeMember }) => {
+const FriendItem: FC<Props> = ({ friend, removeMember, isEditing }) => {
   const { grid } = useTheme();
 
   const handleZoomPhoto = usePress(() => {
@@ -23,15 +27,16 @@ const FriendItem: FC<Props> = ({ friend, removeMember }) => {
 
   const handleRemoveMember = usePress(() => {
     requestAnimationFrame(() => {
-      removeMember(friend.id);
+      removeMember(friend.id!);
     });
   });
 
   const renderLeft = ({ style }: ListItemSideProps) => (
     <TouchableOpacity activeOpacity={0.6} onPress={handleZoomPhoto}>
       <Avatar.Image
+        ImageComponent={FastImage}
         size={58}
-        source={{ uri: friend.picture }}
+        source={{ uri: transformUri(friend.pictureUri, { width: 58 }) }}
         style={[style, { marginRight: grid }]}
       />
     </TouchableOpacity>
@@ -46,7 +51,7 @@ const FriendItem: FC<Props> = ({ friend, removeMember }) => {
   return (
     <List.Item
       left={renderLeft}
-      right={renderRight}
+      right={isEditing ? undefined : renderRight}
       title={friend.name}
       titleEllipsizeMode='tail'
       titleNumberOfLines={2}
@@ -54,14 +59,4 @@ const FriendItem: FC<Props> = ({ friend, removeMember }) => {
   );
 };
 
-const propsAreEqual = (
-  prev: Readonly<PropsWithChildren<Props>>,
-  next: Readonly<PropsWithChildren<Props>>,
-) => {
-  if (prev.friend.isSelected !== next.friend.isSelected) {
-    return false;
-  }
-  return true;
-};
-
-export default React.memo(FriendItem, propsAreEqual);
+export default memo(FriendItem);

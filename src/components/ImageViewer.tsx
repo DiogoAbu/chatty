@@ -29,14 +29,13 @@ import { SharedElement } from 'react-navigation-shared-element';
 
 import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
-import AttachmentModel from '!/models/AttachmentModel';
-import { DeepPartial } from '!/types';
+import { AttachmentParam } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
 
-const FastImageAnim = Animated.createAnimatedComponent(FastImage);
+const FastImageAnim = Animated.createAnimatedComponent(FastImage) as typeof FastImage;
 
 interface Props {
-  image: DeepPartial<AttachmentModel>;
+  image: AttachmentParam;
   shouldFillScreen?: boolean;
 }
 
@@ -143,18 +142,16 @@ const ImageViewer: FC<Props> = ({ image, shouldFillScreen }) => {
       <Animated.View style={[styles.imageContainer, shouldFillScreen && StyleSheet.absoluteFill]}>
         <SharedElement id={image.id!}>
           <FastImageAnim
-            source={{ uri: image.uri }}
-            style={
-              {
-                width,
-                height,
-                aspectRatio,
-                transform: [
-                  ...translate(vec.add({ x: offsetX, y: offsetY }, translation)),
-                  { scale: scaleReset },
-                ],
-              } as any
-            }
+            source={{ uri: image.localUri! }}
+            style={{
+              width,
+              height,
+              aspectRatio,
+              transform: [
+                ...(translate(vec.add({ x: offsetX, y: offsetY }, translation)) as any),
+                { scale: scaleReset },
+              ],
+            }}
           />
         </SharedElement>
       </Animated.View>

@@ -21,19 +21,19 @@ const PictureListItem: FC<Props> = ({ item, index, size, padding, onPress }) => 
     onPress(index);
   });
 
+  const width = Math.min(item.width!, size);
+  const height = Math.min(item.height!, size);
+  const aspectRatio = item.width! / item.height!;
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.6}
-      onPress={handlePress}
-      style={{ marginHorizontal: padding }}
-    >
+    <TouchableOpacity activeOpacity={0.6} onPress={handlePress} style={{ marginHorizontal: padding }}>
       <FastImage
         resizeMode={FastImage.resizeMode.contain}
-        source={{ uri: item.uri }}
+        source={{ uri: item.localUri }}
         style={{
-          width: Math.min(item.width!, size),
-          height: Math.min(item.height!, size),
-          aspectRatio: item.width! / item.height!,
+          width,
+          height,
+          aspectRatio,
         }}
       />
 

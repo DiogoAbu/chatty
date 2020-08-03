@@ -1,36 +1,32 @@
-import React, { FC, PropsWithChildren } from 'react';
+import React, { FC, memo, PropsWithChildren } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Avatar, Colors, List } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 import { useNavigation } from '@react-navigation/native';
 
 import CrossFadeIcon from '!/components/CrossFadeIcon';
+import { User } from '!/generated/graphql';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import { createRoomAndMembers } from '!/models/RoomModel';
+import RoomModel, { createRoom } from '!/models/RoomModel';
+import UserModel from '!/models/UserModel';
 import { useStores } from '!/stores';
-import { ListItemSideProps, MainNavigationProp } from '!/types';
+import { DeepPartial, ListItemSideProps, MainNavigationProp } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
-type Friend = {
-  id: string;
-  name: string;
-  email: string;
-  picture: string;
-  publicKey: string;
-  isSelected?: boolean;
-};
-
 interface Props {
-  friend: Friend;
+  friend: User;
+  isSelected: boolean;
   isSelecting: boolean;
-  toggleSelected: (userId: string) => void;
+  toggleSelected: (user: User) => void;
 }
 
-const FriendItem: FC<Props> = ({ friend, isSelecting, toggleSelected }) => {
+const FriendItem: FC<Props> = ({ friend, isSelected, isSelecting, toggleSelected }) => {
   const database = useDatabase();
   const navigation = useNavigation<MainNavigationProp<'FindFriends'>>();
   const { authStore } = useStores();
@@ -38,13 +34,22 @@ const FriendItem: FC<Props> = ({ friend, isSelecting, toggleSelected }) => {
 
   // Handlers
   const handleStartChatting = usePress(async () => {
-    const room = { isLocalOnly: true };
-    const members = [authStore.user, friend];
-    const roomId = await createRoomAndMembers(database, room, members);
+    const room: DeepPartial<RoomModel> = { isLocalOnly: true };
+    const friendUser: DeepPartial<UserModel> = {
+      id: friend.id,
+      name: friend.name,
+      pictureUri: friend.pictureUri,
+      email: friend.email,
+      role: friend.role,
+      publicKey: friend.publicKey,
+      isFollowingMe: friend.isFollowingMe,
+      isFollowedByMe: friend.isFollowedByMe,
+    };
+    const members = [authStore.user, friendUser];
+    const roomCreated = await createRoom(database, authStore.user, room, members);
 
     requestAnimationFrame(() => {
-      // Make it so the first screen is Home and we're at the Chatting screen
-      navigation.navigate('Chatting', { roomId });
+      navigation.navigate('Chatting', { roomId: roomCreated.id });
     });
   });
 
@@ -54,19 +59,17 @@ const FriendItem: FC<Props> = ({ friend, isSelecting, toggleSelected }) => {
 
   const handleToggleSelect = usePress(() => {
     requestAnimationFrame(() => {
-      toggleSelected(friend.id);
+      toggleSelected(friend);
     });
   });
 
   // Renders
   const renderLeft = ({ style }: ListItemSideProps) => (
-    <TouchableOpacity
-      activeOpacity={0.6}
-      onPress={isSelecting ? handleToggleSelect : handleZoomPhoto}
-    >
+    <TouchableOpacity activeOpacity={0.6} onPress={isSelecting ? handleToggleSelect : handleZoomPhoto}>
       <Avatar.Image
+        ImageComponent={FastImage}
         size={58}
-        source={{ uri: friend.picture }}
+        source={{ uri: transformUri(friend.pictureUri, { width: 58 }) }}
         style={[style, { marginRight: grid }]}
       />
     </TouchableOpacity>
@@ -76,12 +79,12 @@ const FriendItem: FC<Props> = ({ friend, isSelecting, toggleSelected }) => {
     <View style={[style, styles.friendItemRightContainer]}>
       {isSelecting ? (
         <CrossFadeIcon
-          color={friend.isSelected ? Colors.green700 : color}
+          color={isSelected ? Colors.green700 : color}
           size={24}
-          source={friend.isSelected ? 'check-circle-outline' : 'checkbox-blank-circle-outline'}
+          source={isSelected ? 'check-circle-outline' : 'checkbox-blank-circle-outline'}
         />
       ) : (
-        <Icon color={friend.isSelected ? Colors.green700 : color} name='chevron-right' size={24} />
+        <Icon color={isSelected ? Colors.green700 : color} name='chevron-right' size={24} />
       )}
     </View>
   );
@@ -103,7 +106,7 @@ const propsAreEqual = (
   prev: Readonly<PropsWithChildren<Props>>,
   next: Readonly<PropsWithChildren<Props>>,
 ) => {
-  if (prev.friend.isSelected !== next.friend.isSelected) {
+  if (prev.isSelected !== next.isSelected) {
     return false;
   }
   if (prev.isSelecting !== next.isSelecting) {
@@ -112,4 +115,4 @@ const propsAreEqual = (
   return true;
 };
 
-export default React.memo(FriendItem, propsAreEqual);
+export default memo(FriendItem, propsAreEqual);

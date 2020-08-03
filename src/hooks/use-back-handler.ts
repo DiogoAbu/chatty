@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 export default function useBackHandler(
   backAction: () => boolean | null | undefined,
   deps: DependencyList,
-) {
+): void {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const action = useCallback(backAction, deps);
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function useBackHandler(
 export function useBackHandlerOnFocus(
   backAction: () => boolean | null | undefined,
   deps: DependencyList,
-) {
+): void {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const action = useCallback(backAction, deps);
   // eslint-disable-next-line react-hooks/exhaustive-deps

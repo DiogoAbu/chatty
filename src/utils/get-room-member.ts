@@ -1,9 +1,6 @@
 import UserModel from '!/models/UserModel';
 
-export default function getRoomMember(
-  members: UserModel[],
-  signedUserId?: string,
-): UserModel | null {
+export default function getRoomMember(members: UserModel[], signedUserId?: string): UserModel | null {
   if (!signedUserId) {
     return null;
   }

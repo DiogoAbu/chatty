@@ -12,6 +12,6 @@ interface Props {
   theme?: Theme;
 }
 
-const CrossFadeIcon: FC<Props> = CrossFadeIconPaper;
+const CrossFadeIcon = CrossFadeIconPaper as FC<Props>;
 
 export default CrossFadeIcon;

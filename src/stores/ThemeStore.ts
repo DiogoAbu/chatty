@@ -1,44 +1,74 @@
+import { Appearance } from 'react-native';
+
 import { action, observable, runInAction } from 'mobx';
+
+import { ColorSchemeCurrent, ColorSchemePreferred } from '!/types';
 
 import BaseStore from './BaseStore';
 
 export class ThemeStore extends BaseStore {
   @observable
-  isDarkMode = false;
+  colorSchemePreferred: ColorSchemePreferred = 'auto';
 
-  protected DB_KEY = 'ThemeStore';
+  @observable
+  colorSchemeCurrent: ColorSchemeCurrent = Appearance.getColorScheme() ?? 'dark';
+
+  protected databaseKey = 'ThemeStore';
 
   @action
-  toggleDarkMode() {
-    this.isDarkMode = !this.isDarkMode;
-    this.persist();
+  setColorSchemePreferred(colorScheme: ColorSchemePreferred): void {
+    this.colorSchemePreferred = colorScheme;
+
+    if (this.colorSchemePreferred !== 'auto') {
+      this.colorSchemeCurrent = this.colorSchemePreferred;
+    } else {
+      this.colorSchemeCurrent = Appearance.getColorScheme() ?? 'dark';
+    }
+
+    void this.persist();
   }
 
   @action
-  async hydrate() {
-    const data = await this.stores.generalStore.database.adapter.getLocal(this.DB_KEY);
+  setColorSchemeCurrent(colorScheme?: ColorSchemeCurrent): void {
+    if (this.colorSchemePreferred === 'auto' && colorScheme) {
+      this.colorSchemeCurrent = colorScheme;
+    }
+    void this.persist();
+  }
+
+  @action
+  async hydrate(): Promise<void> {
+    const data = await this.stores.generalStore.database.adapter.getLocal(this.databaseKey);
     if (!data) {
       return;
     }
 
-    const { isDarkMode } = JSON.parse(data);
+    const {
+      colorSchemePreferred,
+      colorSchemeCurrent,
+    }: {
+      colorSchemePreferred: ColorSchemePreferred;
+      colorSchemeCurrent: ColorSchemeCurrent;
+    } = JSON.parse(data);
 
     runInAction(() => {
-      this.isDarkMode = isDarkMode;
+      this.colorSchemeCurrent = colorSchemeCurrent;
+      this.setColorSchemePreferred(colorSchemePreferred);
     });
   }
 
-  async persist() {
+  async persist(): Promise<void> {
     const serializableObj = {
-      isDarkMode: this.isDarkMode,
+      colorSchemePreferred: this.colorSchemePreferred,
+      colorSchemeCurrent: this.colorSchemeCurrent,
     };
     await this.stores.generalStore.database.adapter.setLocal(
-      this.DB_KEY,
+      this.databaseKey,
       JSON.stringify(serializableObj),
     );
   }
 
-  async remove() {
-    await this.stores.generalStore.database.adapter.removeLocal(this.DB_KEY);
+  async remove(): Promise<void> {
+    await this.stores.generalStore.database.adapter.removeLocal(this.databaseKey);
   }
 }

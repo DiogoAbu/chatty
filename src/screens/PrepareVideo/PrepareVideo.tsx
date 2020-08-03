@@ -1,18 +1,21 @@
-import React, { FC, useEffect } from 'react';
-import { TextInput, View } from 'react-native';
+import React, { FC, useEffect, useState } from 'react';
+import { BackHandler, TextInput, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { Appbar, Avatar, Colors, IconButton } from 'react-native-paper';
+import { OnLoadData } from 'react-native-video';
 import { useDatabase } from '@nozbe/watermelondb/hooks';
 
 import VideoPlayer from '!/components/VideoPlayer';
+import useFocusEffect from '!/hooks/use-focus-effect';
 import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import RoomModel from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp, Tables } from '!/types';
+import transformUri from '!/utils/transform-uri';
 
 import styles from './styles';
 
@@ -22,16 +25,34 @@ interface Props {
 }
 
 const PrepareVideo: FC<Props> = ({ navigation, route }) => {
-  const { roomId, roomPicture, videoRecorded } = route.params;
+  const { roomId, roomPictureUri, popCount, initialMessage, videoRecorded, handleSaveMessage } = route.params;
 
   const database = useDatabase();
   const { authStore } = useStores();
   const { colors, dark, fonts } = useTheme();
   const { t } = useTranslation();
 
-  const message = useInput('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [video, setVideo] = useState(videoRecorded);
+
+  const message = useInput(initialMessage ?? '');
+
+  useEffect(() => {
+    console.log('video', video);
+  }, [video]);
+
+  const handleLoaded = usePress((data: OnLoadData) => {
+    setVideo((prev) => {
+      if (prev.width && prev.height) {
+        return prev;
+      }
+      return { ...prev, width: data.naturalSize.width, height: data.naturalSize.height };
+    });
+    setIsLoading(false);
+  });
 
   const handlePressBack = usePress(() => {
+    handleSaveMessage?.(message.value);
     requestAnimationFrame(() => {
       navigation.goBack();
     });
@@ -41,14 +62,14 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
     const roomDb = database.collections.get<RoomModel>(Tables.rooms);
     const room = await roomDb.find(roomId);
 
-    room.addMessage({
+    await room.addMessage({
       content: message.value.trim(),
-      senderId: authStore.user.id,
-      attachments: [{ ...videoRecorded, type: AttachmentTypes.video }],
+      sender: authStore.user,
+      attachments: [{ ...video, type: 'video' }],
     });
 
     // Chatting -> Camera -> Prepare
-    navigation.pop(2);
+    navigation.pop(popCount ?? 2);
   });
 
   const handleDeleteVideo = usePress(() => {
@@ -58,16 +79,31 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     navigation.setOptions({
       handlePressBack,
-      headerCenter: () => <Avatar.Image size={32} source={{ uri: roomPicture }} />,
-      headerRight: () => (
-        <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeleteVideo} />
+      headerCenter: () => (
+        <Avatar.Image
+          ImageComponent={FastImage}
+          size={32}
+          source={{ uri: transformUri(roomPictureUri, { width: 64 }) }}
+        />
       ),
+      headerRight: () => <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeleteVideo} />,
     } as HeaderOptions);
-  }, [handleDeleteVideo, handlePressBack, navigation, roomPicture]);
+  }, [handleDeleteVideo, handlePressBack, navigation, roomPictureUri]);
+
+  useFocusEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      handlePressBack();
+      return true;
+    });
+
+    return () => {
+      backHandler.remove();
+    };
+  }, [handlePressBack]);
 
   return (
     <View style={styles.container}>
-      <VideoPlayer video={videoRecorded} />
+      <VideoPlayer onLoaded={handleLoaded} video={video} />
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -87,7 +123,7 @@ const PrepareVideo: FC<Props> = ({ navigation, route }) => {
           {...message}
         />
 
-        <IconButton icon='send' onPress={handleSend} />
+        <IconButton disabled={isLoading} icon='send' onPress={handleSend} />
       </View>
     </View>
   );

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ActivityIndicator } from 'react-native-paper';
 
-const Loading: FC<{}> = () => {
+const Loading: FC<unknown> = () => {
   return (
     <View style={styles.container}>
       <ActivityIndicator />

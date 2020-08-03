@@ -7,7 +7,7 @@ export const to3 = {
   steps: [
     addColumns({
       table: Tables.users,
-      columns: [{ name: 'picture', type: 'string' }],
+      columns: [{ name: 'pictureUri', type: 'string' }],
     }),
   ],
 };

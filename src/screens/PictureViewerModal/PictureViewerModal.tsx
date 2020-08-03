@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import { BackHandler, StatusBar } from 'react-native';
 
 import ImageViewer from '!/components/ImageViewer';
@@ -27,10 +27,12 @@ const PictureViewerModal: FC<Props> = ({ navigation, route }) => {
     });
   });
 
-  navigation.setOptions({
-    title,
-    handlePressBack: skipStatusBar ? undefined : handlePressBack,
-  } as HeaderOptions);
+  useEffect(() => {
+    navigation.setOptions({
+      title,
+      handlePressBack: skipStatusBar ? undefined : handlePressBack,
+    } as HeaderOptions);
+  }, [handlePressBack, navigation, skipStatusBar, title]);
 
   useFocusEffect(() => {
     if (skipStatusBar) {

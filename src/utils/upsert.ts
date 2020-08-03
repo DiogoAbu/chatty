@@ -1,12 +1,12 @@
 import { Database, Model } from '@nozbe/watermelondb';
-import { Condition } from '@nozbe/watermelondb/QueryDescription';
+import { Clause } from '@nozbe/watermelondb/QueryDescription';
 
 import { Tables } from '!/types';
 
 export async function upsert<T extends Model>(
   database: Database,
   tableName: Tables,
-  idOrQuery: string | Condition[] | undefined,
+  idOrQuery: string | Clause[] | undefined,
   action?: any,
   recordUpdater?: ((record: T, creating: boolean) => void) | undefined,
 ): Promise<T> {
@@ -57,7 +57,7 @@ export async function upsert<T extends Model>(
 export async function prepareUpsert<T extends Model>(
   database: Database,
   tableName: Tables,
-  idOrQuery: string | Condition[] | undefined,
+  idOrQuery: string | Clause[] | undefined,
   recordUpdater?: ((record: T, creating: boolean) => void) | undefined,
 ): Promise<T> {
   const collection = database.collections.get<T>(tableName);

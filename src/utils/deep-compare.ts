@@ -1,37 +1,46 @@
 import { useRef } from 'react';
 
+function getValue(data: any): any {
+  if (typeof data?.getTime === 'function') {
+    return data.getTime();
+  }
+  return data;
+}
+
 function deepCompareEquals<T extends Record<string, any>>(
-  a: T[] | undefined,
-  b: T[] | undefined,
-  prop: string,
+  prev: T[] | null,
+  next: T[] | null,
+  props: string[],
 ): boolean {
-  if (!a && !b) {
+  if (!prev && !next) {
     return true;
   }
-  if (a && !b) {
+  if (prev && !next) {
     return false;
   }
-  if (!a && b) {
+  if (!prev && next) {
     return false;
   }
-  if (!a || !b) {
+  if (!prev || !next) {
     return false;
   }
-  if (a.length !== b.length) {
+  if (prev.length !== next.length) {
     return false;
   }
-  return a.some((value, index) => {
-    return value[prop] !== b[index][prop];
+  return props.some((p) => {
+    return prev.some((value, index) => {
+      return getValue(value[p]) !== getValue(next[index][p]);
+    });
   });
 }
 
-export default function deepCompare<T>(value: T[] | undefined, prop: string) {
+export default function deepCompare<T>(array: T[] | null, props: string[]): T[] | null {
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const ref = useRef<T[]>();
+  const prev = useRef<T[] | null>(null);
 
-  if (!deepCompareEquals<T>(value, ref.current, prop)) {
-    ref.current = value;
+  if (!deepCompareEquals<T>(prev.current, array, props)) {
+    prev.current = array;
   }
 
-  return ref.current;
+  return prev.current;
 }

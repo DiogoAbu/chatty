@@ -14,7 +14,6 @@ class __name__Model extends Model {
 
   static associations: Associations = {};
 
-  // @ts-ignore
   @field('name')
   name: string;
 }

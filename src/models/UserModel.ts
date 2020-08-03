@@ -1,12 +1,13 @@
 import UUIDGenerator from 'react-native-uuid-generator';
-import { Database, Model, Q, tableSchema } from '@nozbe/watermelondb';
-import { field, lazy } from '@nozbe/watermelondb/decorators';
+import { Database, Model, Q, Query, tableSchema } from '@nozbe/watermelondb';
+import { children, field, lazy } from '@nozbe/watermelondb/decorators';
 import { Associations } from '@nozbe/watermelondb/Model';
 import Bottleneck from 'bottleneck';
 
 import { DeepPartial, Tables } from '!/types';
 import { prepareUpsert, upsert } from '!/utils/upsert';
 
+import AttachmentModel from './AttachmentModel';
 import RoomModel from './RoomModel';
 
 const limiter = new Bottleneck({
@@ -17,50 +18,49 @@ class UserModel extends Model {
   static table = Tables.users;
 
   static associations: Associations = {
-    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'user_id' },
+    [Tables.roomMembers]: { type: 'has_many', foreignKey: 'userId' },
+    [Tables.attachments]: { type: 'has_many', foreignKey: 'userId' },
   };
 
-  // @ts-ignore
   @field('name')
   name: string;
 
-  // @ts-ignore
   @field('email')
   email: string;
 
-  // @ts-ignore
-  @field('picture')
-  picture: string;
+  @field('pictureUri')
+  pictureUri: string | null;
 
-  // @ts-ignore
   @field('role')
   role: string | null;
 
-  // @ts-ignore
-  @field('secret_key')
+  @field('secretKey')
   secretKey: string | null;
 
-  // @ts-ignore
-  @field('public_key')
+  @field('publicKey')
   publicKey: string | null;
 
-  // @ts-ignore
-  @field('is_following_me')
+  @field('derivedSalt')
+  derivedSalt: string | null;
+
+  @field('isFollowingMe')
   isFollowingMe: boolean | null;
 
-  // @ts-ignore
-  @field('is_followed_by_me')
+  @field('isFollowedByMe')
   isFollowedByMe: boolean | null;
 
   @lazy
   rooms = this.collections
     .get<RoomModel>(Tables.rooms)
-    .query(Q.on(Tables.roomMembers, 'user_id', this.id), Q.where('is_local_only', false));
+    .query(Q.on(Tables.roomMembers, 'userId', this.id), Q.where('isLocalOnly', false));
 
   @lazy
   roomsArchived = this.collections
     .get<RoomModel>(Tables.rooms)
-    .query(Q.on(Tables.roomMembers, 'user_id', this.id), Q.where('is_archived', true));
+    .query(Q.on(Tables.roomMembers, 'userId', this.id), Q.where('isArchived', true));
+
+  @children(Tables.attachments)
+  attachments: Query<AttachmentModel>;
 }
 
 export const userSchema = tableSchema({
@@ -68,16 +68,17 @@ export const userSchema = tableSchema({
   columns: [
     { name: 'name', type: 'string' },
     { name: 'email', type: 'string' },
-    { name: 'picture', type: 'string' },
+    { name: 'pictureUri', type: 'string', isOptional: true },
     { name: 'role', type: 'string', isOptional: true },
-    { name: 'secret_key', type: 'string', isOptional: true },
-    { name: 'public_key', type: 'string', isOptional: true },
-    { name: 'is_following_me', type: 'boolean', isOptional: true },
-    { name: 'is_followed_by_me', type: 'boolean', isOptional: true },
+    { name: 'secretKey', type: 'string', isOptional: true },
+    { name: 'publicKey', type: 'string', isOptional: true },
+    { name: 'derivedSalt', type: 'string', isOptional: true },
+    { name: 'isFollowingMe', type: 'boolean', isOptional: true },
+    { name: 'isFollowedByMe', type: 'boolean', isOptional: true },
   ],
 });
 
-export function userUpdater(changes: DeepPartial<UserModel>) {
+export function userUpdater(changes: DeepPartial<UserModel>): (record: UserModel) => void {
   return (record: UserModel) => {
     if (typeof changes.id !== 'undefined') {
       record._raw.id = changes.id;
@@ -88,8 +89,8 @@ export function userUpdater(changes: DeepPartial<UserModel>) {
     if (typeof changes.email !== 'undefined') {
       record.email = changes.email;
     }
-    if (typeof changes.picture !== 'undefined') {
-      record.picture = changes.picture;
+    if (typeof changes.pictureUri !== 'undefined') {
+      record.pictureUri = changes.pictureUri;
     }
     if (typeof changes.role !== 'undefined') {
       record.role = changes.role;
@@ -100,11 +101,20 @@ export function userUpdater(changes: DeepPartial<UserModel>) {
     if (typeof changes.publicKey !== 'undefined') {
       record.publicKey = changes.publicKey;
     }
+    if (typeof changes.derivedSalt !== 'undefined') {
+      record.derivedSalt = changes.derivedSalt;
+    }
     if (typeof changes.isFollowingMe !== 'undefined') {
       record.isFollowingMe = changes.isFollowingMe;
     }
     if (typeof changes.isFollowedByMe !== 'undefined') {
       record.isFollowedByMe = changes.isFollowedByMe;
+    }
+    if (typeof changes._raw?._status !== 'undefined') {
+      record._raw._status = changes._raw._status;
+    }
+    if (typeof changes._raw?._changed !== 'undefined') {
+      record._raw._changed = changes._raw._changed;
     }
   };
 }
@@ -112,27 +122,20 @@ export function userUpdater(changes: DeepPartial<UserModel>) {
 export async function upsertUser(
   database: Database,
   user: DeepPartial<UserModel>,
-  actionParent?: any,
-) {
+  actionParent?: unknown,
+): Promise<UserModel> {
   return upsert<UserModel>(database, Tables.users, user.id, actionParent, userUpdater(user));
 }
 
-export async function prepareUpsertUser(database: Database, user: DeepPartial<UserModel>) {
+export async function prepareUpsertUser(
+  database: Database,
+  user: DeepPartial<UserModel>,
+): Promise<UserModel> {
   return prepareUpsert<UserModel>(database, Tables.users, user.id, userUpdater(user));
 }
 
-export async function prepareUsersId(users: DeepPartial<UserModel>[], filter = true) {
-  if (!users) {
-    return [];
-  }
-  let withoutId = users;
-
-  if (filter) {
-    // Get only users that do not have ID, will return only users with new ID.
-    withoutId = withoutId.filter((e) => !e.id);
-  }
-
-  if (!withoutId.length) {
+export async function prepareUsers(users?: DeepPartial<UserModel>[]): Promise<DeepPartial<UserModel>[]> {
+  if (!users?.length) {
     return [];
   }
 
@@ -141,7 +144,7 @@ export async function prepareUsersId(users: DeepPartial<UserModel>[], filter = t
     return { ...user, id } as DeepPartial<UserModel>;
   });
 
-  return Promise.all(withoutId.map(wrapped));
+  return Promise.all(users.map(wrapped));
 }
 
 export default UserModel;

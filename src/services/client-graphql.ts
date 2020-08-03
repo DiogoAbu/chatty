@@ -13,7 +13,7 @@ import { fetchOptionsExchange } from '!/exchanges/fetch-options';
 
 const { NODE_ENV } = process.env;
 
-export default function createClient(getToken: () => any): Client {
+export default function createClient(getToken: () => Promise<string>): Client {
   // By using lazy, we delay the connection until it's required, so the connection params
   // will get the token only when it's available.
   // We ensure it's available be using the 'pause' attribute in the subscription hook.
@@ -22,27 +22,36 @@ export default function createClient(getToken: () => any): Client {
     {
       lazy: true,
       reconnect: true,
-      connectionParams: async () => ({
-        token: await getToken(),
-      }),
+      connectionParams: async () => {
+        const token = await getToken();
+        return {
+          authorization: token ? `Bearer ${token}` : '',
+        };
+      },
     },
     NODE_ENV === 'test' ? require('ws') : undefined,
   );
 
+  subsClient.onError((...args) => {
+    console.log('Subscription', ...args);
+  });
+
   const graphClient = createGraphQl({
     url: env.API_URL,
+    maskTypename: true,
     fetchOptions: {},
     exchanges: [
       dedupExchange,
       cacheExchange,
       fetchOptionsExchange(async (fetchOptions: RequestInit) => {
         const token = await getToken();
-        return Promise.resolve({
+        return {
           ...fetchOptions,
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...fetchOptions.headers,
+            authorization: token ? `Bearer ${token}` : '',
           },
-        });
+        };
       }),
       fetchExchange,
       subscriptionExchange({ forwardSubscription: (op) => subsClient.request(op) }),

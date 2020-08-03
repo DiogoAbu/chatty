@@ -24,15 +24,16 @@ import useDimensions from '!/hooks/use-dimensions';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import AttachmentModel from '!/models/AttachmentModel';
-import { DeepPartial } from '!/types';
+import useTranslation from '!/hooks/use-translation';
+import { AttachmentParam } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
 import getStatusBarColor from '!/utils/get-status-bar-color';
 
 type Orientations = 'LANDSCAPE' | 'PORTRAIT' | 'UNKNOWN' | 'PORTRAITUPSIDEDOWN';
 
 interface Props {
-  video: DeepPartial<AttachmentModel>;
+  video: AttachmentParam;
+  onLoaded?: (data: OnLoadData) => void;
   onShowHideOverlay?: (state: boolean) => void;
   onShowHideControl?: (state: boolean) => void;
   onShowHideStatusBar?: (state: boolean) => void;
@@ -40,6 +41,7 @@ interface Props {
 
 const VideoPlayer: FC<Props> = ({
   video,
+  onLoaded,
   onShowHideOverlay,
   onShowHideControl,
   onShowHideStatusBar,
@@ -47,11 +49,12 @@ const VideoPlayer: FC<Props> = ({
   const [winWidth, winHeight, isLandscape] = useDimensions('window');
   const navigation = useNavigation();
   const { colors, dark, mode, animation } = useTheme();
+  const { t } = useTranslation();
 
   const controlValue = useValue(1);
 
   const videoRef = useRef<Video | null>(null);
-  const showingControlTimer = useRef<NodeJS.Timeout | null>(null);
+  const showingControlTimer = useRef<number | null>(null);
   const initialOrientation = useRef<Orientations | null>(null);
 
   const [isReady, setIsReady] = useState(false);
@@ -63,7 +66,7 @@ const VideoPlayer: FC<Props> = ({
   const [playFromBeginning, setPlayFromBeginning] = useState(false);
 
   const animateControl = useCallback(
-    (toValue) => {
+    (toValue: number) => {
       timing(controlValue, {
         duration: animation.scale * 100,
         easing: Easing.linear,
@@ -129,12 +132,16 @@ const VideoPlayer: FC<Props> = ({
   }, []);
 
   const handlePlayError = useCallback(() => {
-    Alert.alert('', 'Video playblack failed', [{ onPress: () => navigation.goBack() }]);
-  }, [navigation]);
+    Alert.alert(t('title.oops'), t('alert.videoPlaybackFailed'), [{ onPress: () => navigation.goBack() }]);
+  }, [navigation, t]);
 
-  const handleLoaded = useCallback((data: OnLoadData) => {
-    setDuration(data.duration);
-  }, []);
+  const handleLoaded = useCallback(
+    (data: OnLoadData) => {
+      setDuration(data.duration);
+      onLoaded?.(data);
+    },
+    [onLoaded],
+  );
 
   const handleProgressChanged = useCallback(
     (data: OnProgressData) => {
@@ -181,12 +188,14 @@ const VideoPlayer: FC<Props> = ({
 
   useFocusEffect(() => {
     initialOrientation.current = Orientation.getInitialOrientation();
-    InteractionManager.runAfterInteractions(() => {
+
+    void InteractionManager.runAfterInteractions(() => {
       Orientation.unlockAllOrientations();
       StatusBar.setBackgroundColor('rgba(0,0,0,0.6)');
       StatusBar.setTranslucent(true);
       setIsReady(true);
     });
+
     return () => {
       StatusBar.setBackgroundColor(getStatusBarColor(4, colors, dark, mode));
       StatusBar.setTranslucent(false);
@@ -238,17 +247,14 @@ const VideoPlayer: FC<Props> = ({
         rate={1.0}
         ref={videoRef}
         resizeMode='contain'
-        source={{ uri: video.uri }}
+        source={{ uri: video.localUri! }}
         style={{ width, height, aspectRatio, backgroundColor: Colors.black }}
         volume={1.0}
       />
 
       <TouchableWithoutFeedback onPress={handlePressShowControl}>
         <View
-          style={[
-            { width, height, aspectRatio, backgroundColor: overlayColor },
-            styles.overlayContainer,
-          ]}
+          style={[{ width, height, aspectRatio, backgroundColor: overlayColor }, styles.overlayContainer]}
         >
           {isShowingOverlay || !isPlaying ? (
             <TouchableWithoutFeedback onPress={handlePressPlayOverlay}>
@@ -259,13 +265,11 @@ const VideoPlayer: FC<Props> = ({
       </TouchableWithoutFeedback>
 
       <Animated.View
-        style={
-          [
-            styles.controlContainer,
-            isLandscape && styles.controlContainerBottom,
-            { width, opacity: controlValue },
-          ] as any
-        }
+        style={[
+          styles.controlContainer,
+          isLandscape && styles.controlContainerBottom,
+          { width, opacity: controlValue },
+        ]}
       >
         <TouchableOpacity activeOpacity={0.3} onPress={handlePressPlay}>
           <Icon name={isPlaying ? 'pause-circle' : 'play-circle'} style={styles.playPauseIcon} />

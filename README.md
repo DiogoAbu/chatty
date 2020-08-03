@@ -22,7 +22,6 @@
       Server
     </a>
   </h3>
-  <img src="https://github.com/DiogoAbu/chatty/workflows/Build%20and%20Release/badge.svg?branch=master" />
 </div>
 
 <div align="center">
@@ -43,8 +42,10 @@
 * **Cross platform.** App runs on iOS and Android.
 * **Synchronized experience.** Always resume where you left off no matter what device.
 
+Here's a [5-Minute Breakdown](BREAKDOWN.md) of the app features and techs used.
+
 ## Development
-Want to contribute? Great, read [CONTRIBUTING.md](#) for details on our code of conduct.
+Want to contribute? Great, read [CONTRIBUTING.md](#) for details on our code of conduct. Take a look [here](ARCHITECTURE.md) for extra details.
 
 To start developing, follow these steps:
 
@@ -63,14 +64,13 @@ To start developing, follow these steps:
 - Push the current branch (`git push`).
 - Create a [Pull Request](https://github.com/DiogoAbu/chatty/compare) across forks.
 
-*On VS Code you can use the extension Conventional Commits (vscode-conventional-commits)*
+*To write commits on VS Code you can use the extension Conventional Commits (vscode-conventional-commits)*
 
 ### Running the app
 You can run the app with three different environments defined by the dotenv files.
 
-You will need to provide the keystore password to build it as a release variant:
-
-`yarn cross-env RELEASE_KEY_ALIAS=alias RELEASE_KEY_ALIAS_PASSWORD=alias_password RELEASE_KEY_PASSWORD=key_password yarn android-*`
+The keystore password and alias are required to build a release variant:
+`yarn cross-env RELEASE_KEY_ALIAS=alias RELEASE_KEY_PASSWORD=password yarn android-*`
 
 **Dev**
   - Will read the `.env` and run as a debug variant.
@@ -92,19 +92,25 @@ You will need to provide the keystore password to build it as a release variant:
 Kindly open an issue [here](https://github.com/DiogoAbu/chatty/issues/new/choose) name it and label it accordingly.
 
 ### Releases
-We use Github Actions to test, build, and release the app.
+We use Github Actions to test, build, and release the app. This is a breakdown of each [workflow](https://github.com/DiogoAbu/chatty/blob/master/.github/workflows).
 
-When a push happens on `master`, `beta`, or `maintenance branchs` it will trigger some [workflow](https://github.com/DiogoAbu/chatty/blob/master/.github/workflows)
-
-**Android workflow:**
-- Set up the environment (gradle, node).
+**Release workflow**
+- Triggered by pushs on `master`, `beta`, or `maintenance branchs`.
+- Set up the environment (node).
 - Run tests.
 - Analize commits to define next version.
 - Update version on package.json and on the native side.
 - Commit the changes.
-- Build APK.
-- Create a release with notes and the APK.
+- Publish a new tagged release with notes.
 
+**Android workflow**
+- Triggered when a release is published.
+- Set up the environment (gradle, node).
+- Get version from package.json.
+- Build APK.
+- Upload APK to release tagged with current version.
+
+### Notes
 **Associate tag with commit**
 ```bash
 git tag -d TAGNAME
@@ -112,9 +118,13 @@ git tag TAGNAME COMMIT_HASH
 git push origin :TAGNAME
 git push origin TAGNAME
 ```
+**Get file as a base64 string**
+```bash
+openssl base64 -A -in file.ext
+```
 
 ## Built with
-*Check the projects to know more*
+*Check out the projects to know more*
 
 * [Apollo GraphQL](https://www.apollographql.com) - The [server](https://github.com/DiogoAbu/chatty-server)
 * [React Native](https://facebook.github.io/react-native) - The [app](https://github.com/DiogoAbu/chatty)

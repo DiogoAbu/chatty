@@ -5,6 +5,7 @@ import AttachmentModel, { attachmentSchema } from './AttachmentModel';
 import CommentModel, { commentSchema } from './CommentModel';
 import MessageModel, { messageSchema } from './MessageModel';
 import PostModel, { postSchema } from './PostModel';
+import ReadReceiptModel, { readReceiptSchema } from './ReadReceiptModel';
 import RoomModel, { roomSchema } from './RoomModel';
 import UserModel, { userSchema } from './UserModel';
 
@@ -17,6 +18,7 @@ export const schema = appSchema({
     commentSchema,
     messageSchema,
     postSchema,
+    readReceiptSchema,
     roomSchema,
     userSchema,
 
@@ -30,6 +32,7 @@ export const modelClasses = [
   CommentModel,
   MessageModel,
   PostModel,
+  ReadReceiptModel,
   RoomModel,
   UserModel,
 

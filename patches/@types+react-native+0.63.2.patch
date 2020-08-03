@@ -1,0 +1,12 @@
+diff --git a/node_modules/@types/react-native/index.d.ts b/node_modules/@types/react-native/index.d.ts
+index 5a65d89..37aa707 100644
+--- a/node_modules/@types/react-native/index.d.ts
++++ b/node_modules/@types/react-native/index.d.ts
+@@ -2179,6 +2179,7 @@ export interface AccessibilityProps extends AccessibilityPropsAndroid, Accessibi
+      * Accessibility State tells a person using either VoiceOver on iOS or TalkBack on Android the state of the element currently focused on.
+      */
+     accessibilityState?: AccessibilityState;
++    accessibilityStates?: any // fix for react-native-paper
+     /**
+      * An accessibility hint helps users understand what will happen when they perform an action on the accessibility element when that result is not obvious from the accessibility label.
+      */

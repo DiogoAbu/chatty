@@ -1,19 +1,23 @@
-import React, { FC, MutableRefObject, useCallback, useEffect } from 'react';
-import { Alert, AlertButton, TextInput, View } from 'react-native';
+import React, { FC, memo, MutableRefObject, useCallback, useEffect, useState } from 'react';
+import { Alert, AlertButton, InteractionManager, Keyboard, TextInput, View } from 'react-native';
 
 import DocumentPicker, { DocumentPickerResponse } from 'react-native-document-picker';
+import FileSystem from 'react-native-fs';
 import { IconButton, Surface } from 'react-native-paper';
+import CameraRoll from '@react-native-community/cameraroll';
 import { useNavigation } from '@react-navigation/native';
 import Bottleneck from 'bottleneck';
 
+import { albuns, documentsPath, imagesPath, videosPath } from '!/config';
 import useInput from '!/hooks/use-input';
+import useMethod from '!/hooks/use-method';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import RoomModel from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { MainNavigationProp } from '!/types';
+import notEmpty from '!/utils/not-empty';
 
 import { PicturesTaken } from '../Camera/types';
 
@@ -26,7 +30,7 @@ const limiter = new Bottleneck({
 
 interface Props {
   room: RoomModel;
-  picture: string;
+  pictureUri: string;
   title: string;
   shouldBlurRemoveRoom: MutableRefObject<boolean>;
   attachmentPickerRef: MutableRefObject<AttachmentPickerType | null>;
@@ -35,34 +39,41 @@ interface Props {
 const iconSize = 24;
 const buttonSize = (24 + 6) * 1.5;
 
-const MessageInput: FC<Props> = ({
-  room,
-  picture,
-  title,
-  shouldBlurRemoveRoom,
-  attachmentPickerRef,
-}) => {
+const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom, attachmentPickerRef }) => {
   const navigation = useNavigation<MainNavigationProp<'Chatting'>>();
-  const { authStore } = useStores();
+  const { authStore, syncStore } = useStores();
   const { colors, dark, roundness, fonts } = useTheme();
   const { t } = useTranslation();
 
   const message = useInput('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const handleSendMessage = usePress(() => {
     attachmentPickerRef.current?.hide();
+    if (sendingMessage) {
+      return;
+    }
+    setSendingMessage(true);
 
     // Sanitize message
-    const content = message.value.trim();
+    const content = `${message.value.trim()}`;
     if (!content) {
       return;
     }
 
-    // Create message
-    room.addMessage({ content, senderId: authStore.user.id });
-
-    // Clear input
+    // Clear input for another message
     message.onChangeText('');
+
+    void InteractionManager.runAfterInteractions(async () => {
+      try {
+        await room.addMessage({ content, sender: authStore.user });
+        void syncStore.sync();
+      } catch (err) {
+        Alert.alert(t('title.oops'));
+      } finally {
+        setSendingMessage(false);
+      }
+    });
   });
 
   const handleSaveMessage = useCallback(
@@ -71,6 +82,13 @@ const MessageInput: FC<Props> = ({
     },
     [message],
   );
+
+  const handleOpenAttachmentPicker = usePress(() => {
+    Keyboard.dismiss();
+    requestAnimationFrame(() => {
+      attachmentPickerRef.current?.toggle();
+    });
+  });
 
   const handleDismissAttachmentPicker = usePress(() => {
     attachmentPickerRef.current?.hide();
@@ -81,117 +99,194 @@ const MessageInput: FC<Props> = ({
 
     shouldBlurRemoveRoom.current = false;
     requestAnimationFrame(() => {
-      navigation.navigate('Camera', { roomId: room.id, roomTitle: title, roomPicture: picture });
-    });
-  });
-
-  const handleOpenAttachmentPicker = usePress(() => {
-    requestAnimationFrame(() => {
-      attachmentPickerRef.current?.toggle();
+      navigation.navigate('Camera', {
+        initialCameraType: 'back',
+        roomId: room.id,
+        roomTitle: title,
+        roomPictureUri: pictureUri,
+      });
     });
   });
 
   const addMessagesWithDocs = useCallback(
-    async (docs: (false | DocumentPickerResponse)[]) => {
-      const wrapped = limiter.wrap(async (file: false | DocumentPickerResponse) => {
+    async (docs: (false | { filename: string; uri: string })[]) => {
+      const wrapped = limiter.wrap(async (file: false | { filename: string; uri: string }) => {
         if (file) {
           // Create one message for each document
           await room.addMessage({
             content: '',
-            senderId: authStore.user.id,
-            attachments: [{ uri: file.uri, type: AttachmentTypes.document }],
+            sender: authStore.user,
+            attachments: [
+              {
+                filename: file.filename,
+                localUri: file.uri,
+                type: 'document',
+              },
+            ],
           });
         }
       });
 
       await Promise.all(docs.map(wrapped));
     },
-    [authStore.user.id, room],
+    [authStore.user, room],
   );
+
+  const goToPreparePictures = useMethod((files: (false | { filename: string; uri: string })[]) => {
+    // Prepare images
+    const images = files
+      .map<PicturesTaken | null>((file) => {
+        if (file) {
+          return {
+            filename: file.filename,
+            localUri: file.uri,
+            type: 'image',
+            isSelected: true,
+          };
+        }
+        return null;
+      })
+      .filter(notEmpty);
+
+    requestAnimationFrame(() => {
+      navigation.navigate('PreparePicture', {
+        roomId: room.id,
+        roomTitle: title,
+        roomPictureUri: pictureUri,
+        popCount: 1,
+        initialMessage: message.value,
+        picturesTaken: images,
+        handleSaveMessage,
+      });
+    });
+  });
+
+  const goToPrepareVideo = useMethod((files: (false | { filename: string; uri: string })[]) => {
+    // Prepare video
+    const video = files[0];
+
+    if (!video) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      navigation.navigate('PrepareVideo', {
+        roomId: room.id,
+        roomTitle: title,
+        roomPictureUri: pictureUri,
+        popCount: 1,
+        initialMessage: message.value,
+        videoRecorded: video,
+        handleSaveMessage,
+      });
+    });
+  });
 
   useEffect(() => {
     attachmentPickerRef.current?.onPress(async (type) => {
       shouldBlurRemoveRoom.current = false;
       try {
-        const filesChosen = await DocumentPicker.pickMultiple({
-          type:
-            type === AttachmentTypes.image
-              ? [DocumentPicker.types.images]
-              : [DocumentPicker.types.allFiles],
+        let filesChosen: DocumentPickerResponse[];
+
+        if (type === 'video') {
+          const fileChosen = await DocumentPicker.pick({
+            type: [DocumentPicker.types.video],
+          });
+          filesChosen = [fileChosen];
+        } else {
+          filesChosen = await DocumentPicker.pickMultiple({
+            type: type === 'image' ? [DocumentPicker.types.images] : [DocumentPicker.types.allFiles],
+          });
+        }
+
+        // Try to access the file
+        const checkFiles = limiter.wrap(async (file: DocumentPickerResponse) => {
+          try {
+            // Get image name
+            const fileFetch = await fetch(file.uri);
+            const fileBlob = (await fileFetch.blob()) as any;
+
+            // Prepare destination
+            let destPath = documentsPath;
+            if (type === 'image') {
+              destPath = imagesPath;
+            } else if (type === 'video') {
+              destPath = videosPath;
+            }
+            await FileSystem.mkdir(destPath, { NSURLIsExcludedFromBackupKey: true });
+
+            // Copy file
+            const filename: string = fileBlob._data.name;
+
+            const finalPath = `${destPath}/${filename}`;
+            await FileSystem.copyFile(file.uri, finalPath);
+
+            // Save on gallery
+            let uri = finalPath;
+            if (type === 'image') {
+              uri = await CameraRoll.save(finalPath, { type: 'photo', album: albuns.images });
+            } else if (type === 'video') {
+              uri = await CameraRoll.save(finalPath, { type: 'video', album: albuns.videos });
+            }
+
+            return { filename, uri };
+          } catch (err) {
+            return false;
+          }
         });
 
-        // Prepare documents
-        if (type === AttachmentTypes.document) {
-          // Try to access the file
-          const checkFiles = limiter.wrap(async (file: DocumentPickerResponse) => {
-            try {
-              await fetch(file.uri);
-              return file;
-            } catch (err) {
-              return false;
-            }
-          });
+        const checkedFiles = await Promise.all(filesChosen.map(checkFiles));
 
-          const checkedFiles = await Promise.all(filesChosen.map(checkFiles));
-
-          // All files are valid
-          if (!checkedFiles.some((e) => e === false)) {
+        // All files are valid
+        if (!checkedFiles.some((e) => e === false)) {
+          if (type === 'document') {
             await addMessagesWithDocs(checkedFiles);
-            return;
+          } else if (type === 'image') {
+            goToPreparePictures(checkedFiles);
+          } else if (type === 'video') {
+            goToPrepareVideo(checkedFiles);
           }
-
-          // Let the user decide if it`s gonna send only the valid files
-          const anyValid = checkedFiles.some((e) => e !== false);
-
-          let alertMessage =
-            checkedFiles.length === 1
-              ? t('alert.oneFileNotFound')
-              : anyValid
-              ? t('alert.someFilesNotFound')
-              : t('alert.noFilesFound');
-
-          alertMessage += '.';
-
-          alertMessage += '\n' + t('alert.maybeFileIsShortcut') + '.';
-
-          alertMessage += anyValid ? '\n\n' + t('alert.sendValidFiles?') : '';
-
-          const buttons: AlertButton[] = [];
-
-          buttons.push({
-            style: 'cancel',
-            text: t('label.return'),
-          });
-
-          if (anyValid) {
-            buttons.push({
-              onPress: async () => addMessagesWithDocs(checkedFiles),
-            });
-          }
-
-          Alert.alert(t('title.oops'), alertMessage, buttons, { cancelable: true });
-
           return;
         }
 
-        // Prepare images
-        const images: PicturesTaken[] = filesChosen.map((file) => ({
-          uri: file.uri,
-          type: AttachmentTypes.image,
-          isSelected: true,
-        }));
+        // Some files are valid
+        const anyValid = checkedFiles.some((e) => e !== false);
 
-        requestAnimationFrame(() => {
-          navigation.navigate('PreparePicture', {
-            roomId: room.id,
-            roomTitle: title,
-            roomPicture: picture,
-            popCount: 1,
-            initialMessage: message.value,
-            picturesTaken: images,
-            handleSaveMessage,
-          });
+        let alertMessage =
+          checkedFiles.length === 1
+            ? t('alert.oneFileNotFound')
+            : anyValid
+            ? t('alert.someFilesNotFound')
+            : t('alert.noFilesFound');
+
+        alertMessage += '.';
+        alertMessage += `\n${t('alert.maybeFileIsShortcut')}.`;
+        alertMessage += anyValid ? `\n\n${t('alert.sendValidFiles?')}` : '';
+
+        const buttons: AlertButton[] = [];
+
+        buttons.push({
+          style: 'cancel',
+          text: t('label.return'),
         });
+
+        // Ask if the user wants to send only the valid files
+        if (anyValid) {
+          buttons.push({
+            onPress: async () => {
+              if (type === 'document') {
+                await addMessagesWithDocs(checkedFiles);
+              } else if (type === 'image') {
+                goToPreparePictures(checkedFiles);
+              } else if (type === 'video') {
+                goToPrepareVideo(checkedFiles);
+              }
+            },
+          });
+        }
+
+        Alert.alert(t('title.oops'), alertMessage, buttons, { cancelable: true });
+        return;
       } catch (err) {
         if (DocumentPicker.isCancel(err)) {
           // User cancelled the picker, exit any dialogs or menus and move on
@@ -204,10 +299,12 @@ const MessageInput: FC<Props> = ({
     addMessagesWithDocs,
     attachmentPickerRef,
     authStore.user.id,
+    goToPreparePictures,
+    goToPrepareVideo,
     handleSaveMessage,
     message.value,
     navigation,
-    picture,
+    pictureUri,
     room,
     shouldBlurRemoveRoom,
     t,
@@ -256,4 +353,4 @@ const MessageInput: FC<Props> = ({
   );
 };
 
-export default React.memo(MessageInput);
+export default memo(MessageInput);

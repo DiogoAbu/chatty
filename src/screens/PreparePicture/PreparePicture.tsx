@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from 'react';
-import { BackHandler, StatusBar, TextInput, View } from 'react-native';
+import { BackHandler, ListRenderItemInfo, StatusBar, TextInput, View } from 'react-native';
 
+import FastImage from 'react-native-fast-image';
 import { FlatList } from 'react-native-gesture-handler';
 import { Appbar, Avatar, Colors, IconButton } from 'react-native-paper';
 import Animated, {
@@ -24,12 +25,12 @@ import useInput from '!/hooks/use-input';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
-import { AttachmentTypes } from '!/models/AttachmentModel';
 import RoomModel from '!/models/RoomModel';
 import { useStores } from '!/stores';
 import { HeaderOptions, MainNavigationProp, MainRouteProp, Tables } from '!/types';
 import getLocalImageDimensions from '!/utils/get-local-image-dimensions';
 import getStatusBarColor from '!/utils/get-status-bar-color';
+import transformUri from '!/utils/transform-uri';
 
 import { PicturesTaken } from '../Camera/types';
 
@@ -52,7 +53,7 @@ interface Props {
 const PreparePicture: FC<Props> = ({ navigation, route }) => {
   const {
     roomId,
-    roomPicture,
+    roomPictureUri,
     popCount,
     skipStatusBar,
     initialMessage,
@@ -68,6 +69,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
   const { colors, dark, fonts, mode } = useTheme();
   const { t } = useTranslation();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [pictures, setPictures] = useState<PicturesTaken[]>([]);
   const message = useInput(initialMessage ?? '');
 
@@ -128,10 +130,10 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
     const roomDb = database.collections.get<RoomModel>(Tables.rooms);
     const room = await roomDb.find(roomId);
 
-    room.addMessage({
+    await room.addMessage({
       content: message.value.trim(),
-      senderId: authStore.user.id,
-      attachments: pictures.map((e) => ({ ...e, type: AttachmentTypes.image })),
+      sender: authStore.user,
+      attachments: pictures.map((e) => ({ ...e, type: 'image' })),
     });
 
     // Chatting -> Camera -> Prepare
@@ -141,12 +143,16 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     navigation.setOptions({
       handlePressBack,
-      headerCenter: () => <Avatar.Image size={32} source={{ uri: roomPicture }} />,
-      headerRight: () => (
-        <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeletePicture} />
+      headerCenter: () => (
+        <Avatar.Image
+          ImageComponent={FastImage}
+          size={32}
+          source={{ uri: transformUri(roomPictureUri, { width: 64 }) }}
+        />
       ),
+      headerRight: () => <Appbar.Action color={Colors.white} icon='delete' onPress={handleDeletePicture} />,
     } as HeaderOptions);
-  }, [handleDeletePicture, handlePressBack, navigation, roomPicture]);
+  }, [handleDeletePicture, handlePressBack, navigation, roomPictureUri]);
 
   useFocusEffect(() => {
     if (!skipStatusBar) {
@@ -167,7 +173,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
   }, [handlePressBack, skipStatusBar]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       // Prepare images
       const wrapped = limiter.wrap(
         async (pic: PicturesTaken): Promise<PicturesTaken> => {
@@ -175,7 +181,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
             return pic;
           }
 
-          const dimensions = await getLocalImageDimensions(pic.uri!);
+          const dimensions = await getLocalImageDimensions(pic.localUri!);
           return { ...pic, ...dimensions };
         },
       );
@@ -185,13 +191,14 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
           .filter((each, index, arr) => {
             // Is selected and uri is not already present
             return (
-              each.isSelected && arr.findIndex((e, i) => e.uri === each.uri && i !== index) === -1
+              each.isSelected && arr.findIndex((e, i) => e.localUri === each.localUri && i !== index) === -1
             );
           })
           .map(wrapped),
       );
 
       setPictures(images);
+      setIsLoading(false);
     })();
   }, [picturesTaken]);
 
@@ -209,20 +216,20 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
       <FlatListAnim
         contentContainerStyle={{ width: pictures.length ? undefined : winWidth }}
         data={pictures}
-        getItemLayout={(_, index) => ({
+        getItemLayout={(_: PicturesTaken, index: number) => ({
           length: winWidth,
           offset: winWidth * index,
           index,
         })}
         horizontal
         initialNumToRender={1}
-        keyExtractor={(item) => item.uri!}
+        keyExtractor={(item: PicturesTaken) => item.localUri!}
         ListEmptyComponent={Loading}
         onScroll={event([{ nativeEvent: { contentOffset: { x: scrollAnim } } }])}
         pagingEnabled
         ref={listRef}
         removeClippedSubviews
-        renderItem={({ item }) => <ImageViewer image={item} />}
+        renderItem={({ item }: ListRenderItemInfo<PicturesTaken>) => <ImageViewer image={item} />}
         scrollEventThrottle={16}
         showsHorizontalScrollIndicator={false}
       />
@@ -235,10 +242,9 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
           offset: DOTS_SIZE + DOTS_PADDING * 2 * index,
           index,
         })}
-        keyExtractor={(item) => item.uri! + 'dot'}
-        renderItem={({ item, index }) => (
+        keyExtractor={(item) => item.localUri! + 'dot'}
+        renderItem={({ index }) => (
           <Animated.View
-            key={item.uri}
             style={{
               opacity: interpolate(dotPosition, {
                 inputRange: [index - 1, index, index + 1],
@@ -257,17 +263,17 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
       />
 
       <View style={styles.inputContainer}>
-        <IconButton icon='image-plus' onPress={handleMakeAlbumAndBack} />
+        <IconButton color={Colors.white} icon='image-plus' onPress={handleMakeAlbumAndBack} />
 
         <TextInput
           keyboardAppearance={dark ? 'dark' : 'light'}
           multiline
           placeholder={t('messageInput.placeholder')}
-          placeholderTextColor={colors.placeholder}
+          placeholderTextColor={Colors.grey500}
           selectionColor={colors.primary}
           style={[
             {
-              color: colors.text,
+              color: Colors.white,
               ...fonts.regular,
             },
             styles.inputText,
@@ -276,7 +282,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
           {...message}
         />
 
-        <IconButton icon='send' onPress={handleSend} />
+        <IconButton color={Colors.white} disabled={isLoading} icon='send' onPress={handleSend} />
       </View>
     </View>
   );

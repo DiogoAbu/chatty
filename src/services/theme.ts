@@ -46,10 +46,10 @@ const lightTheme: Theme = {
     statusBar: '#7c80ee',
     statusBarText: 'light-content',
 
-    get card() {
+    get card(): string {
       return this.background;
     },
-    get border() {
+    get border(): string {
       return this.background;
     },
   },
@@ -70,17 +70,17 @@ const darkTheme: Theme = {
     background: '#121212',
     primary: '#7c80ee',
     accent: '#f79393',
-    text: '#dedede',
-    textOnPrimary: '#dedede',
+    text: '#ded',
+    textOnPrimary: '#ded',
     textOnAccent: '#fff',
 
     statusBar: '#121212',
     statusBarText: 'light-content',
 
-    get card() {
+    get card(): string {
       return this.background;
     },
-    get border() {
+    get border(): string {
       return this.background;
     },
   },

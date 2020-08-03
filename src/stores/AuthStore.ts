@@ -1,6 +1,7 @@
 import { action, observable, runInAction } from 'mobx';
 
-import UserModel, { upsertUser } from '!/models/UserModel';
+import UserModel, { userUpdater } from '!/models/UserModel';
+import { deriveKeyPair, derivesKeyWithPassword, generateSaltForKeyDerivation } from '!/services/encryption';
 import { DeepPartial, Tables } from '!/types';
 
 import BaseStore from './BaseStore';
@@ -11,72 +12,115 @@ export class AuthStore extends BaseStore {
   @observable
   token = '';
 
-  protected DB_KEY = 'AuthStore';
+  deviceToken = '';
+
+  protected databaseKey = 'AuthStore';
 
   @action
-  async signIn(user: DeepPartial<UserModel>, token: string) {
-    const { database } = this.stores.generalStore;
+  setDeviceToken(deviceToken: string): void {
+    this.deviceToken = deviceToken;
+  }
 
-    const userCreated = await upsertUser(database, user);
+  @action
+  async signIn(user: DeepPartial<UserModel>, token: string, password: string): Promise<void> {
+    const {
+      generalStore: { database },
+    } = this.stores;
+
+    // Using the password and a salt to derive a key that will be used to derive the pair of keys
+    const derivedSalt = user.derivedSalt || (await generateSaltForKeyDerivation());
+
+    const pass = password + user.id!;
+    const derivedKey = await derivesKeyWithPassword(pass, derivedSalt);
+
+    const { secretKey, publicKey } = await deriveKeyPair(derivedKey);
+
+    const userData: DeepPartial<UserModel> = {
+      ...user,
+      secretKey,
+      publicKey,
+      derivedSalt,
+      _raw: { _changed: 'publicKey,derivedSalt', _status: 'updated' },
+    };
+
+    const userCreated = await database.action<UserModel>(async () => {
+      await database.unsafeResetDatabase();
+      return database.collections.get<UserModel>(Tables.users).create(userUpdater(userData));
+    });
 
     runInAction(() => {
       this.user = userCreated;
       this.token = token;
-      this.persist();
+      void this.persist();
     });
   }
 
   @action
-  async signOut() {
+  async signOut(): Promise<void> {
     await this.remove();
   }
 
   @action
-  async hydrate() {
+  async hydrate(): Promise<void> {
     const { database } = this.stores.generalStore;
 
-    const data = await database.adapter.getLocal(this.DB_KEY);
+    const data = await database.adapter.getLocal(this.databaseKey);
     if (!data) {
       return;
     }
 
-    const { userId, token } = JSON.parse(data);
-    const user = await database.collections.get<UserModel>(Tables.users).find(userId);
+    try {
+      const { userId, token, deviceToken } = JSON.parse(data) as {
+        userId: string;
+        token: string;
+        deviceToken: string;
+      };
+      const user = await database.collections.get<UserModel>(Tables.users).find(userId);
 
-    runInAction(() => {
-      this.user = user;
-      this.token = token;
-    });
+      runInAction(() => {
+        this.user = user;
+        this.token = token;
+        this.deviceToken = deviceToken;
+      });
+    } catch (err) {
+      //
+    }
   }
 
-  async persist() {
+  async persist(): Promise<void> {
     const serializableObj = {
       userId: this.user?.id,
       token: this.token,
+      deviceToken: this.deviceToken,
     };
     await this.stores.generalStore.database.adapter.setLocal(
-      this.DB_KEY,
+      this.databaseKey,
       JSON.stringify(serializableObj),
     );
   }
 
   @action
-  async remove() {
+  async remove(): Promise<void> {
     runInAction(() => {
-      this.user = undefined as any;
+      this.user = (undefined as unknown) as UserModel;
       this.token = '';
+      this.deviceToken = '';
     });
-    await this.stores.generalStore.database.adapter.removeLocal(this.DB_KEY);
+    await this.stores.generalStore.database.adapter.removeLocal(this.databaseKey);
   }
 
   // Get token directly from the database local storage.
-  forceGetToken = async () => {
-    const data = await this.stores.generalStore.database.adapter.getLocal(this.DB_KEY);
-    if (!data) {
+  forceGetToken = async (): Promise<string> => {
+    try {
+      const data = await this.stores.generalStore.database.adapter.getLocal(this.databaseKey);
+      if (!data) {
+        return '';
+      }
+
+      const { token } = JSON.parse(data) as { userId: string; token: string };
+      return token;
+    } catch {
       return '';
     }
-
-    const { token } = JSON.parse(data);
-    return token;
   };
 }

@@ -1,14 +1,17 @@
 import { MaterialTopTabNavigationProp } from '@react-navigation/material-top-tabs';
 import { CompositeNavigationProp, RouteProp as RoutePropNative } from '@react-navigation/native';
 import { StackNavigationOptions, StackNavigationProp } from '@react-navigation/stack';
-import { Observable as ObservableRxJs } from 'rxjs/Observable';
+import { DurationInputArg1, DurationInputArg2 } from 'moment';
 
-import AttachmentModel from './models/AttachmentModel';
+import { User } from './generated/graphql';
+import AttachmentModel, { AttachmentType } from './models/AttachmentModel';
 import { PicturesTaken, VideoRecorded } from './screens/Camera/types';
 
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+export type DeepRequired<T> = { [P in keyof T]-?: DeepRequired<T[P]> };
 
-export type Observable<T> = ObservableRxJs<T>;
+export type ColorSchemePreferred = 'light' | 'dark' | 'auto';
+export type ColorSchemeCurrent = 'light' | 'dark';
 
 // Table names
 export enum Tables {
@@ -16,9 +19,10 @@ export enum Tables {
   comments = 'comments',
   messages = 'messages',
   posts = 'posts',
-  roomMembers = 'room_members',
+  roomMembers = 'roomMembers',
   rooms = 'rooms',
   users = 'users',
+  readReceipts = 'readReceipts',
 }
 
 export type RootStackParams = {
@@ -26,21 +30,25 @@ export type RootStackParams = {
   RoomInfoModal: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
     friendId: string;
   };
   PictureScrollerModal: {
     title: string;
-    attachments: DeepPartial<AttachmentModel>[];
+    attachments: AttachmentParam[];
   };
   PictureViewerModal: {
     title: string;
-    attachment: DeepPartial<AttachmentModel>;
+    attachment: AttachmentParam;
     skipStatusBar?: boolean;
   };
   VideoPlayerModal: {
     title: string;
-    attachment: DeepPartial<AttachmentModel>;
+    attachment: AttachmentParam;
+  };
+  AttachmentPickerModal: {
+    callbackScreen: keyof (MainStackParams & RootStackParams);
+    types?: Array<AttachmentType | 'camera'>;
   };
 };
 
@@ -52,22 +60,36 @@ export type MainStackParams = {
   Chatting: {
     roomId: string;
   };
-  Settings: undefined;
+  Settings?: {
+    reload?: boolean;
+  };
   FindFriends: undefined;
   CreateGroup: {
-    members: any[];
+    id?: string;
+    name?: string;
+    pictureUri?: string;
+    createdAt?: number;
+    members: User[];
+    attachmentType?: AttachmentType | 'camera';
+    picturesTaken?: PicturesTaken[];
   };
   ChatsArchived: undefined;
 
   Camera: {
-    roomId: string;
-    roomTitle: string;
-    roomPicture: string;
+    screenNameAfterPicture?: keyof (MainStackParams & RootStackParams);
+    screenNameAfterVideo?: keyof (MainStackParams & RootStackParams);
+    disableTakePicture?: boolean;
+    disableRecordVideo?: boolean;
+    initialCameraType?: 'front' | 'back';
+    showCameraMask?: boolean;
+    roomId?: string;
+    roomTitle?: string;
+    roomPictureUri?: string;
   };
   PreparePicture: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
     popCount?: number;
     skipStatusBar?: boolean;
 
@@ -81,14 +103,29 @@ export type MainStackParams = {
   PrepareVideo: {
     roomId: string;
     roomTitle: string;
-    roomPicture: string;
+    roomPictureUri: string;
+    popCount?: number;
 
+    initialMessage?: string;
     videoRecorded: VideoRecorded;
+
+    handleSaveMessage?: (message: string) => void;
   };
 
+  RoomMedias: {
+    roomId: string;
+    title: string;
+  };
+
+  Welcome: undefined;
   SignIn: undefined;
   ForgotPass: undefined;
   ChangePass: undefined;
+  CreateProfile?: {
+    isEditing?: boolean;
+    attachmentType?: AttachmentType | 'camera';
+    picturesTaken?: PicturesTaken[];
+  };
 };
 
 // Tab screens with params
@@ -115,9 +152,10 @@ export type MainNavigationProp<
 > = StackNavigationProp<MainStackParams & RootStackParams, RouteName>;
 
 // Route prop for Main Stack screens
-export type MainRouteProp<
-  RouteName extends keyof (MainStackParams & RootStackParams)
-> = RoutePropNative<MainStackParams & RootStackParams, RouteName>;
+export type MainRouteProp<RouteName extends keyof (MainStackParams & RootStackParams)> = RoutePropNative<
+  MainStackParams & RootStackParams,
+  RouteName
+>;
 
 // Navigation prop for Tab screens inside Stack screens
 export type HomeTabNavigationProp<RouteName extends keyof HomeTabParams> = CompositeNavigationProp<
@@ -139,6 +177,7 @@ export interface HeaderOptions extends StackNavigationOptions {
   subtitle?: string;
   handlePressBack?: () => void;
   headerCenter?: (props: StackHeaderRightProps) => React.ReactNode;
+  handlePressCenter?: () => void;
   skipInset?: boolean;
 }
 
@@ -146,3 +185,58 @@ export interface HeaderOptions extends StackNavigationOptions {
 export type StackHeaderRightProps = {
   tintColor?: string;
 };
+
+export type AttachmentParam = Pick<
+  DeepPartial<AttachmentModel>,
+  'id' | 'localUri' | 'remoteUri' | 'cipherUri' | 'filename' | 'type' | 'width' | 'height'
+>;
+
+export type MuteUntilOption = {
+  key: string;
+  value: [DurationInputArg1, DurationInputArg2];
+};
+
+// Cloudinary response
+/* eslint-disable @typescript-eslint/naming-convention */
+export interface MediaUploaded {
+  access_mode: string;
+  asset_id: string;
+  bytes: number;
+  created_at: string;
+  etag: string;
+  existing: boolean;
+  format: string;
+  height: number;
+  info: MediaUploadedInfo;
+  original_filename: string;
+  placeholder: boolean;
+  public_id: string;
+  resource_type: string;
+  secure_url: string;
+  signature: string;
+  tags: string[];
+  type: string;
+  url: string;
+  version_id: string;
+  version: string;
+  width: number;
+}
+
+export interface MediaUploadedInfo {
+  categorization: MediaUploadedCategorization;
+}
+
+export interface MediaUploadedCategorization {
+  google_tagging: GoogleTagging;
+}
+
+export interface GoogleTagging {
+  data: GoogleTaggingData[];
+  status: string;
+}
+
+export interface GoogleTaggingData {
+  confidence: number;
+  tag: string;
+}
+/* eslint-enable @typescript-eslint/naming-convention */

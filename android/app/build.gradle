@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
+apply plugin: "com.google.gms.google-services"
 apply plugin: "kotlin-android"
-apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+apply from: project(":react-native-config").projectDir.getPath() + "/dotenv.gradle"
 
 import com.android.build.OutputFile
 
@@ -22,7 +23,7 @@ import com.android.build.OutputFile
  *   // default. Can be overridden with ENTRY_FILE environment variable.
  *   entryFile: "index.android.js",
  *
- *   // https://facebook.github.io/react-native/docs/performance#enable-the-ram-format
+ *   // https://reactnative.dev/docs/performance#enable-the-ram-format
  *   bundleCommand: "ram-bundle",
  *
  *   // whether to bundle JS and assets in debug mode
@@ -34,8 +35,8 @@ import com.android.build.OutputFile
  *   // whether to bundle JS and assets in another build variant (if configured).
  *   // See http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Build-Variants
  *   // The configuration property can be in the following formats
- *   //         'bundleIn${productFlavor}${buildType}'
- *   //         'bundleIn${buildType}'
+ *   //         "bundleIn${productFlavor}${buildType}"
+ *   //         "bundleIn${buildType}"
  *   // bundleInFreeDebug: true,
  *   // bundleInPaidRelease: true,
  *   // bundleInBeta: true,
@@ -44,8 +45,8 @@ import com.android.build.OutputFile
  *   // for example: to disable dev mode in the staging build type (if configured)
  *   devDisabledInStaging: true,
  *   // The configuration property can be in the following formats
- *   //         'devDisabledIn${productFlavor}${buildType}'
- *   //         'devDisabledIn${buildType}'
+ *   //         "devDisabledIn${productFlavor}${buildType}"
+ *   //         "devDisabledIn${buildType}"
  *
  *   // the root of your project, i.e. where "package.json" lives
  *   root: "../../",
@@ -57,15 +58,15 @@ import com.android.build.OutputFile
  *   jsBundleDirRelease: "$buildDir/intermediates/assets/release",
  *
  *   // where to put drawable resources / React Native assets, e.g. the ones you use via
- *   // require('./image.png')), in debug mode
+ *   // require("./image.png")), in debug mode
  *   resourcesDirDebug: "$buildDir/intermediates/res/merged/debug",
  *
  *   // where to put drawable resources / React Native assets, e.g. the ones you use via
- *   // require('./image.png')), in release mode
+ *   // require("./image.png")), in release mode
  *   resourcesDirRelease: "$buildDir/intermediates/res/merged/release",
  *
  *   // by default the gradle tasks are skipped if none of the JS files or assets change; this means
- *   // that we don't look at files in android/ or ios/ to determine whether the tasks are up to
+ *   // that we don"t look at files in android/ or ios/ to determine whether the tasks are up to
  *   // date; if you have any other folders that you want to ignore for performance reasons (gradle
  *   // indexes the entire tree), add them here. Alternatively, if you have JS files in android/
  *   // for example, you might want to remove it from here.
@@ -83,7 +84,7 @@ project.ext.react = [
     enableHermes: false,  // clean and rebuild if changing
 ]
 project.ext.vectoricons = [
-    iconFontNames: [ 'MaterialCommunityIcons.ttf' ] // Name of the font files you want to copy
+    iconFontNames: [ "MaterialCommunityIcons.ttf" ] // Name of the font files you want to copy
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -108,14 +109,14 @@ def enableProguardInReleaseBuilds = false
  * The preferred build flavor of JavaScriptCore.
  *
  * For example, to use the international variant, you can use:
- * `def jscFlavor = 'org.webkit:android-jsc-intl:+'`
+ * `def jscFlavor = "org.webkit:android-jsc-intl:+"`
  *
  * The international variant includes ICU i18n library and necessary data
  * allowing to use e.g. `Date.toLocaleString` and `String.localeCompare` that
  * give correct results when using with locales other than en-US.  Note that
  * this variant is about 6MiB larger per architecture than default.
  */
-def jscFlavor = 'org.webkit:android-jsc:+'
+def jscFlavor = "org.webkit:android-jsc:+"
 
 /**
  * Whether to enable the Hermes VM.
@@ -153,9 +154,8 @@ android {
          */
         // resValue "string", "build_config_package", "YOUR_PACKAGE_NAME_IN_ANDROIDMANIFEST.XML"
 
-        missingDimensionStrategy 'react-native-camera', 'general'
+        missingDimensionStrategy "react-native-camera", "general"
     }
-
     splits {
         abi {
             reset()
@@ -164,22 +164,20 @@ android {
             include "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
         }
     }
-
     signingConfigs {
         debug {
-            storeFile file('debug.jks')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            storeFile file("debug.jks")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
         }
         release {
-            storeFile file('release.jks')
+            storeFile file("release.jks")
             storePassword = "$System.env.RELEASE_KEY_PASSWORD"
             keyAlias = "$System.env.RELEASE_KEY_ALIAS"
-            keyPassword = "$System.env.RELEASE_KEY_ALIAS_PASSWORD"
+            keyPassword = "$System.env.RELEASE_KEY_PASSWORD"
         }
     }
-
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
@@ -190,7 +188,6 @@ android {
             debuggable false
             shrinkResources enableProguardInReleaseBuilds
             zipAlignEnabled enableProguardInReleaseBuilds
-            minifyEnabled enableProguardInReleaseBuilds
             minifyEnabled enableProguardInReleaseBuilds
             useProguard enableProguardInReleaseBuilds
 
@@ -225,22 +222,22 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
-    implementation 'androidx.appcompat:appcompat:1.1.0-rc01'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02'
+    implementation "androidx.appcompat:appcompat:1.1.0-rc01"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02"
 
-    implementation 'com.android.support:multidex:1.0.3'
-    implementation project(':watermelondb')
+    implementation "com.android.support:multidex:1.0.3"
+    implementation project(":watermelondb")
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
-      exclude group:'com.facebook.fbjni'
+      exclude group:"com.facebook.fbjni"
     }
 
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.facebook.flipper'
+        exclude group:"com.facebook.flipper"
     }
 
     debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.facebook.flipper'
+        exclude group:"com.facebook.flipper"
     }
 
     if (enableHermes) {
@@ -256,7 +253,7 @@ dependencies {
 // puts all compile dependencies into folder libs for BUCK to use
 task copyDownloadableDepsToLibs(type: Copy) {
     from configurations.compile
-    into 'libs'
+    into "libs"
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

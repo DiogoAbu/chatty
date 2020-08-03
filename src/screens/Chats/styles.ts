@@ -23,13 +23,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-
-  messageContent: {
-    marginLeft: 4,
+  roomRightDetailsContainer: {
+    flexDirection: 'row',
+    paddingBottom: 4,
+  },
+  roomRightIcon: {
+    opacity: 0.8,
   },
 
+  marginRight: {
+    marginRight: 4,
+  },
+
+  lastMessageEncrypted: {
+    fontStyle: 'italic',
+  },
   lastMessageAttachmentIcon: {
-    marginLeft: 4,
     fontSize: 18,
   },
 
@@ -42,7 +51,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
     marginLeft: 4,
     marginBottom: 4,
-    lineHeight: 16,
+    lineHeight: 17,
   },
 
   roomArchivedChip: {
@@ -52,6 +61,10 @@ const styles = StyleSheet.create({
     marginVertical: 0,
     marginRight: 4,
     marginLeft: 4,
+  },
+
+  headerActionsContainer: {
+    flexDirection: 'row',
   },
 });
 

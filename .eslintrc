@@ -82,12 +82,57 @@
         "@typescript-eslint/ban-ts-comment": 0,
         "@typescript-eslint/ban-ts-ignore": 0,
         "@typescript-eslint/brace-style": [2, "1tbs"],
-        "@typescript-eslint/camelcase": 2,
         "@typescript-eslint/explicit-function-return-type": 0,
+        "@typescript-eslint/explicit-module-boundary-types": [
+          2,
+          {
+            "allowArgumentsExplicitlyTypedAsAny": true
+          }
+        ],
+        "@typescript-eslint/naming-convention": [
+          2,
+          {
+            "selector": "default",
+            "format": ["camelCase"]
+          },
+          {
+            "selector": "variable",
+            "format": ["camelCase", "PascalCase", "UPPER_CASE"]
+          },
+          {
+            "selector": "parameter",
+            "format": ["camelCase", "PascalCase"],
+            "leadingUnderscore": "allow"
+          },
+          {
+            "selector": "memberLike",
+            "format": ["camelCase"],
+            "leadingUnderscore": "require",
+            "modifiers": ["private"]
+          },
+          {
+            "selector": "typeLike",
+            "format": ["PascalCase"]
+          },
+          {
+            "selector": "property",
+            "format": null,
+            "filter": "_plural$"
+          },
+          {
+            "selector": "property",
+            "format": ["camelCase", "PascalCase", "UPPER_CASE"],
+            "leadingUnderscore": "allow"
+          }
+        ],
         "@typescript-eslint/no-empty-interface": 0,
         "@typescript-eslint/no-explicit-any": 0,
         "@typescript-eslint/no-non-null-assertion": 0,
         "@typescript-eslint/no-unnecessary-type-assertion": 0,
+        "@typescript-eslint/no-unsafe-assignment": 0,
+        "@typescript-eslint/no-unsafe-call": 0,
+        "@typescript-eslint/no-unsafe-member-access": 0,
+        "@typescript-eslint/no-unsafe-return": 0,
         "@typescript-eslint/no-unused-vars": 0,
         "@typescript-eslint/no-use-before-define": [
           2,
@@ -113,11 +158,7 @@
         "jest": true,
         "jest/globals": true
       },
-      "files": [
-        "jest.setup.js",
-        "*.{spec,test}.{js,ts,tsx}",
-        "**/__{mocks,tests}__/**/*.{js,ts,tsx}"
-      ]
+      "files": ["jest.setup.js", "*.{spec,test}.{js,ts,tsx}", "**/__{mocks,tests}__/**/*.{js,ts,tsx}"]
     }
   ],
   "parserOptions": {
@@ -306,7 +347,7 @@
     "no-underscore-dangle": [
       2,
       {
-        "allow": ["_raw", "_status", "_changed"]
+        "allow": ["_raw", "_status", "_changed", "_data", "_locale", "_calendar", "_children", "_nativeTag"]
       }
     ],
     "no-unexpected-multiline": 2,
@@ -322,7 +363,12 @@
       }
     ],
     "no-var": 2,
-    "no-void": 1,
+    "no-void": [
+      1,
+      {
+        "allowAsStatement": true
+      }
+    ],
     "no-warning-comments": 0,
     "no-with": 1,
     "object-curly-newline": 0,
@@ -340,7 +386,7 @@
     "react-hooks/exhaustive-deps": [
       2,
       {
-        "additionalHooks": "^(useAutorun|useCode|useBackHandler|useMemoOne|useBackHandlerOnFocus|useFocusEffect|useThrottle|useDimensions|useInput|useTheme|useTranslation)$"
+        "additionalHooks": "^(useAutorun|useCode|useBackHandler|useFocusEffect|useMemoOne|useBackHandlerOnFocus|useThrottle|useDimensions|useTheme|useTranslation)$"
       }
     ],
     "react-hooks/rules-of-hooks": 2,

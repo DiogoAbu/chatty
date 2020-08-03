@@ -3,24 +3,15 @@ import { StyleSheet } from 'react-native';
 const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
-  },
-  logoContainer: {
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
-  formContainer: {
-    padding: 16,
-  },
+
   formContent: {
     margin: 0,
-    marginTop: -40,
-    padding: 12,
-    elevation: 2,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 16,
+    padding: 16,
+    paddingTop: 20,
+    elevation: 8,
   },
   inputBottom: {
     marginTop: 4,
@@ -28,6 +19,10 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     paddingVertical: 8,
+  },
+
+  accountHelperText: {
+    textAlign: 'center',
   },
 });
 

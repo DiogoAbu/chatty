@@ -55,17 +55,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  attachmentOverlay: {
+  attachmentVideoOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  attachmentPlayIcon: {
+  attachmentVideoPlayIcon: {
     color: Colors.white,
     fontSize: 40,
     shadowOpacity: 2,
     textShadowRadius: 4,
     textShadowOffset: { width: 2, height: 2 },
+  },
+
+  attachmentProgressOverlayContainer: {
+    position: 'relative',
+  },
+  attachmentProgressOverlayContentContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+    bottom: 8,
+    left: 8,
+  },
+  attachmentProgressOverlayContent: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 8,
+    borderRadius: 8,
+  },
+
+  encryptedAttachmentContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 16,
+    marginHorizontal: 64,
+  },
+  encryptedAttachmentIcon: {
+    fontSize: 48,
   },
 
   messageSenderName: {
@@ -75,6 +101,9 @@ const styles = StyleSheet.create({
   messageContentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  messageEncrypted: {
+    fontStyle: 'italic',
   },
   messageTime: {
     fontSize: 12,

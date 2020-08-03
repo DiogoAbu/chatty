@@ -1,20 +1,24 @@
-import React, { FC, useCallback, useEffect, useRef } from 'react';
-import { BackHandler, GestureResponderEvent, StatusBar, View } from 'react-native';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { BackHandler, GestureResponderEvent, InteractionManager, StatusBar, View } from 'react-native';
 
-import { useTranslation } from 'react-i18next';
-import { Appbar } from 'react-native-paper';
+import { Q } from '@nozbe/watermelondb';
 import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
-import { useDatabase } from '@nozbe/watermelondb/hooks';
-import { ExtractedObservables } from '@nozbe/with-observables';
 import { useNavigation } from '@react-navigation/native';
+import Bottleneck from 'bottleneck';
 
+import { User } from '!/generated/graphql';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
-import RoomModel, { removeRoomsCascade, roomUpdater } from '!/models/RoomModel';
+import useTheme from '!/hooks/use-theme';
+import useTranslation from '!/hooks/use-translation';
+import MessageModel from '!/models/MessageModel';
+import ReadReceiptModel from '!/models/ReadReceiptModel';
+import { removeRoomsCascade, roomUpdater } from '!/models/RoomModel';
 import { useStores } from '!/stores';
-import { DeepPartial, HeaderOptions, MainNavigationProp } from '!/types';
+import { HeaderOptions, MainNavigationProp, Tables } from '!/types';
 import capitalize from '!/utils/capitalize';
 import getRoomMember from '!/utils/get-room-member';
+import getStatusBarColor from '!/utils/get-status-bar-color';
 
 import AttachmentPicker, { AttachmentPickerType } from './AttachmentPicker';
 import MessageInput from './MessageInput';
@@ -22,13 +26,17 @@ import MessageList from './MessageList';
 import { withMembers, WithMembersOutput, withRoom, WithRoomOutput } from './queries';
 import styles from './styles';
 
-type Props = ExtractedObservables<WithRoomOutput & WithMembersOutput>;
+const limiter = new Bottleneck({
+  maxConcurrent: 1,
+});
 
-const Chatting: FC<Props> = ({ room, members }) => {
-  const database = useDatabase();
+const Chatting: FC<WithRoomOutput & WithMembersOutput> = ({ database, room, members }) => {
   const navigation = useNavigation<MainNavigationProp<'Chatting'>>();
-  const { authStore, generalStore } = useStores();
+  const { authStore, generalStore, syncStore } = useStores();
+  const { colors, dark, mode } = useTheme();
   const { t } = useTranslation();
+
+  const [page, setPage] = useState(1);
 
   const shouldBlurRemoveRoom = useRef(true);
   const attachmentPickerRef = useRef<AttachmentPickerType | null>(null);
@@ -37,28 +45,18 @@ const Chatting: FC<Props> = ({ room, members }) => {
   // Get title
   let title = room.name;
   let subtitle: string | undefined;
-  let picture = room.picture;
+  let pictureUri = room.pictureUri;
 
-  let friendId: string | undefined;
-
-  if (!title && members) {
+  if (!title) {
     const friend = getRoomMember(members, authStore.user.id);
     title = friend?.name || null;
-    picture = friend?.picture || null;
-    friendId = friend?.id;
+    pictureUri = friend?.pictureUri || null;
   } else {
-    subtitle = members
-      .map((e) => capitalize(e.id === authStore.user.id ? t('you') : e.name.split(' ')[0]))
-      .join(', ');
+    const names = members
+      .map((e) => (e.id !== authStore.user.id ? capitalize(e.name.split(' ')[0]) : null))
+      .filter((e) => e);
+    subtitle = `${capitalize(t('you'))}, ${names.join(', ')}`;
   }
-
-  const handleAddMessage = usePress(() => {
-    const userId = friendId || members[Math.floor(Math.random() * members.length)].id;
-
-    if (userId) {
-      room.addMessage({ content: "Friend's response", senderId: userId });
-    }
-  });
 
   const handlePressBack = usePress(() => {
     if (attachmentPickerRef.current?.isShowing) {
@@ -66,6 +64,31 @@ const Chatting: FC<Props> = ({ room, members }) => {
     } else {
       navigation.popToTop();
     }
+  });
+
+  const handlePressCenter = usePress(() => {
+    requestAnimationFrame(() => {
+      if (room.name) {
+        navigation.navigate('CreateGroup', {
+          id: room.id,
+          name: room.name!,
+          pictureUri: room.pictureUri!,
+          createdAt: room.createdAt,
+          members: members.map<User>((member) => ({
+            id: member.id,
+            name: member.name,
+            pictureUri: member.pictureUri!,
+            email: member.email,
+            role: member.role!,
+            publicKey: member.publicKey!,
+            isFollowingMe: member.isFollowingMe!,
+            isFollowedByMe: member.isFollowedByMe!,
+          })),
+        });
+      } else {
+        // navigation.navigate('');
+      }
+    });
   });
 
   const handleTappingOutside = useCallback((event: GestureResponderEvent) => {
@@ -83,28 +106,13 @@ const Chatting: FC<Props> = ({ room, members }) => {
     touchableIds.current = ids;
   }, []);
 
-  const updateReadTime = usePress(
-    () => {
-      const name = 'Chatting -> updateReadTime';
-      const changes: DeepPartial<RoomModel> = {
-        ...room,
-        lastReadAt: Date.now(),
-      };
-
-      database.action(async () => {
-        await room.update(roomUpdater(changes));
-      }, name);
-    },
-    350,
-    { leading: false, trailing: true },
-  );
-
   // Remove room on blur if it's local only
   useFocusEffect(() => {
     shouldBlurRemoveRoom.current = true;
 
     StatusBar.setHidden(false);
     StatusBar.setTranslucent(false);
+    StatusBar.setBackgroundColor(getStatusBarColor(4, colors, dark, mode));
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       handlePressBack();
@@ -115,26 +123,66 @@ const Chatting: FC<Props> = ({ room, members }) => {
       title,
       subtitle,
       handlePressBack,
-      headerRight: ({ tintColor }: any) => (
-        <Appbar.Action color={tintColor} icon='message-text' onPress={handleAddMessage} />
-      ),
+      handlePressCenter,
     } as HeaderOptions);
+
+    const markAsSeen = async () => {
+      const messagesNotSeen = await room.messages
+        .extend(
+          Q.where('userId', Q.notEq(authStore.user.id)),
+          Q.on(Tables.readReceipts, Q.where('seenAt', null)),
+        )
+        .fetch();
+
+      const lastReadAt = Date.now();
+
+      const wrapped = limiter.wrap(async (msg: MessageModel) => {
+        if (msg.sender.id !== authStore.user.id) {
+          return msg.prepareMarkAsSeen(authStore.user.id, lastReadAt);
+        }
+        return (null as unknown) as ReadReceiptModel;
+      });
+      const batch = await Promise.all(messagesNotSeen.map(wrapped));
+
+      const roomUpdate = room.prepareUpdate(
+        roomUpdater({
+          lastReadAt,
+          _raw: {
+            _status: room._raw._status === 'synced' ? 'synced' : 'updated',
+          },
+        }),
+      );
+
+      await database.action(async () => {
+        await database.batch(roomUpdate, ...batch);
+      }, 'Chatting -> markAsSeen');
+
+      if (messagesNotSeen.length > 0) {
+        await syncStore.sync();
+      }
+    };
+    void InteractionManager.runAfterInteractions(() => {
+      void markAsSeen();
+    });
 
     return () => {
       backHandler.remove();
       if (room.isLocalOnly && shouldBlurRemoveRoom.current) {
-        removeRoomsCascade(database, [room.id], authStore.user.id);
+        void removeRoomsCascade(database, [room.id], authStore.user.id);
       }
     };
   }, [
     authStore.user.id,
+    colors,
+    dark,
     database,
-    handleAddMessage,
     handlePressBack,
+    handlePressCenter,
+    mode,
     navigation,
-    room.id,
-    room.isLocalOnly,
+    room,
     subtitle,
+    syncStore,
     title,
   ]);
 
@@ -147,14 +195,15 @@ const Chatting: FC<Props> = ({ room, members }) => {
     <View onStartShouldSetResponder={handleTappingOutside} style={styles.container}>
       <MessageList
         attachmentPickerRef={attachmentPickerRef}
+        page={page}
         room={room}
+        setPage={setPage}
         title={title!}
-        updateReadTime={updateReadTime}
       />
 
       <MessageInput
         attachmentPickerRef={attachmentPickerRef}
-        picture={picture!}
+        pictureUri={pictureUri!}
         room={room}
         shouldBlurRemoveRoom={shouldBlurRemoveRoom}
         title={title!}

@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   input: {
-    flex: 0,
+    flex: 1,
   },
   iconContainer: {
     position: 'relative',

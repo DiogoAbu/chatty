@@ -8,8 +8,17 @@ const styles = StyleSheet.create({
   detailsContainer: {
     flexDirection: 'column',
   },
+
+  detailsAvatarContainer: {
+    position: 'relative',
+    alignSelf: 'center',
+  },
   detailsAvatar: {
     alignSelf: 'center',
+  },
+  fabDiscardPicture: {
+    position: 'absolute',
+    bottom: 0,
   },
 
   friendItemRightContainer: {

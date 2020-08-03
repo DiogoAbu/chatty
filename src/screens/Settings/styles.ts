@@ -16,6 +16,12 @@ const styles = StyleSheet.create({
   noMarginRight: {
     marginRight: 0,
   },
+  rightText: {
+    fontSize: 14,
+    marginTop: 10,
+    paddingRight: 8,
+    justifyContent: 'center',
+  },
 });
 
 export default styles;

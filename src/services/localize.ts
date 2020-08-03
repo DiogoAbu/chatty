@@ -11,10 +11,10 @@ const fallback = {
 
 const { languageTag } = rnLocalize.findBestAvailableLanguage(Object.keys(locales)) || fallback;
 
-moment.locale(languageTag);
+moment.updateLocale(languageTag);
 moment.tz.setDefault(rnLocalize.getTimeZone());
 
-i18n.use(initReactI18next).init({
+void i18n.use(initReactI18next).init({
   initImmediate: true,
   interpolation: {
     escapeValue: false,

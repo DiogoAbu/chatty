@@ -1,0 +1,241 @@
+diff --git a/node_modules/react-native-sodium/android/src/main/cpp/sodium-jni.c b/node_modules/react-native-sodium/android/src/main/cpp/sodium-jni.c
+index 2955126..9493803 100644
+--- a/node_modules/react-native-sodium/android/src/main/cpp/sodium-jni.c
++++ b/node_modules/react-native-sodium/android/src/main/cpp/sodium-jni.c
+@@ -199,6 +199,16 @@ JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1box_1keypair(JNI
+   return (jint)result;
+ }
+
++JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1box_1seed_1keypair(JNIEnv *jenv, jclass jcls, jbyteArray j_pk, jbyteArray j_sk, jbyteArray j_seed) {
++  unsigned char *pk = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_pk, 0);
++  unsigned char *sk = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_sk, 0);
++  unsigned char *seed = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_seed, 0);
++  int result = (int)crypto_box_seed_keypair(pk, sk, seed);
++  (*jenv)->ReleaseByteArrayElements(jenv, j_pk, (jbyte *) pk, 0);
++  (*jenv)->ReleaseByteArrayElements(jenv, j_sk, (jbyte *) sk, 0);
++  return (jint)result;
++}
++
+ JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1box_1easy(JNIEnv *jenv, jclass jcls, jbyteArray j_c, jbyteArray j_m, jlong j_mlen, jbyteArray j_n, jbyteArray j_pk, jbyteArray j_sk) {
+   unsigned char *c = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_c, 0);
+   unsigned char *m = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_m, 0);
+@@ -347,6 +357,22 @@ JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1pwhash_1algo_1ar
+   return (jint) crypto_pwhash_ALG_ARGON2ID13;
+ }
+
++JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1pwhash_1bytes_1max(JNIEnv *jenv, jclass jcls) {
++  return (jint) crypto_pwhash_BYTES_MAX;
++}
++
++JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1pwhash_1bytes_1min(JNIEnv *jenv, jclass jcls) {
++  return (jint) crypto_pwhash_BYTES_MIN;
++}
++
++JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1pwhash_1passwd_1max(JNIEnv *jenv, jclass jcls) {
++  return (jint) crypto_pwhash_PASSWD_MAX;
++}
++
++JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1pwhash_1passwd_1min(JNIEnv *jenv, jclass jcls) {
++  return (jint) crypto_pwhash_PASSWD_MIN;
++}
++
+ JNIEXPORT jint JNICALL Java_org_libsodium_jni_SodiumJNI_crypto_1scalarmult_1base(JNIEnv *jenv, jclass jcls, jbyteArray j_q, jbyteArray j_n) {
+   unsigned char *q = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_q, 0);
+   unsigned char *n = (unsigned char *) (*jenv)->GetByteArrayElements(jenv, j_n, 0);
+diff --git a/node_modules/react-native-sodium/android/src/main/java/org/libsodium/jni/SodiumJNI.java b/node_modules/react-native-sodium/android/src/main/java/org/libsodium/jni/SodiumJNI.java
+index 08a8ea6..ceed872 100644
+--- a/node_modules/react-native-sodium/android/src/main/java/org/libsodium/jni/SodiumJNI.java
++++ b/node_modules/react-native-sodium/android/src/main/java/org/libsodium/jni/SodiumJNI.java
+@@ -33,6 +33,7 @@ public class SodiumJNI {
+   public final static native int crypto_box_boxzerobytes();
+   public final static native int crypto_box_sealbytes();
+   public final static native int crypto_box_keypair(byte[] pk, byte[] sk);
++  public final static native int crypto_box_seed_keypair(byte[] pk, byte[] sk, final byte[] seed);
+   public final static native int crypto_box_easy(byte[] c, final byte[] m, final long mlen, final byte[] n, final byte[] pk, final byte[] sk);
+   public final static native int crypto_box_open_easy(byte[] m, final byte[] c, final long clen,  final byte[] n, final byte[] pk, final byte[] sk);
+
+@@ -54,6 +55,10 @@ public class SodiumJNI {
+   public final static native int crypto_pwhash_algo_default();
+   public final static native int crypto_pwhash_algo_argon2i13();
+   public final static native int crypto_pwhash_algo_argon2id13();
++  public final static native int crypto_pwhash_bytes_max();
++  public final static native int crypto_pwhash_bytes_min();
++  public final static native int crypto_pwhash_passwd_max();
++  public final static native int crypto_pwhash_passwd_min();
+
+   public final static native int crypto_scalarmult_base(byte[] q, final byte[] n);
+
+diff --git a/node_modules/react-native-sodium/android/src/main/java/org/libsodium/rn/RCTSodiumModule.java b/node_modules/react-native-sodium/android/src/main/java/org/libsodium/rn/RCTSodiumModule.java
+index 208864d..7edbc2d 100644
+--- a/node_modules/react-native-sodium/android/src/main/java/org/libsodium/rn/RCTSodiumModule.java
++++ b/node_modules/react-native-sodium/android/src/main/java/org/libsodium/rn/RCTSodiumModule.java
+@@ -71,6 +71,10 @@ public class RCTSodiumModule extends ReactContextBaseJavaModule {
+      constants.put("crypto_pwhash_ALG_DEFAULT", Sodium.crypto_pwhash_algo_default());
+      constants.put("crypto_pwhash_ALG_ARGON2I13", Sodium.crypto_pwhash_algo_argon2i13());
+      constants.put("crypto_pwhash_ALG_ARGON2ID13", Sodium.crypto_pwhash_algo_argon2id13());
++     constants.put("crypto_pwhash_BYTES_MAX", Sodium.crypto_pwhash_bytes_max());
++     constants.put("crypto_pwhash_BYTES_MIN", Sodium.crypto_pwhash_bytes_min());
++     constants.put("crypto_pwhash_PASSWD_MAX", Sodium.crypto_pwhash_passwd_max());
++     constants.put("crypto_pwhash_PASSWD_MIN", Sodium.crypto_pwhash_passwd_min());
+
+      return constants;
+   }
+@@ -269,6 +273,28 @@ public class RCTSodiumModule extends ReactContextBaseJavaModule {
+     }
+   }
+
++  @ReactMethod
++  public void crypto_box_seed_keypair(final String seed, final Promise p){
++    try {
++      byte[] pk = new byte[Sodium.crypto_box_publickeybytes()];
++      byte[] sk = new byte[Sodium.crypto_box_secretkeybytes()];
++      byte[] seedb = Base64.decode(seed, Base64.NO_WRAP);
++      if (seedb.length != Sodium.crypto_box_seedbytes())
++        p.reject(ESODIUM,ERR_BAD_SEED);
++      else if (Sodium.crypto_box_seed_keypair(pk, sk, seedb) != 0)
++        p.reject(ESODIUM,ERR_FAILURE);
++      else {
++        WritableNativeMap result = new WritableNativeMap();
++        result.putString("pk",Base64.encodeToString(pk,Base64.NO_WRAP));
++        result.putString("sk",Base64.encodeToString(sk,Base64.NO_WRAP));
++        p.resolve(result);
++      }
++    }
++    catch (Throwable t) {
++      p.reject(ESODIUM,ERR_FAILURE,t);
++    }
++  }
++
+   @ReactMethod
+   public void crypto_box_easy(final String m, final String n, final String pk, final String sk, final Promise p) {
+     try {
+diff --git a/node_modules/react-native-sodium/index.d.ts b/node_modules/react-native-sodium/index.d.ts
+index f4e0a8f..a38e510 100644
+--- a/node_modules/react-native-sodium/index.d.ts
++++ b/node_modules/react-native-sodium/index.d.ts
+@@ -125,6 +125,16 @@ declare module "react-native-sodium" {
+    */
+   export const crypto_box_SECRETKEYBYTES: number;
+
++  /**
++   *
++   */
++  export const crypto_box_BEFORENMBYTES: number;
++
++  /**
++   *
++   */
++  export const crypto_box_SEEDBYTES: number;
++
+   /**
+    * Bytes of nonce on public-key cryptography, authenticated encryption
+    */
+@@ -140,6 +150,11 @@ declare module "react-native-sodium" {
+    */
+   export const crypto_box_ZEROBYTES: number;
+
++  /**
++   *
++   */
++  export const crypto_box_BOXZEROBYTES: number;
++
+   /**
+    *
+    */
+@@ -150,6 +165,11 @@ declare module "react-native-sodium" {
+    */
+   export function crypto_box_keypair(): Promise<{ sk: string; pk: string }>;
+
++  /**
++   * Deterministically derive from a single key seed, a secret key (sk) and a corresponding public key (pk).
++   */
++  export function crypto_box_seed_keypair(seed: string): Promise<{ sk: string; pk: string }>;
++
+   /**
+    * Encrypts a message, with a recipient's public key, a sender's secret key and a nonce.
+    */
+@@ -356,7 +376,7 @@ declare module "react-native-sodium" {
+   export const crypto_pwhash_MEMLIMIT_MAX: number;
+
+   /**
+-   * Tthe currently recommended algorithm, which can change from one version of libsodium to another.
++   * The currently recommended algorithm, which can change from one version of libsodium to another.
+    * On password hashing, the pwhash* API.
+    */
+   export const crypto_pwhash_ALG_DEFAULT: number;
+@@ -370,4 +390,24 @@ declare module "react-native-sodium" {
+    * Version 1.3 of the Argon2id algorithm, available since libsodium 1.0.13.
+    */
+   export const crypto_pwhash_ALG_ARGON2ID13: number;
++
++  /**
++   * Max bytes of out key on password hashing, the pwhash* API.
++   */
++  export const crypto_pwhash_BYTES_MAX: number;
++
++  /**
++   * Min bytes of out key on password hashing, the pwhash* API.
++   */
++  export const crypto_pwhash_BYTES_MIN: number;
++
++  /**
++   * Max bytes of password on password hashing, the pwhash* API.
++   */
++  export const crypto_pwhash_PASSWD_MAX: number;
++
++  /**
++   * Min bytes of password on password hashing, the pwhash* API.
++   */
++  export const crypto_pwhash_PASSWD_MIN: number;
+ }
+diff --git a/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.h b/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.h
+index 6929ff9..cb26464 100644
+--- a/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.h
++++ b/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.h
+@@ -26,6 +26,7 @@
+ - (void) crypto_auth_verify:(NSString*)h in:(NSString*)in k:(NSString*)k resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject;
+
+ - (void) crypto_box_keypair:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject;
++- (void) crypto_box_seed_keypair:(NSString*)seed resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject;
+ - (void) crypto_box_beforenm:(NSString*)pk sk:(NSString*)sk resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject;
+
+ - (void) crypto_box_easy:(NSString*)m n:(NSString*)n pk:(NSString*)pk sk:(NSString*)sk resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject;
+diff --git a/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.m b/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.m
+index c785031..5b8d604 100644
+--- a/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.m
++++ b/node_modules/react-native-sodium/ios/RCTSodium/RCTSodium.m
+@@ -66,7 +66,11 @@ RCT_EXPORT_MODULE();
+     @"crypto_pwhash_MEMLIMIT_MAX":@crypto_pwhash_MEMLIMIT_MAX,
+     @"crypto_pwhash_ALG_DEFAULT":@crypto_pwhash_ALG_DEFAULT,
+     @"crypto_pwhash_ALG_ARGON2I13":@crypto_pwhash_ALG_ARGON2I13,
+-    @"crypto_pwhash_ALG_ARGON2ID13":@crypto_pwhash_ALG_ARGON2ID13
++    @"crypto_pwhash_ALG_ARGON2ID13":@crypto_pwhash_ALG_ARGON2ID13,
++    @"crypto_pwhash_BYTES_MAX":@crypto_pwhash_BYTES_MAX,
++    @"crypto_pwhash_BYTES_MIN":@crypto_pwhash_BYTES_MIN,
++    @"crypto_pwhash_PASSWD_MAX":@crypto_pwhash_PASSWD_MAX,
++    @"crypto_pwhash_PASSWD_MIN":@crypto_pwhash_PASSWD_MIN
+   };
+
+ }
+@@ -224,6 +228,21 @@ RCT_EXPORT_METHOD(crypto_box_keypair:(RCTPromiseResolveBlock)resolve reject:(RCT
+     reject(ESODIUM,ERR_FAILURE,nil);
+ }
+
++RCT_EXPORT_METHOD(crypto_box_seed_keypair:(NSString*)seed resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
++{
++  unsigned char pk[crypto_box_PUBLICKEYBYTES],sk[crypto_box_SECRETKEYBYTES];
++  const NSData *dseed = [[NSData alloc] initWithBase64EncodedString:seed options:0];
++  if (!dseed) reject(ESODIUM,ERR_FAILURE,nil);
++  else if (dseed.length != crypto_box_SEEDBYTES) reject(ESODIUM,ERR_BAD_SEED,nil);
++  else if (crypto_box_seed_keypair(pk,sk,dseed) == 0) {
++    NSString *pk64 = [[NSData dataWithBytesNoCopy:pk length:sizeof(pk) freeWhenDone:NO]  base64EncodedStringWithOptions:0];
++    NSString *sk64 = [[NSData dataWithBytesNoCopy:sk length:sizeof(sk) freeWhenDone:NO]  base64EncodedStringWithOptions:0];
++    if (!pk64 || !sk64) reject(ESODIUM,ERR_FAILURE,nil); else resolve(@{@"pk":pk64, @"sk":sk64});
++  }
++  else
++    reject(ESODIUM,ERR_FAILURE,nil);
++}
++
+ RCT_EXPORT_METHOD(crypto_box_easy:(NSString*)m n:(NSString*)n pk:(NSString*)pk sk:(NSString*)sk resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+ {
+   const NSData *dm = [[NSData alloc] initWithBase64EncodedString:m options:0];

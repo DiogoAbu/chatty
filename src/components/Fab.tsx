@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, memo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { FAB as FabPaper } from 'react-native-paper';
@@ -7,7 +7,7 @@ import { useObserver } from 'mobx-react-lite';
 import useTheme from '!/hooks/use-theme';
 import { useStores } from '!/stores';
 
-const Fab: FC<{}> = () => {
+const Fab: FC<unknown> = () => {
   const { generalStore } = useStores();
   const { colors } = useTheme();
 
@@ -35,4 +35,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(Fab);
+export default memo(Fab);
