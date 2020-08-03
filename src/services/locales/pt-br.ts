@@ -105,6 +105,10 @@ export default {
     'alert.youCanAlwaysChangeYourProfileLater': 'Você pode mudar seu perfil depois.',
     'alert.weNeedStoragePermission':
       'Este app precisa de acesso ao armazenamento externo para baixar imagens e vídeos. O app não funcionará sem esta permissão.',
+    'alert.notConnected': 'Sem conexão com a internet.',
+    'alert.connectionIsExpensive':
+      'A conexão atual está associada a um limite limite de dados. Pode ocorrer por bateria baixa ou para economizar dados.',
+    'alert.videoPlaybackFailed': 'Falha ao reproduzir o vídeo',
 
     'messageInput.placeholder': 'Digite algo...',
     'headerSearch.placeholder': 'Procure por nome ou email',

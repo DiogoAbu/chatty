@@ -84,6 +84,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
+  encryptedAttachmentContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 16,
+    marginHorizontal: 64,
+  },
+  encryptedAttachmentIcon: {
+    fontSize: 48,
+  },
+
   messageSenderName: {
     fontWeight: 'bold',
   },

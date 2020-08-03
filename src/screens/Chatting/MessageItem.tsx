@@ -8,6 +8,7 @@ import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
 import useTranslation from '!/hooks/use-translation';
 import { useStores } from '!/stores';
+import attachmentChanged from '!/utils/attachment-changed';
 import getAttachmentTextKey from '!/utils/get-attachment-text-key';
 import getSentAt from '!/utils/get-sent-at';
 import readReceiptChanged from '!/utils/read-receipt-changed';
@@ -131,6 +132,9 @@ const propsAreEqual = (prev: WithMessageOutput, next: WithMessageOutput) => {
     return false;
   }
   if (readReceiptChanged(prev.readReceipts, next.readReceipts)) {
+    return false;
+  }
+  if (attachmentChanged(prev.attachments, next.attachments)) {
     return false;
   }
   return true;

@@ -52,6 +52,9 @@ export function roomMemberUpdater(changes: DeepPartial<RoomMemberModel>): (recor
     if (typeof changes._raw?._status !== 'undefined') {
       record._raw._status = changes._raw._status;
     }
+    if (typeof changes._raw?._changed !== 'undefined') {
+      record._raw._changed = changes._raw._changed;
+    }
   };
 }
 

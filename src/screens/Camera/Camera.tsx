@@ -49,7 +49,6 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
   // Camera state and options
   const [isCameraAvailable, setIsCameraAvailable] = useState(false);
-  const [storageGranted, setStorageGranted] = useState<boolean | null>(null);
   const [cameraGranted, setCameraGranted] = useState<boolean | null>(null);
   const [audioEnabled, setAudioEnabled] = useState<boolean | null>(null);
   const [cameraAspectRatio] = useState('4:3');
@@ -133,11 +132,16 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       // Save to camera roll
       const rollUri = await CameraRoll.save(uri, { type: 'photo' });
 
+      // Get image name
+      const fileFetch = await fetch(rollUri);
+      const fileBlob = (await fileFetch.blob()) as any;
+
       const notAboveMax = pictureSelectedAmount < ATTACHMENT_MAX_AMOUNT;
 
       // deviceOrientation = 1 | 2 | 3 | 4;
       // 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown'
       const newPic: PicturesTaken = {
+        filename: fileBlob._data.name,
         localUri: rollUri,
         width: [3, 4].includes(deviceOrientation) ? width : height,
         height: [3, 4].includes(deviceOrientation) ? height : width,
@@ -233,11 +237,15 @@ const Camera: FC<Props> = ({ navigation, route }) => {
       // Save to camera roll
       const rollUri = await CameraRoll.save(uri, { type: 'video' });
 
+      const fileFetch = await fetch(rollUri);
+      const fileBlob = (await fileFetch.blob()) as any;
+
       const { width, height } = dimensions[quality];
 
       // deviceOrientation = 1 | 2 | 3 | 4;
       // 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown'
       const videoRecorded: VideoRecorded = {
+        filename: fileBlob._data.name,
         localUri: rollUri,
         width: [3, 4].includes(deviceOrientation) ? width : height,
         height: [3, 4].includes(deviceOrientation) ? height : width,
@@ -482,12 +490,6 @@ const Camera: FC<Props> = ({ navigation, route }) => {
     });
 
     void InteractionManager.runAfterInteractions(async () => {
-      // const storageStatus = await requestStoragePermission();
-      // setStorageGranted(storageStatus);
-      // if (!storageStatus) {
-      //   return;
-      // }
-
       const cameraStatus = await requestCameraPermission();
       setCameraGranted(cameraStatus);
       if (!cameraStatus) {
@@ -512,19 +514,7 @@ const Camera: FC<Props> = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      {storageGranted === false ? (
-        <View style={styles.fullCenter}>
-          <Title>{t('error.storagePermission')}</Title>
-          <Button
-            labelStyle={{ color: colors.textOnPrimary }}
-            mode='contained'
-            onPress={handlePressBack}
-            style={styles.buttonPermission}
-          >
-            {t('label.goBack')}
-          </Button>
-        </View>
-      ) : cameraGranted === false ? (
+      {cameraGranted === false ? (
         <View style={styles.fullCenter}>
           <Title>{t('error.cameraPermission')}</Title>
           <Button

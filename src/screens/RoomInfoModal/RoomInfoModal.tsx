@@ -49,8 +49,6 @@ const RoomInfoModal: FC<Props> = ({ navigation, route }) => {
     generalStore.setFab();
   });
 
-  console.log(transformUri(roomPictureUri));
-
   return (
     <>
       <TouchableOpacity

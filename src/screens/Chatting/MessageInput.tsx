@@ -1,5 +1,5 @@
 import React, { FC, memo, MutableRefObject, useCallback, useEffect, useState } from 'react';
-import { Alert, AlertButton, InteractionManager, TextInput, View } from 'react-native';
+import { Alert, AlertButton, InteractionManager, Keyboard, TextInput, View } from 'react-native';
 
 import DocumentPicker, { DocumentPickerResponse } from 'react-native-document-picker';
 import FileSystem from 'react-native-fs';
@@ -8,7 +8,7 @@ import CameraRoll from '@react-native-community/cameraroll';
 import { useNavigation } from '@react-navigation/native';
 import Bottleneck from 'bottleneck';
 
-import { albuns, imagesPath } from '!/config';
+import { albuns, documentsPath, imagesPath, videosPath } from '!/config';
 import useInput from '!/hooks/use-input';
 import useMethod from '!/hooks/use-method';
 import usePress from '!/hooks/use-press';
@@ -84,6 +84,7 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
   );
 
   const handleOpenAttachmentPicker = usePress(() => {
+    Keyboard.dismiss();
     requestAnimationFrame(() => {
       attachmentPickerRef.current?.toggle();
     });
@@ -108,8 +109,8 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
   });
 
   const addMessagesWithDocs = useCallback(
-    async (docs: (false | string)[]) => {
-      const wrapped = limiter.wrap(async (file: false | string) => {
+    async (docs: (false | { filename: string; uri: string })[]) => {
+      const wrapped = limiter.wrap(async (file: false | { filename: string; uri: string }) => {
         if (file) {
           // Create one message for each document
           await room.addMessage({
@@ -117,7 +118,8 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
             sender: authStore.user,
             attachments: [
               {
-                localUri: file,
+                filename: file.filename,
+                localUri: file.uri,
                 type: 'document',
               },
             ],
@@ -130,13 +132,14 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
     [authStore.user, room],
   );
 
-  const goToPreparePictures = useMethod((files: (false | string)[]) => {
+  const goToPreparePictures = useMethod((files: (false | { filename: string; uri: string })[]) => {
     // Prepare images
     const images = files
       .map<PicturesTaken | null>((file) => {
         if (file) {
           return {
-            localUri: file,
+            filename: file.filename,
+            localUri: file.uri,
             type: 'image',
             isSelected: true,
           };
@@ -158,13 +161,43 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
     });
   });
 
+  const goToPrepareVideo = useMethod((files: (false | { filename: string; uri: string })[]) => {
+    // Prepare video
+    const video = files[0];
+
+    if (!video) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      navigation.navigate('PrepareVideo', {
+        roomId: room.id,
+        roomTitle: title,
+        roomPictureUri: pictureUri,
+        popCount: 1,
+        initialMessage: message.value,
+        videoRecorded: video,
+        handleSaveMessage,
+      });
+    });
+  });
+
   useEffect(() => {
     attachmentPickerRef.current?.onPress(async (type) => {
       shouldBlurRemoveRoom.current = false;
       try {
-        const filesChosen = await DocumentPicker.pickMultiple({
-          type: type === 'image' ? [DocumentPicker.types.images] : [DocumentPicker.types.allFiles],
-        });
+        let filesChosen: DocumentPickerResponse[];
+
+        if (type === 'video') {
+          const fileChosen = await DocumentPicker.pick({
+            type: [DocumentPicker.types.video],
+          });
+          filesChosen = [fileChosen];
+        } else {
+          filesChosen = await DocumentPicker.pickMultiple({
+            type: type === 'image' ? [DocumentPicker.types.images] : [DocumentPicker.types.allFiles],
+          });
+        }
 
         // Try to access the file
         const checkFiles = limiter.wrap(async (file: DocumentPickerResponse) => {
@@ -174,19 +207,29 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
             const fileBlob = (await fileFetch.blob()) as any;
 
             // Prepare destination
-            const destPath = imagesPath;
+            let destPath = documentsPath;
+            if (type === 'image') {
+              destPath = imagesPath;
+            } else if (type === 'video') {
+              destPath = videosPath;
+            }
             await FileSystem.mkdir(destPath, { NSURLIsExcludedFromBackupKey: true });
 
-            // Copy image
+            // Copy file
             const filename: string = fileBlob._data.name;
+
             const finalPath = `${destPath}/${filename}`;
             await FileSystem.copyFile(file.uri, finalPath);
 
-            // Save image on gallery
-            const uri = await CameraRoll.save(finalPath, { type: 'photo', album: albuns.images });
-            console.log(uri);
+            // Save on gallery
+            let uri = finalPath;
+            if (type === 'image') {
+              uri = await CameraRoll.save(finalPath, { type: 'photo', album: albuns.images });
+            } else if (type === 'video') {
+              uri = await CameraRoll.save(finalPath, { type: 'video', album: albuns.videos });
+            }
 
-            return uri;
+            return { filename, uri };
           } catch (err) {
             return false;
           }
@@ -200,6 +243,8 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
             await addMessagesWithDocs(checkedFiles);
           } else if (type === 'image') {
             goToPreparePictures(checkedFiles);
+          } else if (type === 'video') {
+            goToPrepareVideo(checkedFiles);
           }
           return;
         }
@@ -233,6 +278,8 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
                 await addMessagesWithDocs(checkedFiles);
               } else if (type === 'image') {
                 goToPreparePictures(checkedFiles);
+              } else if (type === 'video') {
+                goToPrepareVideo(checkedFiles);
               }
             },
           });
@@ -253,6 +300,7 @@ const MessageInput: FC<Props> = ({ room, pictureUri, title, shouldBlurRemoveRoom
     attachmentPickerRef,
     authStore.user.id,
     goToPreparePictures,
+    goToPrepareVideo,
     handleSaveMessage,
     message.value,
     navigation,

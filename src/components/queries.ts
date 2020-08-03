@@ -21,7 +21,10 @@ const getUserAttachments = ({ database, userId }: WithUserAttachmentsInput) => {
           .findAndObserve(userId)
           .pipe(
             switchMap(
-              (user) => user?.attachments?.extend(Q.where('cipherUri', Q.eq(null))).observe() || of$(null),
+              (user) =>
+                user.attachments
+                  .extend(Q.or(Q.where('localUri', Q.eq(null)), Q.where('cipherUri', Q.eq(null))))
+                  .observe() || of$(null),
             ),
           ) || of$(null),
   };

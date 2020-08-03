@@ -4,7 +4,7 @@ import '!/services/why-did-you-render';
 import '!/services/localize';
 
 import React, { FC, useEffect } from 'react';
-import { Alert, Appearance, BackHandler } from 'react-native';
+import { Alert, Appearance, BackHandler, InteractionManager } from 'react-native';
 
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -58,7 +58,7 @@ const AppWithStores: FC = () => {
   }, [handleSchemeChange]);
 
   useEffect(() => {
-    void (async () => {
+    void InteractionManager.runAfterInteractions(async () => {
       const storageGranted = await checkStoragePermission();
       if (!storageGranted) {
         Alert.alert(
@@ -71,7 +71,7 @@ const AppWithStores: FC = () => {
           },
         );
       }
-    })();
+    });
 
     return () => {
       // @ts-expect-error read-only

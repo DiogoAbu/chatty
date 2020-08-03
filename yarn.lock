@@ -2601,6 +2601,11 @@
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.3.tgz#2ab0d5da2e5815f94b0b9d4b95d1e5f243ab2ca7"
   integrity sha512-KfRL3PuHmqQLOG+2tGpRO26Ctg+Cq1E01D2DMriKEATHgWLfeNDmq9e29Q9WIky0dQ3NPkd1mzYH8Lm936Z9qw==
 
+"@types/react-native-background-downloader@^2.3.2":
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/@types/react-native-background-downloader/-/react-native-background-downloader-2.3.2.tgz#5347d0611ab302416aa51c62492a601ac6a1eadd"
+  integrity sha512-euv7vnWwfwJSink+IttNxUvsbF6vcC/g5zTBGY6Mz36TmdqASfp1tcN71LHBQWD/XJUZCKDLeb9N5ZDhRzcftw==
+
 "@types/react-native-orientation@^5.0.1":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@types/react-native-orientation/-/react-native-orientation-5.0.1.tgz#347f7041683249f9ca7386717aa4dd66b394d3fb"
@@ -11145,6 +11150,11 @@ react-is@^16.7.0:
   version "16.13.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
+
+react-native-background-downloader@^2.3.4:
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/react-native-background-downloader/-/react-native-background-downloader-2.3.4.tgz#050a94b044b0a204f1c41b9852d4d53dcefe527c"
+  integrity sha512-SqAnsf3dJ/aoj2zq8zG/qVcQZxeK3Le0PsoNQ00G/q6oDho2kHNfIOxthD/00B0t384J3u2gWurwRW8idI79zg==
 
 react-native-background-upload@^5.7.0:
   version "5.7.0"

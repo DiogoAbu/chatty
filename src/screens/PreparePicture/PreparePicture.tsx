@@ -69,6 +69,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
   const { colors, dark, fonts, mode } = useTheme();
   const { t } = useTranslation();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [pictures, setPictures] = useState<PicturesTaken[]>([]);
   const message = useInput(initialMessage ?? '');
 
@@ -197,6 +198,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
       );
 
       setPictures(images);
+      setIsLoading(false);
     })();
   }, [picturesTaken]);
 
@@ -280,7 +282,7 @@ const PreparePicture: FC<Props> = ({ navigation, route }) => {
           {...message}
         />
 
-        <IconButton color={Colors.white} icon='send' onPress={handleSend} />
+        <IconButton color={Colors.white} disabled={isLoading} icon='send' onPress={handleSend} />
       </View>
     </View>
   );

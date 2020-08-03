@@ -35,16 +35,16 @@ export type RootStackParams = {
   };
   PictureScrollerModal: {
     title: string;
-    attachments: DeepPartial<AttachmentModel>[];
+    attachments: AttachmentParam[];
   };
   PictureViewerModal: {
     title: string;
-    attachment: DeepPartial<AttachmentModel>;
+    attachment: AttachmentParam;
     skipStatusBar?: boolean;
   };
   VideoPlayerModal: {
     title: string;
-    attachment: DeepPartial<AttachmentModel>;
+    attachment: AttachmentParam;
   };
   AttachmentPickerModal: {
     callbackScreen: keyof (MainStackParams & RootStackParams);
@@ -104,8 +104,12 @@ export type MainStackParams = {
     roomId: string;
     roomTitle: string;
     roomPictureUri: string;
+    popCount?: number;
 
+    initialMessage?: string;
     videoRecorded: VideoRecorded;
+
+    handleSaveMessage?: (message: string) => void;
   };
 
   RoomMedias: {
@@ -181,6 +185,11 @@ export interface HeaderOptions extends StackNavigationOptions {
 export type StackHeaderRightProps = {
   tintColor?: string;
 };
+
+export type AttachmentParam = Pick<
+  DeepPartial<AttachmentModel>,
+  'id' | 'localUri' | 'remoteUri' | 'cipherUri' | 'filename' | 'type' | 'width' | 'height'
+>;
 
 export type MuteUntilOption = {
   key: string;

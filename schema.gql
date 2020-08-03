@@ -236,6 +236,7 @@ fragment ReadReceiptChangesFragment on ReadReceiptChanges {
 fragment AttachmentChangesFragment on AttachmentChanges {
   id
   cipherUri
+  filename
   type
   width
   height

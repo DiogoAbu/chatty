@@ -105,6 +105,10 @@ export default {
     'alert.youCanAlwaysChangeYourProfileLater': 'You can always change your profile later.',
     'alert.weNeedStoragePermission':
       'This app needs access to the external storage to download images and videos. It will not run properly otherwise.',
+    'alert.notConnected': 'No internet connection.',
+    'alert.connectionIsExpensive':
+      'The current network connection is considered expensive. This could be in either energy or monetary terms.',
+    'alert.videoPlaybackFailed': 'Video playback failed',
 
     'messageInput.placeholder': 'Type a message...',
     'headerSearch.placeholder': 'Find by name or email',

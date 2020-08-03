@@ -11,8 +11,9 @@ import { useNavigation } from '@react-navigation/native';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
 import AttachmentModel from '!/models/AttachmentModel';
-import { MainNavigationProp } from '!/types';
+import { AttachmentParam, MainNavigationProp } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
+import transformUri from '!/utils/transform-uri';
 
 import { AttachmentPickerType } from './AttachmentPicker';
 import MessageAttachmentProgressOverlay from './MessageAttachmentProgressOverlay';
@@ -44,26 +45,42 @@ const getLimitedSize = (index: number, lastIndex: number, size: number) => {
 
 const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachmentPickerRef }) => {
   const navigation = useNavigation<MainNavigationProp<'Chatting'>>();
-  const { roundness, gridSmaller } = useTheme();
+  const { colors, roundness, gridSmaller } = useTheme();
 
   const [fileInfo, setFileInfo] = useState<StatResult | null>(null);
+
+  // One attachment
+  const attachment = attachments[0];
 
   const handleSeeAttachment = usePress(() => {
     attachmentPickerRef.current?.hide();
 
-    const { id, localUri, width, height, type } = attachments[0];
-    const attachment = { id, localUri, width, height, type };
-    const route = type === 'video' ? 'VideoPlayerModal' : 'PictureViewerModal';
-
     requestAnimationFrame(() => {
-      navigation.navigate(route, { attachment, title });
+      navigation.navigate(attachment.type === 'video' ? 'VideoPlayerModal' : 'PictureViewerModal', {
+        attachment: {
+          id: attachment.id,
+          localUri: attachment.localUri,
+          remoteUri: attachment.remoteUri,
+          cipherUri: attachment.cipherUri,
+          filename: attachment.filename,
+          type: attachment.type,
+          width: attachment.width,
+          height: attachment.height,
+        },
+        title,
+      });
     });
   });
 
   const handleSeePictures = usePress(() => {
     attachmentPickerRef.current?.hide();
 
-    const pictures = attachments.map(({ id, localUri, width, height }) => ({ id, localUri, width, height }));
+    const pictures = attachments.map<AttachmentParam>(({ id, localUri, width, height }) => ({
+      id,
+      localUri,
+      width,
+      height,
+    }));
 
     requestAnimationFrame(() => {
       navigation.navigate('PictureScrollerModal', { attachments: pictures, title });
@@ -73,7 +90,6 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
   useEffect(() => {
     (() => {
       try {
-        const attachment = attachments[0];
         if (attachment.type !== 'document') {
           return;
         }
@@ -83,13 +99,17 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
         setFileInfo(null);
       }
     })();
-  }, [attachments]);
+  }, [attachment]);
 
+  // Multiple attachments
   if (attachments.length > 1) {
     const preview = attachments.slice(0, PREVIEW_MAX_AMOUNT);
 
     return (
-      <MessageAttachmentProgressOverlay visible={attachments.some((e) => !e.cipherUri)}>
+      <MessageAttachmentProgressOverlay
+        isDownloading={attachments.some((e) => !e.localUri)}
+        isVisible={attachments.some((e) => !e.cipherUri || !e.localUri)}
+      >
         <TouchableWithoutFeedback onPress={handleSeePictures}>
           <View style={styles.attachmentListContainer}>
             {preview.map((item, index) => {
@@ -116,11 +136,10 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
     );
   }
 
-  const attachment = attachments[0];
-
   if (attachment.type === 'document') {
     return (
       <TouchableWithoutFeedback onPress={handleSeeAttachment}>
+        {/* TODO display file info */}
         <Text style={{ paddingHorizontal: gridSmaller }}>{attachment.localUri}</Text>
       </TouchableWithoutFeedback>
     );
@@ -135,14 +154,40 @@ const MessageAttachment: FC<Props> = ({ attachments, title, maxWidth, attachment
   const widthFinal = Math.min(width!, maxWidth) - PREVIEW_PADDING * 2;
   const heightFinal = Math.min(height!, maxWidth) - PREVIEW_PADDING * 2;
 
+  let uri: string | undefined = attachment.localUri!;
+
+  if (!uri && attachment.remoteUri) {
+    // Change extension to jpg
+    const imageUri = attachment.remoteUri.substring(0, attachment.remoteUri.lastIndexOf('.')) + '.jpg';
+
+    // Get low-quality blurred thumbnail
+    uri = transformUri(imageUri, {
+      width: widthFinal,
+      height: heightFinal,
+      quality: 15,
+      blur: 1000,
+    });
+  }
+
+  if (!uri) {
+    return (
+      <View style={styles.encryptedAttachmentContainer}>
+        <Icon name='key' style={[styles.encryptedAttachmentIcon, { color: colors.textOnPrimary }]} />
+      </View>
+    );
+  }
+
   return (
-    <MessageAttachmentProgressOverlay visible={!attachment.cipherUri}>
+    <MessageAttachmentProgressOverlay
+      isDownloading={!attachment.localUri}
+      isVisible={!attachment.cipherUri || !attachment.localUri}
+    >
       <TouchableWithoutFeedback onPress={handleSeeAttachment}>
         <View>
           <SharedElement id={attachment.id}>
             <FastImage
               resizeMode={FastImage.resizeMode.cover}
-              source={{ uri: attachment.localUri! }}
+              source={{ uri }}
               style={{
                 aspectRatio,
                 width: widthFinal,

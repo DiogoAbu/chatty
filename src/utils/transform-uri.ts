@@ -19,6 +19,7 @@ export interface Transformations {
     | 'thumb';
 
   pixelRatio?: number;
+  blur?: number;
 }
 
 type TransformationTuple = [keyof Transformations, any];
@@ -65,6 +66,9 @@ export default function transformUri(uri?: string, transformations?: Transformat
       if (key === 'cropping') {
         return cropping(value);
       }
+      if (key === 'blur') {
+        return blur(value);
+      }
       return '';
     })
     .filter((e) => !!e);
@@ -96,6 +100,10 @@ function quality(value: Transformations['quality']) {
 
 function cropping(value: Transformations['cropping']) {
   return value ? `c_${value}` : '';
+}
+
+function blur(value: Transformations['blur']) {
+  return value ? `e_blur:${value}` : '';
 }
 
 function pixelRatio(value: Transformations['pixelRatio']) {

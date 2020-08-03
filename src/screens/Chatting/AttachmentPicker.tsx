@@ -30,10 +30,10 @@ const AttachmentPicker = forwardRef<AttachmentPickerType, Props>(({ handleSetTou
   const { animValue } = useMemoOne(() => ({ animValue: new Value(0) }), []);
 
   const animRef = useRef<Animated.BackwardCompatibleWrapper | null>(null);
-  const [isShowing, setIsShowing] = useState(false);
   const containerRef = useRef<Animated.View | null>(null);
-
   const onPress = useRef<((type: AttachmentType) => any) | null>(null);
+
+  const [isShowing, setIsShowing] = useState(false);
 
   const handleOnPress = usePress((type: AttachmentType) => {
     handleToggleAttachmentPicker(false);

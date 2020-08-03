@@ -24,24 +24,32 @@ import useDimensions from '!/hooks/use-dimensions';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import AttachmentModel from '!/models/AttachmentModel';
-import { DeepPartial } from '!/types';
+import useTranslation from '!/hooks/use-translation';
+import { AttachmentParam } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
 import getStatusBarColor from '!/utils/get-status-bar-color';
 
 type Orientations = 'LANDSCAPE' | 'PORTRAIT' | 'UNKNOWN' | 'PORTRAITUPSIDEDOWN';
 
 interface Props {
-  video: DeepPartial<AttachmentModel>;
+  video: AttachmentParam;
+  onLoaded?: (data: OnLoadData) => void;
   onShowHideOverlay?: (state: boolean) => void;
   onShowHideControl?: (state: boolean) => void;
   onShowHideStatusBar?: (state: boolean) => void;
 }
 
-const VideoPlayer: FC<Props> = ({ video, onShowHideOverlay, onShowHideControl, onShowHideStatusBar }) => {
+const VideoPlayer: FC<Props> = ({
+  video,
+  onLoaded,
+  onShowHideOverlay,
+  onShowHideControl,
+  onShowHideStatusBar,
+}) => {
   const [winWidth, winHeight, isLandscape] = useDimensions('window');
   const navigation = useNavigation();
   const { colors, dark, mode, animation } = useTheme();
+  const { t } = useTranslation();
 
   const controlValue = useValue(1);
 
@@ -124,12 +132,16 @@ const VideoPlayer: FC<Props> = ({ video, onShowHideOverlay, onShowHideControl, o
   }, []);
 
   const handlePlayError = useCallback(() => {
-    Alert.alert('', 'Video playblack failed', [{ onPress: () => navigation.goBack() }]);
-  }, [navigation]);
+    Alert.alert(t('title.oops'), t('alert.videoPlaybackFailed'), [{ onPress: () => navigation.goBack() }]);
+  }, [navigation, t]);
 
-  const handleLoaded = useCallback((data: OnLoadData) => {
-    setDuration(data.duration);
-  }, []);
+  const handleLoaded = useCallback(
+    (data: OnLoadData) => {
+      setDuration(data.duration);
+      onLoaded?.(data);
+    },
+    [onLoaded],
+  );
 
   const handleProgressChanged = useCallback(
     (data: OnProgressData) => {

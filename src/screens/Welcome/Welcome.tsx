@@ -51,8 +51,6 @@ const Welcome: FC<Props> = ({ navigation }) => {
     // Sign out here so the other screens that depend on the user will be already disposed
     void authStore.signOut().catch(() => null);
 
-    console.log('Welcome done');
-
     return () => {
       clearTimeout(fetchTimeout);
       fetchControl.abort();

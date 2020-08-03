@@ -6,8 +6,7 @@ import { FlatList } from 'react-native-gesture-handler';
 import useFocusEffect from '!/hooks/use-focus-effect';
 import usePress from '!/hooks/use-press';
 import useTheme from '!/hooks/use-theme';
-import AttachmentModel from '!/models/AttachmentModel';
-import { DeepPartial, HeaderOptions, RootNavigationProp, RootRouteProp } from '!/types';
+import { AttachmentParam, HeaderOptions, RootNavigationProp, RootRouteProp } from '!/types';
 import getStatusBarColor from '!/utils/get-status-bar-color';
 
 import PictureItem from './PictureItem';
@@ -58,9 +57,7 @@ const PictureScrollerModal: FC<Props> = ({ navigation, route }) => {
     handlePressBack,
   } as HeaderOptions);
 
-  const renderItem = (props: ListRenderItemInfo<DeepPartial<AttachmentModel>>) => (
-    <PictureItem {...props} title={title} />
-  );
+  const renderItem = (props: ListRenderItemInfo<AttachmentParam>) => <PictureItem {...props} title={title} />;
 
   return (
     <FlatList

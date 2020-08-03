@@ -1,3 +1,5 @@
+import { InteractionManager } from 'react-native';
+
 import UUIDGenerator from 'react-native-uuid-generator';
 import { Database, Model, Q, Query, Relation, tableSchema } from '@nozbe/watermelondb';
 import { action, children, date, field, lazy, readonly, relation } from '@nozbe/watermelondb/decorators';
@@ -190,12 +192,17 @@ class RoomModel extends Model {
           isArchived: false,
           lastChangeAt: createdAt,
           lastMessage: { id },
-          _raw: { _changed: this.isLocalOnly ? 'isLocalOnly' : '', _status: 'updated' },
+          _raw: {
+            _changed: this.isLocalOnly ? 'isLocalOnly' : '',
+            _status: this.isLocalOnly ? 'updated' : undefined,
+          },
         }),
       ),
     );
 
-    await this.batch(...batches);
+    await InteractionManager.runAfterInteractions(async () => {
+      await this.batch(...batches);
+    });
   }
 }
 

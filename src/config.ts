@@ -26,5 +26,6 @@ export const albuns = {
 };
 
 export const mediaPath = `${FileSystem.ExternalStorageDirectoryPath}/Chatty/Media`;
-export const imagesPath = `${mediaPath}/Chatty ${albuns.images}`;
-export const videosPath = `${mediaPath}/Chatty ${albuns.videos}`;
+export const imagesPath = `${mediaPath}/${albuns.images}`;
+export const videosPath = `${mediaPath}/${albuns.videos}`;
+export const documentsPath = `${mediaPath}/Chatty Documents`;

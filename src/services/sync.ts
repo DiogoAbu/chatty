@@ -17,7 +17,7 @@ import {
 } from '!/generated/graphql';
 import { prepareUpsertMessage } from '!/models/MessageModel';
 import ReadReceiptModel from '!/models/ReadReceiptModel';
-import { getAllMembersOfRoom } from '!/models/relations/RoomMemberModel';
+import { getAllMembersOfRoom, prepareUpsertRoomMember } from '!/models/relations/RoomMemberModel';
 import { prepareUpsertRoom } from '!/models/RoomModel';
 import UserModel, { prepareUpsertUser } from '!/models/UserModel';
 import debug from '!/services/debug';
@@ -276,16 +276,16 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
   // Attachments //
   /////////////////
   if (changes?.attachments?.updated?.length) {
-    const decryptAttachment = limiter.wrap(async (attach: AttachmentChanges) => {
-      if (!attach.cipherUri) {
-        return attach;
+    const decryptAttachment = limiter.wrap(async (attachment: AttachmentChanges) => {
+      if (!attachment.cipherUri) {
+        return attachment;
       }
 
       const { sharedKey, senderPublicKey } = await getKeyFromRoomOrSender(
         database,
         userId,
-        attach.roomId!,
-        attach.userId!,
+        attachment.roomId!,
+        attachment.userId!,
         changes.rooms?.updated,
         changes.users?.updated,
       );
@@ -293,25 +293,25 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
       try {
         if (sharedKey) {
           // @ts-expect-error adding remoteUri
-          attach.remoteUri = await decryptContentUsingShared(attach.cipherUri, sharedKey);
+          attachment.remoteUri = await decryptContentUsingShared(attachment.cipherUri, sharedKey);
         } else if (senderPublicKey) {
           const usersTable = database.collections.get<UserModel>(Tables.users);
           const signedUser = await usersTable.find(userId);
           // @ts-expect-error adding remoteUri
-          attach.remoteUri = await decryptContentUsingPair(
-            attach.cipherUri,
+          attachment.remoteUri = await decryptContentUsingPair(
+            attachment.cipherUri,
             senderPublicKey,
             signedUser.secretKey!,
           );
         } else {
-          log(`Failed to find key for attachment ${attach.id as string}`);
+          log(`Failed to find key for attachment ${attachment.id as string}`);
         }
       } catch (err) {
-        log(`Failed to handle pulled attachment ${attach.id as string}`);
+        log(`Failed to handle pulled attachment ${attachment.id as string}`);
         console.log(err);
       }
 
-      return attach;
+      return attachment;
     });
 
     changes.attachments.updated = await Promise.all(changes.attachments.updated.map(decryptAttachment));
@@ -320,7 +320,7 @@ const pullChanges = (userId: string, database: Database, client: Client) => asyn
   // Return changes to the database
   log('Pull', JSON.stringify({ changes, timestamp }, removeEmptys, 2));
   return {
-    changes: changes! as Omit<DeepRequired<SyncChanges>, '__typename'>,
+    changes: changes as Omit<DeepRequired<SyncChanges>, '__typename'>,
     timestamp,
   };
 };
@@ -375,17 +375,12 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
         }),
       );
     };
-    changes.rooms.created = changes.rooms.created.filter(
-      (e) =>
-        !e.isLocalOnly &&
-        e._changed &&
-        !e._changed.split(',').every((c: string) => keysToOmit.rooms.push.includes(c)),
-    );
+    changes.rooms.created = changes.rooms.created.filter((e) => !e.isLocalOnly);
     changes.rooms.updated = changes.rooms.updated.filter(
       (e) =>
         !e.isLocalOnly &&
-        e._changed &&
-        !e._changed.split(',').every((c: string) => keysToOmit.rooms.push.includes(c)),
+        (e._changed.includes('isLocalOnly') ||
+          !e._changed.split(',').every((c: string) => keysToOmit.rooms.push.includes(c))),
     );
     changes.rooms.created = changes.rooms.created.map((e) => omitKeys(e, keysToOmit.rooms.push));
     changes.rooms.updated = changes.rooms.updated.map((e) => omitKeys(e, keysToOmit.rooms.push));
@@ -397,6 +392,15 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
   // Room Members //
   //////////////////
   if (changes?.roomMembers) {
+    const updateToSynced = (e: DirtyRaw) => {
+      batchAsync.push(
+        prepareUpsertRoomMember(database, {
+          roomId: e.roomId,
+          userId: e.userId,
+          _raw: { _status: 'synced', _changed: '' },
+        }),
+      );
+    };
     changes.roomMembers.created = changes.roomMembers.created.filter((e) => !e.isLocalOnly);
     changes.roomMembers.updated = changes.roomMembers.updated.filter((e) => !e.isLocalOnly);
     changes.roomMembers.created = changes.roomMembers.created.map((e) =>
@@ -405,6 +409,8 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
     changes.roomMembers.updated = changes.roomMembers.updated.map((e) =>
       omitKeys(e, keysToOmit.roomMembers.push),
     );
+    changes.roomMembers.created.map(updateToSynced);
+    changes.roomMembers.updated.map(updateToSynced);
   }
 
   /////////////////
@@ -439,6 +445,20 @@ const pushChanges = (userId: string, database: Database, client: Client) => asyn
     changes.attachments.updated = changes.attachments.updated.map((e) =>
       omitKeys(e, keysToOmit.attachments.push),
     );
+    changes.attachments.created = changes.attachments.created.filter((e) => {
+      return (
+        e.userId === userId &&
+        e._changed &&
+        !e._changed.split(',').every((c: string) => keysToOmit.attachments.push.includes(c))
+      );
+    });
+    changes.attachments.updated = changes.attachments.updated.filter((e) => {
+      return (
+        e.userId === userId &&
+        e._changed &&
+        !e._changed.split(',').every((c: string) => keysToOmit.attachments.push.includes(c))
+      );
+    });
   }
 
   //////////////

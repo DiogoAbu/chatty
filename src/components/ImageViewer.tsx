@@ -29,14 +29,13 @@ import { SharedElement } from 'react-navigation-shared-element';
 
 import useDimensions from '!/hooks/use-dimensions';
 import useTheme from '!/hooks/use-theme';
-import AttachmentModel from '!/models/AttachmentModel';
-import { DeepPartial } from '!/types';
+import { AttachmentParam } from '!/types';
 import getNormalizedSize from '!/utils/get-normalized-size';
 
 const FastImageAnim = Animated.createAnimatedComponent(FastImage) as typeof FastImage;
 
 interface Props {
-  image: DeepPartial<AttachmentModel>;
+  image: AttachmentParam;
   shouldFillScreen?: boolean;
 }
 

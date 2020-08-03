@@ -123,6 +123,7 @@ export type Attachment = {
   __typename?: 'Attachment';
   id?: Maybe<Scalars['ID']>;
   cipherUri?: Maybe<Scalars['String']>;
+  filename?: Maybe<Scalars['String']>;
   type?: Maybe<AttachmentType>;
   width?: Maybe<Scalars['Float']>;
   height?: Maybe<Scalars['Float']>;
@@ -215,6 +216,7 @@ export type AttachmentChanges = {
   _changed?: Maybe<Scalars['String']>;
   id?: Maybe<Scalars['ID']>;
   cipherUri?: Maybe<Scalars['String']>;
+  filename?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   width?: Maybe<Scalars['Float']>;
   height?: Maybe<Scalars['Float']>;
@@ -451,6 +453,7 @@ export type AttachmentChangesInput = {
   _changed?: Maybe<Scalars['String']>;
   id?: Maybe<Scalars['ID']>;
   cipherUri?: Maybe<Scalars['String']>;
+  filename?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   width?: Maybe<Scalars['Float']>;
   height?: Maybe<Scalars['Float']>;
@@ -750,7 +753,7 @@ export type MessageChangesFragmentFragment = { __typename?: 'MessageChanges', id
 
 export type ReadReceiptChangesFragmentFragment = { __typename?: 'ReadReceiptChanges', id?: Maybe<string>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string>, receivedAt?: Maybe<number>, seenAt?: Maybe<number> };
 
-export type AttachmentChangesFragmentFragment = { __typename?: 'AttachmentChanges', id?: Maybe<string>, cipherUri?: Maybe<string>, type?: Maybe<string>, width?: Maybe<number>, height?: Maybe<number>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string> };
+export type AttachmentChangesFragmentFragment = { __typename?: 'AttachmentChanges', id?: Maybe<string>, cipherUri?: Maybe<string>, filename?: Maybe<string>, type?: Maybe<string>, width?: Maybe<number>, height?: Maybe<number>, userId?: Maybe<string>, roomId?: Maybe<string>, messageId?: Maybe<string> };
 
 export type RoomChangesFragmentFragment = { __typename?: 'RoomChanges', id?: Maybe<string>, name?: Maybe<string>, pictureUri?: Maybe<string>, isMuted?: Maybe<boolean>, shouldStillNotify?: Maybe<boolean>, mutedUntil?: Maybe<number>, lastChangeAt?: Maybe<number>, lastMessageId?: Maybe<string>, createdAt?: Maybe<number> };
 
@@ -802,6 +805,7 @@ export const AttachmentChangesFragmentFragmentDoc = gql`
     fragment AttachmentChangesFragment on AttachmentChanges {
   id
   cipherUri
+  filename
   type
   width
   height

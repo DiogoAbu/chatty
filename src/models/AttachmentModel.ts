@@ -41,6 +41,9 @@ class AttachmentModel extends Model {
   @field('cipherUri')
   cipherUri: string | null;
 
+  @field('filename')
+  filename: string;
+
   @field('type')
   type: AttachmentType;
 
@@ -69,6 +72,7 @@ export const attachmentSchema = tableSchema({
     { name: 'localUri', type: 'string', isOptional: true },
     { name: 'remoteUri', type: 'string', isOptional: true },
     { name: 'cipherUri', type: 'string', isOptional: true },
+    { name: 'filename', type: 'string' },
     { name: 'type', type: 'string' },
     { name: 'width', type: 'number', isOptional: true },
     { name: 'height', type: 'number', isOptional: true },
@@ -92,6 +96,9 @@ export function attachmentUpdater(changes: DeepPartial<AttachmentModel>): (recor
     }
     if (typeof changes.cipherUri !== 'undefined') {
       record.cipherUri = changes.cipherUri;
+    }
+    if (typeof changes.filename !== 'undefined') {
+      record.filename = changes.filename;
     }
     if (typeof changes.type !== 'undefined') {
       record.type = changes.type;
